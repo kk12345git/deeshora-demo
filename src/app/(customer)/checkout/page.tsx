@@ -1,0 +1,246 @@
+// src/app/(customer)/checkout/page.tsx
+"use client";
+
+
+import { useState, useEffect } from 'react';
+import { useCart } from '@/hooks/useCart';
+import { trpc } from '@/lib/trpc';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { Home, Plus, Loader2 } from 'lucide-react';
+
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
+
+export default function CheckoutPage() {
+  const { items, total, clearCart } = useCart();
+  const router = useRouter();
+  const utils = trpc.useUtils();
+
+
+  const { data: addresses, isLoading: isLoadingAddresses } = trpc.vendor.myAddresses.useQuery();
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+
+
+  const addAddressMutation = trpc.vendor.addAddress.useMutation({
+    onSuccess: () => {
+      utils.vendor.myAddresses.invalidate();
+      toast.success('Address added successfully!');
+      setShowNewAddressForm(false);
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+
+  const createOrderMutation = trpc.order.createPaymentOrder.useMutation();
+  const verifyPaymentMutation = trpc.order.verifyPayment.useMutation();
+
+
+  useEffect(() => {
+    if (addresses && addresses.length > 0 && !selectedAddressId) {
+      const defaultAddress = addresses.find(a => a.isDefault) || addresses[0];
+      setSelectedAddressId(defaultAddress.id);
+    }
+  }, [addresses, selectedAddressId]);
+
+
+  const handleAddNewAddress = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    addAddressMutation.mutate({
+      label: formData.get('label') as string,
+      line1: formData.get('line1') as string,
+      city: formData.get('city') as string,
+      state: formData.get('state') as string,
+      pincode: formData.get('pincode') as string,
+      isDefault: formData.get('isDefault') === 'on',
+    });
+    e.currentTarget.reset();
+  };
+
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+
+  const handlePayment = async () => {
+    if (!selectedAddressId) {
+      toast.error('Please select a delivery address.');
+      return;
+    }
+    setIsPlacingOrder(true);
+
+
+    const res = await loadRazorpayScript();
+    if (!res) {
+      toast.error('Razorpay SDK failed to load. Are you online?');
+      setIsPlacingOrder(false);
+      return;
+    }
+
+
+    try {
+      const paymentOrder = await createOrderMutation.mutateAsync({
+        addressId: selectedAddressId,
+        notes,
+      });
+
+
+      const options = {
+        key: paymentOrder.keyId,
+        amount: paymentOrder.amount,
+        currency: 'INR',
+        name: 'Deeshora',
+        description: 'Order Payment',
+        order_id: paymentOrder.razorpayOrderId,
+        handler: async function (response: any) {
+          const verificationResult = await verifyPaymentMutation.mutateAsync({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            orderIds: paymentOrder.orderIds,
+          });
+
+
+          if (verificationResult.success) {
+            toast.success('Payment successful! Your order is confirmed.');
+            clearCart();
+            router.push(`/orders/${verificationResult.orderIds[0]}`);
+          } else {
+            toast.error('Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          // You can prefill user details here
+        },
+        notes: {
+          address: 'Deeshora Corporate Office',
+        },
+        theme: {
+          color: '#f97316',
+        },
+      };
+
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+      paymentObject.on('payment.failed', function (response: any) {
+        toast.error('Payment failed. Please try again.');
+        console.error(response.error);
+      });
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create order.');
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  };
+
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Checkout</h1>
+      <div className="grid lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          {/* Address Selector */}
+          <div className="card p-6">
+            <h2 className="text-xl font-bold mb-4">Select Delivery Address</h2>
+            {isLoadingAddresses ? (
+              <p>Loading addresses...</p>
+            ) : (
+              <div className="space-y-4">
+                {addresses?.map(address => (
+                  <div key={address.id} onClick={() => setSelectedAddressId(address.id)}
+                    className={`p-4 border rounded-xl cursor-pointer transition-all ${selectedAddressId === address.id ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200' : 'border-gray-200'}`}>
+                    <div className="flex items-center">
+                      <Home className="w-5 h-5 mr-3 text-gray-600" />
+                      <div>
+                        <p className="font-semibold">{address.label} {address.isDefault && <span className="badge bg-gray-200 text-gray-700 ml-2">Default</span>}</p>
+                        <p className="text-sm text-gray-500">{address.line1}, {address.city}, {address.state} - {address.pincode}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setShowNewAddressForm(!showNewAddressForm)} className="mt-4 flex items-center text-sm font-semibold text-orange-600 hover:underline">
+              <Plus size={16} className="mr-1" /> {showNewAddressForm ? 'Cancel' : 'Add New Address'}
+            </button>
+            {showNewAddressForm && (
+              <form onSubmit={handleAddNewAddress} className="mt-4 space-y-4 border-t pt-4">
+                <input name="label" placeholder="Label (e.g., Home, Work)" className="input" required />
+                <input name="line1" placeholder="Address Line 1" className="input" required />
+                <div className="grid grid-cols-3 gap-4">
+                  <input name="city" placeholder="City" className="input" required />
+                  <input name="state" placeholder="State" className="input" required />
+                  <input name="pincode" placeholder="Pincode" className="input" required />
+                </div>
+                <div className="flex items-center">
+                  <input type="checkbox" name="isDefault" id="isDefault" className="h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" />
+                  <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-900">Set as default address</label>
+                </div>
+                <button type="submit" className="btn-primary" disabled={addAddressMutation.isPending}>
+                  {addAddressMutation.isPending ? 'Saving...' : 'Save Address'}
+                </button>
+              </form>
+            )}
+          </div>
+          {/* Delivery Notes */}
+          <div className="card p-6 mt-6">
+            <h2 className="text-xl font-bold mb-4">Delivery Notes</h2>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Any special instructions for the delivery person?"
+              className="input w-full"
+              rows={3}
+            />
+          </div>
+        </div>
+
+
+        {/* Payment Summary */}
+        <div className="lg:col-span-1">
+          <div className="card p-6 sticky top-24">
+            <h2 className="text-xl font-bold mb-4">Payment Summary</h2>
+            <div className="space-y-2 text-sm max-h-48 overflow-y-auto pr-2">
+              {items.map(item => (
+                <div key={item.productId} className="flex justify-between">
+                  <span className="text-gray-600 truncate w-4/5">{item.name} x{item.quantity}</span>
+                  <span className="font-medium">₹{(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-4 border-t">
+              <div className="flex justify-between items-baseline">
+                <span className="text-lg font-bold">Total to Pay</span>
+                <span className="text-xl font-extrabold">₹{total().toFixed(2)}</span>
+              </div>
+            </div>
+            <button
+              onClick={handlePayment}
+              disabled={isPlacingOrder || items.length === 0}
+              className="btn-primary w-full text-center mt-6 text-base"
+            >
+              {isPlacingOrder ? <Loader2 className="animate-spin mx-auto" /> : `Pay ₹${total().toFixed(2)}`}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

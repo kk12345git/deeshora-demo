@@ -1,0 +1,58 @@
+/* src/app/globals.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-800 antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl shadow-lg shadow-orange-500/20 transition-all duration-300 hover:shadow-orange-500/40 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-bold text-gray-700 bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-sm transition-all duration-300 hover:bg-white hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 active:scale-95 disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-bold text-gray-500 bg-transparent rounded-2xl hover:bg-gray-100/50 transition-colors focus:outline-none;
+  }
+  .card {
+    @apply bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/40 flex flex-col transition-all duration-300;
+  }
+  .input {
+    @apply block w-full px-5 py-3 text-sm text-gray-900 bg-gray-50/50 backdrop-blur-sm border border-gray-100 rounded-2xl transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 focus:bg-white;
+  }
+  .badge {
+    @apply inline-flex items-center text-[10px] tracking-wider uppercase font-black px-3 py-1 rounded-full;
+  }
+  .section-title {
+    @apply text-3xl font-black text-gray-900 tracking-tight;
+  }
+  .glass-card {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 rounded-[2.5rem] shadow-2xl;
+  }
+}
+
+/* Custom Utilities */
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-700;
+}
