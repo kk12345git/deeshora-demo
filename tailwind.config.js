@@ -1,8 +1,5 @@
-// tailwind.config.ts
-import type { Config } from "tailwindcss";
-
-
-const config: Config = {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -26,8 +23,8 @@ const config: Config = {
         },
       },
       borderRadius: {
-        'xl': '0.75rem', // 12px
-        '2xl': '1rem',   // 16px
+        'xl': '0.75rem', 
+        '2xl': '1rem',   
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
@@ -36,4 +33,3 @@ const config: Config = {
   },
   plugins: [],
 };
-export default config;
