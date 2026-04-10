@@ -1,19 +1,14 @@
 /* src/app/globals.css */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 @layer base {
   body {
     @apply bg-gray-50 text-gray-800 antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: inherit; /* Rely on next/font class set in layout */
   }
 }
-
 
 @layer components {
   .btn-primary {
@@ -42,17 +37,18 @@
   }
 }
 
-/* Custom Utilities */
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
 
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-}
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
 
-.text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-700;
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-700;
+  }
 }

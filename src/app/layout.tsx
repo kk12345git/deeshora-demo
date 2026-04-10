@@ -13,6 +13,11 @@ const outfit = Outfit({
     variable: '--font-outfit'
 });
 
+const inter = Inter({
+    subsets: ["latin"],
+    variable: '--font-inter'
+});
+
 export const metadata: Metadata = {
   title: {
     default: "Deeshora - Your Local Delivery Partner",
@@ -67,7 +72,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className="scroll-smooth">
-        <body className={`${outfit.variable} font-outfit antialiased bg-gray-50 text-gray-900`}>
+        <body className={`${outfit.variable} ${inter.variable} font-outfit antialiased bg-gray-50 text-gray-900`}>
           <TRPCProvider>
             <JsonLd />
             {children}
