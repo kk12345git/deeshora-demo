@@ -47,9 +47,9 @@ export default function HomePage() {
                Empowering Local Commerce
             </div>
             
-            <h1 className="text-5xl md:text-8xl font-black text-white leading-tight tracking-tighter">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white leading-tight tracking-tighter">
               Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">Hometown</span> 
-              <br className="hidden md:block" /> Marketplace.
+              <br className="hidden sm:block" /> Marketplace.
             </h1>
             
             <p className="max-w-2xl mx-auto text-xl text-white/60 font-medium leading-relaxed">
@@ -125,7 +125,7 @@ export default function HomePage() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
             {isLoadingCats ? Array(8).fill(0).map((_, i) => <div key={i} className="aspect-square bg-gray-100 animate-pulse rounded-3xl" />) : 
             categories?.map((category) => (
               <Link key={category.id} href={`/category/${category.slug}`} className="group space-y-4">
@@ -152,7 +152,7 @@ export default function HomePage() {
                Featured Specials
                <span className="h-px bg-gray-200 flex-grow hidden md:block" />
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
               {isLoadingFeatured ? Array(4).fill(0).map((_, i) => <div key={i} className="h-80 bg-white rounded-3xl animate-pulse" />) :
               featuredProducts?.products.map((product) => (
                 <ProductCard key={product.id} product={product as any} />
@@ -184,7 +184,7 @@ export default function HomePage() {
                  {Array(12).fill(0).map((_, i) => <div key={i} className="h-80 bg-gray-50 rounded-3xl animate-pulse" />)}
             </div>
           ) : (allProducts?.products.length || 0) > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
               {allProducts?.products.map((product) => (
                 <ProductCard key={product.id} product={product as any} />
               ))}

@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Star, Plus, Minus, ShoppingCart, Store } from 'lucide-react';
 import { useCart, CartItem } from '@/hooks/useCart';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import OnboardingModal from './OnboardingModal';
 
 interface ProductCardProps {
   product: any; // Using any temporarily to avoid strict Prisma types during major refactor
@@ -12,11 +14,12 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { items, addItem, updateQuantity } = useCart();
+  const { requireOnboarding, isModalOpen, closeModal, handleOnboardingSuccess } = useOnboarding();
   const cartItem = items.find((item) => item.productId === product.id);
 
   const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100);
 
-  const handleAddToCart = () => {
+  const addToCart = () => {
     const item: Omit<CartItem, 'quantity'> = {
       productId: product.id,
       name: product.name,
@@ -27,7 +30,17 @@ export default function ProductCard({ product }: ProductCardProps) {
     addItem(item);
   };
 
+  const handleAddToCart = () => {
+    requireOnboarding(addToCart);
+  };
+
   return (
+    <>
+      <OnboardingModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onSuccess={() => { handleOnboardingSuccess(); addToCart(); }}
+      />
     <div className="card group group relative hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] overflow-hidden">
       {/* Image Container */}
       <Link href={`/product/${product.slug}`} className="block relative overflow-hidden aspect-square rounded-t-[2rem]">
@@ -62,7 +75,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       </Link>
 
       {/* Content */}
-      <div className="p-6 flex flex-col flex-grow space-y-3">
+      <div className="p-4 sm:p-6 flex flex-col flex-grow space-y-2 sm:space-y-3">
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-orange-500 tracking-wider">
                 <Store size={12} />
@@ -114,9 +127,9 @@ export default function ProductCard({ product }: ProductCardProps) {
                 ) : (
                     <button 
                         onClick={handleAddToCart} 
-                        className="w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center hover:bg-orange-500 transition-all shadow-xl shadow-gray-950/20 active:scale-95"
+                        className="w-10 sm:w-12 h-10 sm:h-12 bg-gray-900 text-white rounded-xl sm:rounded-2xl flex items-center justify-center hover:bg-orange-500 transition-all shadow-xl shadow-gray-950/20 active:scale-95"
                     >
-                        <Plus size={24} />
+                        <Plus size={20} className="sm:size-6" />
                     </button>
                 )
             )}
@@ -124,5 +137,6 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }

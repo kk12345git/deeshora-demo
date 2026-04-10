@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MapPin, Search, ShoppingCart, Menu, Sparkles, X, LayoutDashboard, Store, Package, LogOut } from 'lucide-react';
+import { MapPin, Search, ShoppingCart, Menu, Sparkles, X, LayoutDashboard, Store, Package, LogOut, UserRound } from 'lucide-react';
 import { UserButton, useUser, SignOutButton } from '@clerk/nextjs';
 import { useCart } from '@/hooks/useCart';
 import { useRouter } from 'next/navigation';
@@ -39,6 +39,7 @@ export default function Navbar() {
   const navLinks = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard, role: "ADMIN" },
     { name: "Vendor Dashboard", href: "/vendor/dashboard", icon: Store, role: "VENDOR" },
+    { name: "My Space", href: "/profile", icon: UserRound },
     { name: "My Orders", href: "/orders", icon: Package },
   ];
 
@@ -51,13 +52,18 @@ export default function Navbar() {
            : "bg-white border-transparent shadow-sm"
          }`}>
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
-            <div className="bg-orange-500 text-white font-black text-xl w-10 h-10 flex items-center justify-center rounded-[1rem] shadow-lg shadow-orange-500/30">
-              D
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="relative w-11 h-11 transition-all duration-300 group-hover:scale-110">
+              <Image 
+                src="/logo.jpg" 
+                alt="Deeshora" 
+                fill 
+                className="object-cover rounded-xl shadow-lg border border-gray-100" 
+              />
             </div>
-            <div className="flex flex-col -space-y-1">
-                <span className="text-xl font-black text-gray-900 tracking-tighter">deeshora</span>
-                <span className="text-[10px] font-bold text-orange-500 tracking-[0.2em] uppercase">Local Shop</span>
+            <div className="flex flex-col -space-y-1 hidden sm:flex">
+                <span className="text-xl font-black text-gray-900 tracking-tighter">Deeshora</span>
+                <span className="text-[10px] font-bold text-orange-500 tracking-[0.2em] uppercase">India to World</span>
             </div>
           </Link>
 
@@ -81,10 +87,10 @@ export default function Navbar() {
               <span>{city}</span>
             </div>
 
-            <Link href="/cart" className="relative w-11 h-11 flex items-center justify-center rounded-2xl hover:bg-gray-100 transition-colors text-gray-700 hidden md:flex">
-              <ShoppingCart size={22} strokeWidth={2} />
+            <Link href="/cart" className="relative w-10 md:w-11 h-10 md:h-11 flex items-center justify-center rounded-2xl hover:bg-gray-100 transition-colors text-gray-700">
+              <ShoppingCart size={20} md:size={22} strokeWidth={2} />
               {cart.itemCount() > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-orange-600 text-white text-[10px] font-black flex items-center justify-center shadow-lg shadow-orange-500/40">
+                <span className="absolute -top-1 -right-1 h-4 w-4 md:h-5 md:w-5 rounded-full bg-orange-600 text-white text-[9px] md:text-[10px] font-black flex items-center justify-center shadow-lg shadow-orange-500/40">
                   {cart.itemCount()}
                 </span>
               )}
@@ -92,9 +98,12 @@ export default function Navbar() {
 
             {isSignedIn ? (
               <div className="flex items-center gap-3">
-                <div className="hidden md:block">
+              <div className="hidden md:flex items-center gap-2">
+                   <Link href="/profile" className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400 hover:text-orange-500">
+                     <UserRound size={20} />
+                   </Link>
                    <UserButton appearance={{ elements: { userButtonAvatarBox: "h-10 w-10 border-2 border-white shadow-md rounded-xl" } }} afterSignOutUrl="/" />
-                </div>
+              </div>
                 <button 
                   onClick={() => setIsMobileMenuOpen(true)}
                   className="md:hidden w-11 h-11 flex items-center justify-center rounded-xl bg-gray-50 text-gray-900"
@@ -125,8 +134,10 @@ export default function Navbar() {
         <div className={`absolute right-0 top-0 bottom-0 w-[80%] max-w-sm bg-white shadow-2xl transition-transform duration-500 p-8 flex flex-col ${isMobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}>
           <div className="flex items-center justify-between mb-12">
              <div className="flex items-center gap-3">
-                <div className="bg-orange-500 text-white font-black text-xl w-10 h-10 flex items-center justify-center rounded-xl">D</div>
-                <span className="font-black text-xl tracking-tighter">Menu</span>
+                <div className="relative w-10 h-10">
+                    <Image src="/logo.jpg" alt="Logo" fill className="object-cover rounded-xl" />
+                </div>
+                <span className="font-black text-xl tracking-tighter uppercase">Menu</span>
              </div>
              <button onClick={() => setIsMobileMenuOpen(false)} className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
                 <X size={20} />

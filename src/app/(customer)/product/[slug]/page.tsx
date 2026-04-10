@@ -1,4 +1,4 @@
-// src/app/(customer)/product/[id]/page.tsx
+// src/app/(customer)/product/[slug]/page.tsx
 "use client";
 
 import { trpc } from '@/lib/trpc';
@@ -60,7 +60,7 @@ export default function ProductDetailPage() {
       </div>
 
       <div className="container mx-auto px-4 py-4 md:py-12">
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16">
           {/* Image Gallery - Premium Presentation */}
           <div className="space-y-4">
             <div className="relative aspect-square w-full bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-gray-200/50 group border border-gray-100">
@@ -107,14 +107,14 @@ export default function ProductDetailPage() {
                         {product.rating.toFixed(1)} • {product.reviewCount} Reviews
                     </div>
                 </div>
-                <h1 className="text-3xl md:text-5xl font-black text-gray-950 tracking-tight leading-none uppercase">
+                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-gray-950 tracking-tight leading-none uppercase">
                     {product.name}
                 </h1>
               </div>
 
               <div className="flex items-end gap-3">
                 <div className="space-y-1">
-                    <p className="text-4xl font-black text-gray-950 tracking-tighter">₹{product.price}</p>
+                    <p className="text-3xl sm:text-4xl font-black text-gray-950 tracking-tighter">₹{product.price}</p>
                     {product.mrp > product.price && (
                     <div className="flex items-center gap-2">
                         <p className="text-base text-gray-400 line-through font-medium">₹{product.mrp}</p>
@@ -160,7 +160,7 @@ export default function ProductDetailPage() {
               )}
 
               {/* Desktop CTA */}
-              <div className="hidden md:block pt-6">
+              <div className="hidden lg:block pt-6">
                 {product.stock > 0 ? (
                   cartItem ? (
                     <div className="flex flex-col gap-4">

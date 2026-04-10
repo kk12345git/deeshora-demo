@@ -27,8 +27,13 @@ export default function SignInPage() {
       <div className="flex-grow flex items-center justify-center p-4 relative z-10 pb-20">
         <div className="w-full max-w-[480px] animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="text-center mb-10 space-y-2">
-            <div className="inline-block bg-orange-500 text-white font-black text-2xl w-14 h-14 flex items-center justify-center rounded-[1.25rem] shadow-2xl shadow-orange-500/40 mx-auto mb-6">
-              D
+            <div className="relative w-20 h-20 mx-auto mb-6 transition-all hover:scale-105 duration-500">
+               <Image 
+                src="/logo.jpg" 
+                alt="Deeshora Logo" 
+                fill 
+                className="object-cover rounded-[1.5rem] shadow-2xl shadow-orange-500/20 border border-white/10" 
+               />
             </div>
             <h1 className="text-4xl font-black text-white tracking-tighter uppercase">Welcome Back</h1>
             <p className="text-white/40 font-medium">Continue your hyperlocal shopping journey</p>

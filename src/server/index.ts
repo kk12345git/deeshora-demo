@@ -5,6 +5,7 @@ import { orderRouter } from './routers/order';
 import { cartRouter } from './routers/cart';
 import { vendorRouter } from './routers/vendor';
 import { adminRouter } from './routers/admin';
+import { userRouter } from './routers/user';
 
 
 export const appRouter = createTRPCRouter({
@@ -13,6 +14,7 @@ export const appRouter = createTRPCRouter({
   cart: cartRouter,
   vendor: vendorRouter,
   admin: adminRouter,
+  user: userRouter,
 });
 
 
