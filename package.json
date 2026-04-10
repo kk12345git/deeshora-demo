@@ -2,12 +2,6 @@
   "name": "deeshora",
   "version": "0.1.0",
   "private": true,
-  "postcss": {
-    "plugins": {
-      "tailwindcss": {},
-      "autoprefixer": {}
-    }
-  },
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
