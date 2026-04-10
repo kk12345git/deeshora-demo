@@ -88,7 +88,7 @@ export default function Navbar() {
             </div>
 
             <Link href="/cart" className="relative w-10 md:w-11 h-10 md:h-11 flex items-center justify-center rounded-2xl hover:bg-gray-100 transition-colors text-gray-700">
-              <ShoppingCart size={20} md:size={22} strokeWidth={2} />
+              <ShoppingCart size={20} strokeWidth={2} />
               {cart.itemCount() > 0 && (
                 <span className="absolute -top-1 -right-1 h-4 w-4 md:h-5 md:w-5 rounded-full bg-orange-600 text-white text-[9px] md:text-[10px] font-black flex items-center justify-center shadow-lg shadow-orange-500/40">
                   {cart.itemCount()}
