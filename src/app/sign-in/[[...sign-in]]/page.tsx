@@ -1,6 +1,7 @@
 // src/app/sign-in/[[...sign-in]]/page.tsx
 import { SignIn } from "@clerk/nextjs";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 
 export default function SignInPage() {

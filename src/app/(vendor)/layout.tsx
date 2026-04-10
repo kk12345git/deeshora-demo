@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useUser, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Package, ShoppingCart, Settings, Loader2, Menu, X, Store } from "lucide-react";
 

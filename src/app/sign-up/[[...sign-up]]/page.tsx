@@ -1,6 +1,7 @@
 // src/app/sign-up/[[...sign-up]]/page.tsx
 import { SignUp } from "@clerk/nextjs";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 
 export default function SignUpPage() {

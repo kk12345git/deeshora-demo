@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { MapPin, Search, ShoppingCart, Menu, Sparkles, X, LayoutDashboard, Store, Package, LogOut, UserRound } from 'lucide-react';
 import { UserButton, useUser, SignOutButton } from '@clerk/nextjs';
 import { useCart } from '@/hooks/useCart';
