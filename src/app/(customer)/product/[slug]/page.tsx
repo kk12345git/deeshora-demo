@@ -5,14 +5,14 @@ import { trpc } from '@/lib/trpc';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useState } from 'react';
-import { Star, Minus, Plus, AlertTriangle, CheckCircle, ChevronLeft, ShoppingCart, Share2, Heart } from 'lucide-react';
+import { Star, Minus, Plus, AlertTriangle, CheckCircle, ChevronLeft, ShoppingCart, Share2, Heart, MapPin } from 'lucide-react';
 import { useCart, CartItem } from '@/hooks/useCart';
 import Link from 'next/link';
 
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const slug = Array.isArray(params.id) ? params.id[0] : params.id;
+  const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
 
   const { data: product, isLoading, error } = trpc.product.bySlug.useQuery({ slug });
   const [selectedImage, setSelectedImage] = useState(0);
