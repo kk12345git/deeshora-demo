@@ -68,9 +68,9 @@ export default function VendorDashboardPage() {
       <h1 className="text-2xl font-bold">Dashboard</h1>
 
 
-      {stats?.pendingPayout > 0 && (
+      {(stats?.pendingPayout ?? 0) > 0 && (
         <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-r-lg" role="alert">
-          <p className="font-bold">Pending Payout: ₹{stats.pendingPayout.toFixed(2)}</p>
+          <p className="font-bold">Pending Payout: ₹{stats?.pendingPayout.toFixed(2)}</p>
           <p className="text-sm">This amount will be paid out in the next cycle.</p>
         </div>
       )}
@@ -110,7 +110,7 @@ export default function VendorDashboardPage() {
             <div className="p-3 rounded-full bg-green-100 text-green-600"><IndianRupee /></div>
             <div className="ml-4">
               <p className="text-sm text-gray-500">Total Earnings</p>
-              <p className="text-2xl font-bold">₹{stats?.totalRevenue.toFixed(2) ?? '...'}</p>
+              <p className="text-2xl font-bold">₹{stats?.totalRevenue?.toFixed(2) ?? '...'}</p>
             </div>
           </div>
         </div>

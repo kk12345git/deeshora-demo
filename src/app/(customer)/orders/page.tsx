@@ -1,5 +1,5 @@
 // src/app/(customer)/orders/page.tsx
-import { trpc } from '@/lib/trpc';
+import { api } from '@/lib/trpc-server';
 import Link from 'next/link';
 import Image from 'next/image';
 import { OrderStatusBadge } from '@/components/customer/OrderStatus';
@@ -7,7 +7,7 @@ import { Package } from 'lucide-react';
 
 
 export default async function OrdersPage() {
-  const { orders } = await trpc.order.myOrders.query({});
+  const { orders } = await api.order.myOrders({});
 
 
   if (orders.length === 0) {

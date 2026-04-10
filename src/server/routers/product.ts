@@ -116,6 +116,16 @@ export const productRouter = createTRPCRouter({
   }),
 
 
+  getCities: publicProcedure.query(async ({ ctx }) => {
+    const vendors = await ctx.prisma.vendor.findMany({
+      where: { status: 'APPROVED' },
+      select: { city: true },
+      distinct: ['city'],
+    });
+    return vendors.map(v => v.city).filter(Boolean).sort();
+  }),
+
+
   create: vendorProcedure
     .input(
       z.object({

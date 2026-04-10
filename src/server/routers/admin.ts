@@ -258,4 +258,109 @@ export const adminRouter = createTRPCRouter({
         data: { value: input.value },
       });
     }),
+
+  products: adminProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).nullish(),
+        cursor: z.string().nullish(),
+        search: z.string().optional(),
+        vendorId: z.string().optional(),
+        categoryId: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const limit = input.limit ?? 20;
+      const { cursor, search, vendorId, categoryId } = input;
+      const products = await ctx.prisma.product.findMany({
+        take: limit + 1,
+        where: {
+          vendorId,
+          categoryId,
+          OR: search
+            ? [
+                { name: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+              ]
+            : undefined,
+        },
+        include: {
+          vendor: { select: { shopName: true, city: true } },
+          category: { select: { name: true } },
+        },
+        cursor: cursor ? { id: cursor } : undefined,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      let nextCursor: typeof cursor | undefined = undefined;
+      if (products.length > limit) {
+        const nextItem = products.pop();
+        nextCursor = nextItem!.id;
+      }
+
+      const total = await ctx.prisma.product.count({
+        where: {
+          vendorId,
+          categoryId,
+          OR: search
+            ? [
+                { name: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+              ]
+            : undefined,
+        },
+      });
+
+      return { products, nextCursor, total };
+    }),
+
+  createProduct: adminProcedure
+    .input(
+      z.object({
+        vendorId: z.string(),
+        name: z.string().min(3),
+        description: z.string().min(10),
+        price: z.number().positive(),
+        mrp: z.number().positive(),
+        stock: z.number().int().min(0),
+        unit: z.string(),
+        categoryId: z.string(),
+        images: z.array(z.string().startsWith('data:image/')).min(1),
+        isFeatured: z.boolean().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const vendor = await ctx.prisma.vendor.findUnique({ where: { id: input.vendorId } });
+      if (!vendor) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Vendor not found.' });
+      }
+
+      const imageUrls = await Promise.all(
+        input.images.map((base64) => uploadImage(base64, 'products'))
+      );
+
+      const slug = `${slugify(input.name, { lower: true, strict: true })}-${Date.now()}`;
+
+      return ctx.prisma.product.create({
+        data: {
+          name: input.name,
+          slug,
+          description: input.description,
+          price: input.price,
+          mrp: input.mrp,
+          stock: input.stock,
+          unit: input.unit,
+          categoryId: input.categoryId,
+          images: imageUrls,
+          isFeatured: input.isFeatured ?? false,
+          vendorId: input.vendorId,
+        },
+      });
+    }),
+
+  deleteProduct: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.product.delete({ where: { id: input.id } });
+    }),
 });

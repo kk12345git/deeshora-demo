@@ -36,6 +36,7 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
 
 
 export const createTRPCRouter = t.router;
+export const createCallerFactory = t.createCallerFactory;
 
 
 /**

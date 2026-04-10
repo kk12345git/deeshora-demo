@@ -15,14 +15,14 @@ const statusConfig = {
 };
 
 
-const colorClasses = {
+const colorClasses: Record<string, string> = {
   gray: 'bg-gray-100 text-gray-800',
   blue: 'bg-blue-100 text-blue-800',
   purple: 'bg-purple-100 text-purple-800',
   indigo: 'bg-indigo-100 text-indigo-800',
   orange: 'bg-orange-100 text-orange-800',
-  green: 'bg-green-100 text-green-100', // Fixed green text contrast
-  red: 'bg-red-100 text-red-00',
+  green: 'bg-green-100 text-green-800',
+  red: 'bg-red-100 text-red-800',
 };
 
 

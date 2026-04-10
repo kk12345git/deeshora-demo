@@ -108,7 +108,7 @@ export const orderRouter = createTRPCRouter({
           },
           timeline: {
             create: {
-              status: 'PENDING',
+              status: OrderStatus.PENDING,
               message: 'Order placed by customer.',
             },
           },
@@ -190,7 +190,7 @@ export const orderRouter = createTRPCRouter({
         await tx.orderTimeline.createMany({
           data: orderIds.map(id => ({
             orderId: id,
-            status: 'CONFIRMED',
+            status: OrderStatus.CONFIRMED,
             message: 'Payment successful. Order confirmed.',
           })),
         });

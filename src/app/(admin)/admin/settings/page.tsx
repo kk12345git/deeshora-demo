@@ -60,4 +60,3 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
-54. src/app/vendor/register/page.tsx
