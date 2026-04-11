@@ -12,8 +12,7 @@ import {
   ShoppingBag, Camera,
 } from 'lucide-react';
 import OnboardingModal from '@/components/customer/OnboardingModal';
-
-const SERVICEABLE_AREA = 'Thiruvottriyur';
+import { THIRUVOTTRIYUR_LOCALITIES, isAreaServiceable } from '@/lib/areas';
 
 type EditSection = 'basic' | 'location' | null;
 
@@ -82,7 +81,7 @@ export default function MySpacePage() {
   }
 
   // ─── DERIVED STATE ────────────────────────────────────────────────────────
-  const isServiceable = profile.area?.toLowerCase().includes(SERVICEABLE_AREA.toLowerCase());
+  const isServiceable = isAreaServiceable(profile.area);
   const isProfileComplete = !!profile.phone && !!profile.area;
   const completionScore = [!!profile.phone, !!profile.area, !!profile.pincode, !!profile.landmark].filter(Boolean).length;
   const completionPct = Math.round((completionScore / 4) * 100);
@@ -330,23 +329,19 @@ export default function MySpacePage() {
             <div className="p-5 space-y-4 animate-in fade-in duration-300">
               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-gray-400 block mb-3">Select Your Area</label>
-                <div className="grid grid-cols-1 gap-2">
-                  {[
-                    { label: 'Thiruvottriyur, Chennai', value: 'Thiruvottriyur' },
-                    { label: 'Other area in Chennai', value: 'Other Chennai' },
-                    { label: 'Outside Chennai', value: 'Outside Chennai' },
-                  ].map((opt) => (
+              <div className="grid grid-cols-2 gap-2">
+                  {THIRUVOTTRIYUR_LOCALITIES.map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={() => setEditData({ ...editData, area: opt.value })}
-                      className={`p-3.5 rounded-xl border-2 text-left text-sm font-bold transition-all flex items-center justify-between ${
+                      onClick={() => setEditData({ ...editData, area: opt.value, pincode: opt.pincode ?? editData.pincode })}
+                      className={`p-3 rounded-xl border-2 text-left text-sm font-bold transition-all flex flex-col gap-0.5 ${
                         editData.area === opt.value
                           ? 'border-orange-500 bg-orange-50 text-orange-700'
-                          : 'border-gray-100 bg-gray-50 text-gray-600 hover:border-gray-200'
+                          : 'border-gray-100 bg-gray-50 text-gray-600 hover:border-orange-200'
                       }`}
                     >
-                      {opt.label}
-                      {editData.area === opt.value && <CheckCircle size={16} className="text-orange-500" />}
+                      <span className="text-xs leading-tight">{opt.label}</span>
+                      {opt.pincode && <span className="text-[10px] text-gray-400 font-normal">{opt.pincode}</span>}
                     </button>
                   ))}
                 </div>
@@ -401,7 +396,7 @@ export default function MySpacePage() {
             <div>
               <p className="font-black text-orange-800 text-sm">Delivery not available in your area</p>
               <p className="text-xs text-orange-600 mt-1">
-                Deeshora currently serves <strong>Thiruvottriyur, Chennai</strong> only. Update your location above if you're in our area, or watch for us to expand soon!
+                Deeshora currently serves <strong>Thiruvottriyur &amp; nearby localities, Chennai</strong>. Update your location above if you're in our area, or watch for us to expand soon!
               </p>
             </div>
           </div>

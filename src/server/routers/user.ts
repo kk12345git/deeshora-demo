@@ -2,9 +2,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
-
-// The only area we currently serve
-const SERVICEABLE_AREA = 'Thiruvottriyur';
+import { isAreaServiceable } from '@/lib/areas';
 
 export const userRouter = createTRPCRouter({
   // Fetch the current logged-in user's full profile
@@ -69,7 +67,7 @@ export const userRouter = createTRPCRouter({
       });
       return {
         user: updated,
-        isServiceable: input.area?.toLowerCase().includes(SERVICEABLE_AREA.toLowerCase()) ?? false,
+        isServiceable: isAreaServiceable(input.area),
       };
     }),
 
@@ -83,8 +81,8 @@ export const userRouter = createTRPCRouter({
     if (!user.isOnboarded || !user.phone) {
       return { canOrder: false, reason: 'incomplete_profile' };
     }
-    const isServiceable = user.area?.toLowerCase().includes(SERVICEABLE_AREA.toLowerCase()) ?? false;
-    if (!isServiceable) {
+    const serviceable = isAreaServiceable(user.area);
+    if (!serviceable) {
       return { canOrder: false, reason: 'outside_area', area: user.area };
     }
     return { canOrder: true, reason: null };

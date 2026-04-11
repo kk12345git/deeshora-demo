@@ -4,15 +4,14 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { trpc } from '@/lib/trpc';
-import { X, User, Phone, MapPin, CheckCircle, AlertTriangle, Loader2, ChevronRight, Sparkles } from 'lucide-react';
+import { X, User, Phone, MapPin, CheckCircle, AlertTriangle, Loader2, ChevronRight, Sparkles, Clock } from 'lucide-react';
+import { THIRUVOTTRIYUR_LOCALITIES, COMING_SOON_AREAS, isAreaServiceable } from '@/lib/areas';
 
 interface OnboardingModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
-
-const SERVICEABLE_AREA = 'Thiruvottriyur';
 
 type Step = 'intro' | 'details' | 'location' | 'success' | 'unavailable';
 
@@ -77,6 +76,15 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
+  // Auto fill pincode when area is selected
+  const selectLocality = (value: string, pincode?: string) => {
+    setFormData(prev => ({
+      ...prev,
+      area: value,
+      pincode: pincode ?? prev.pincode,
+    }));
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
@@ -86,8 +94,8 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
       />
 
       {/* Modal Card */}
-      <div className="relative z-10 w-full sm:max-w-md bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-500">
-        
+      <div className="relative z-10 w-full sm:max-w-lg bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-500">
+
         {/* Decorative gradient header strip */}
         <div className="h-1.5 w-full bg-gradient-to-r from-orange-400 via-orange-500 to-rose-500" />
 
@@ -101,7 +109,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
           </button>
         )}
 
-        {/* STEP: Intro */}
+        {/* ─── STEP: Intro ──────────────────────────────────────────── */}
         {step === 'intro' && (
           <div className="p-8 flex flex-col items-center text-center gap-6">
             <div className="relative">
@@ -115,10 +123,23 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
             <div className="space-y-2">
               <h2 className="text-2xl font-black text-gray-900 tracking-tight">Almost there!</h2>
               <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
-                We just need a couple of quick details to place your order. Takes less than a minute!
+                We just need a couple of quick details to deliver to your door. Takes less than a minute!
               </p>
             </div>
-            <div className="flex flex-col gap-3 w-full pt-2">
+
+            {/* Coverage badge */}
+            <div className="w-full bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3 text-left">
+              <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                <MapPin size={18} className="text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-black text-emerald-700 uppercase tracking-wider">Now Delivering In</p>
+                <p className="text-sm font-bold text-emerald-900 mt-0.5">Thiruvottriyur &amp; 12 localities, Chennai</p>
+                <p className="text-xs text-emerald-600 mt-0.5">More areas coming soon ✨</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 w-full">
               <button
                 onClick={() => setStep('details')}
                 className="btn-primary w-full h-14 rounded-2xl font-black text-sm tracking-widest uppercase flex items-center justify-center gap-2"
@@ -135,7 +156,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
           </div>
         )}
 
-        {/* STEP: Contact Details */}
+        {/* ─── STEP: Contact Details ─────────────────────────────────── */}
         {step === 'details' && (
           <div className="p-8 space-y-6">
             <div>
@@ -189,16 +210,16 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
                 if (!validate()) return;
                 setStep('location');
               }}
-              className="btn-primary w-full h-13 rounded-2xl font-black text-sm tracking-widest uppercase flex items-center justify-center gap-2 py-4"
+              className="btn-primary w-full h-14 rounded-2xl font-black text-sm tracking-widest uppercase flex items-center justify-center gap-2"
             >
               Continue <ChevronRight size={18} />
             </button>
           </div>
         )}
 
-        {/* STEP: Location (optional but important) */}
+        {/* ─── STEP: Location ────────────────────────────────────────── */}
         {step === 'location' && (
-          <div className="p-8 space-y-6">
+          <div className="p-6 space-y-5 max-h-[85vh] overflow-y-auto">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-6 h-6 bg-orange-500 rounded-lg flex items-center justify-center">
@@ -207,80 +228,111 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
                 <p className="text-xs font-black uppercase tracking-widest text-orange-500">Step 2 of 2</p>
               </div>
               <h2 className="text-xl font-black text-gray-900 mt-2">Where do you live?</h2>
-              <p className="text-gray-500 text-sm">We currently deliver in <span className="font-bold text-orange-600">Thiruvottriyur</span> only. Select your area.</p>
+              <p className="text-gray-500 text-sm">Select your locality for accurate delivery.</p>
             </div>
 
-            {/* Area selection chips */}
-            <div className="grid grid-cols-1 gap-3">
-              {[
-                { label: 'Thiruvottriyur, Chennai', value: 'Thiruvottriyur', tag: '✅ Serviceable', color: 'border-emerald-500 bg-emerald-50' },
-                { label: 'Other area in Chennai', value: 'Other Chennai', tag: '🚫 Not yet available', color: 'border-gray-200 bg-gray-50' },
-                { label: 'Outside Chennai', value: 'Outside Chennai', tag: '🚫 Not yet available', color: 'border-gray-200 bg-gray-50' },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => updateField('area', opt.value)}
-                  className={`w-full p-4 rounded-2xl border-2 text-left flex items-center justify-between transition-all ${
-                    formData.area === opt.value ? opt.color : 'border-gray-100 bg-white hover:border-gray-200'
-                  }`}
-                >
-                  <div>
-                    <p className="font-bold text-sm text-gray-800">{opt.label}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{opt.tag}</p>
-                  </div>
-                  {formData.area === opt.value && (
-                    <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <CheckCircle size={14} className="text-white" />
+            {/* ── Thiruvottriyur Localities ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+                  ✅ Delivering Now
+                </span>
+                <span className="text-xs font-bold text-gray-700">Thiruvottriyur, Chennai</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {THIRUVOTTRIYUR_LOCALITIES.map((loc) => (
+                  <button
+                    key={loc.value}
+                    onClick={() => selectLocality(loc.value, loc.pincode)}
+                    className={`p-3 rounded-2xl border-2 text-left transition-all flex flex-col gap-0.5 ${
+                      formData.area === loc.value
+                        ? 'border-emerald-500 bg-emerald-50'
+                        : 'border-gray-100 bg-gray-50 hover:border-emerald-200 hover:bg-emerald-50/50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-1">
+                      <span className="text-xs font-bold text-gray-800 leading-tight">{loc.label}</span>
+                      {formData.area === loc.value && (
+                        <CheckCircle size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                      )}
                     </div>
-                  )}
-                </button>
-              ))}
+                    {loc.pincode && (
+                      <span className="text-[10px] text-gray-400 font-medium">{loc.pincode}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Optional pincode + landmark */}
-            {formData.area === 'Thiruvottriyur' && (
-              <div className="space-y-3 animate-in fade-in duration-300">
+            {/* ── Coming Soon Areas ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-700 bg-orange-100 px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <Clock size={9} /> Coming Soon
+                </span>
+                <span className="text-xs font-bold text-gray-500">Expanding to more Chennai areas</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {COMING_SOON_AREAS.map((loc) => (
+                  <div
+                    key={loc.value}
+                    className="p-3 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 opacity-70 cursor-not-allowed"
+                  >
+                    <span className="text-xs font-bold text-gray-500">{loc.label}</span>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Coming soon</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Optional pincode + landmark (shown when a locality is selected) */}
+            {formData.area && isAreaServiceable(formData.area) && (
+              <div className="space-y-3 animate-in fade-in duration-300 border-t pt-4">
+                <p className="text-xs font-black uppercase tracking-widest text-gray-400">Fine-tune your location (optional)</p>
                 <input
                   type="text"
                   value={formData.pincode}
                   onChange={(e) => updateField('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="Pincode (optional)"
+                  placeholder="Pincode (auto-filled)"
                   className="w-full px-4 py-3 bg-gray-50 rounded-2xl text-sm font-medium border-2 border-transparent outline-none focus:border-orange-500 focus:bg-white transition-all"
                 />
                 <input
                   type="text"
                   value={formData.landmark}
                   onChange={(e) => updateField('landmark', e.target.value)}
-                  placeholder="Landmark (optional, e.g. near bus stand)"
+                  placeholder="Landmark (e.g. near temple, bus stop)"
                   className="w-full px-4 py-3 bg-gray-50 rounded-2xl text-sm font-medium border-2 border-transparent outline-none focus:border-orange-500 focus:bg-white transition-all"
                 />
               </div>
             )}
 
-            <button
-              onClick={handleSubmit}
-              disabled={completeOnboarding.isPending || !formData.area}
-              className="btn-primary w-full h-14 rounded-2xl font-black text-sm tracking-widest uppercase flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {completeOnboarding.isPending ? (
-                <><Loader2 size={18} className="animate-spin" /> Saving...</>
-              ) : (
-                'Confirm & Continue'
-              )}
-            </button>
-            <button
-              onClick={() => {
-                // Allow skip — but won't be able to order
-                completeOnboarding.mutate({ ...formData, area: formData.area || 'Not set' });
-              }}
-              className="w-full text-center text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              Skip for now (browse only)
-            </button>
+            <div className="flex flex-col gap-3 pt-1">
+              <button
+                onClick={handleSubmit}
+                disabled={completeOnboarding.isPending || !formData.area}
+                className="btn-primary w-full h-14 rounded-2xl font-black text-sm tracking-widest uppercase flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {completeOnboarding.isPending ? (
+                  <><Loader2 size={18} className="animate-spin" /> Saving...</>
+                ) : (
+                  'Confirm & Continue'
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  // Allow skip — saves profile but without confirmed area
+                  completeOnboarding.mutate({ ...formData, area: formData.area || 'Not set' });
+                }}
+                disabled={completeOnboarding.isPending}
+                className="w-full text-center text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                Skip for now (browse only)
+              </button>
+            </div>
           </div>
         )}
 
-        {/* STEP: Success */}
+        {/* ─── STEP: Success ─────────────────────────────────────────── */}
         {step === 'success' && (
           <div className="p-8 flex flex-col items-center text-center gap-6">
             <div className="relative">
@@ -291,7 +343,8 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
             <div className="space-y-2">
               <h2 className="text-2xl font-black text-gray-900 tracking-tight">You're all set! 🎉</h2>
               <p className="text-gray-500 text-sm max-w-xs mx-auto">
-                Welcome to Deeshora, {formData.name.split(' ')[0]}! You can now order from local shops in <span className="font-bold text-orange-600">Thiruvottriyur</span>.
+                Welcome to Deeshora, {formData.name.split(' ')[0]}! You can now order from local shops in{' '}
+                <span className="font-bold text-orange-600">{formData.area}</span>.
               </p>
             </div>
             <button
@@ -303,7 +356,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
           </div>
         )}
 
-        {/* STEP: Outside Serviceable Area */}
+        {/* ─── STEP: Outside Serviceable Area ────────────────────────── */}
         {step === 'unavailable' && (
           <div className="p-8 flex flex-col items-center text-center gap-6">
             <div className="w-20 h-20 rounded-[2rem] bg-gray-100 flex items-center justify-center">
@@ -312,8 +365,15 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
             <div className="space-y-2">
               <h2 className="text-2xl font-black text-gray-900 tracking-tight">Not Available Yet</h2>
               <p className="text-gray-500 text-sm max-w-xs mx-auto">
-                We're currently only delivering in <span className="font-bold text-orange-600">Thiruvottriyur, Chennai</span>. You can still browse our products, but ordering isn't available in your area yet.
+                We're currently delivering in <span className="font-bold text-orange-600">Thiruvottriyur &amp; nearby areas, Chennai</span>.
+                You can still browse our products — we're expanding soon!
               </p>
+            </div>
+            <div className="w-full bg-orange-50 border border-orange-100 rounded-2xl p-4 text-left space-y-1">
+              <p className="text-xs font-black text-orange-700 uppercase tracking-wider">Coming to your area soon:</p>
+              {COMING_SOON_AREAS.map(a => (
+                <p key={a.value} className="text-xs text-orange-600 font-medium">• {a.label}</p>
+              ))}
             </div>
             <div className="space-y-3 w-full">
               <button
