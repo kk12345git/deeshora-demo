@@ -6,7 +6,8 @@ import { trpc } from '@/lib/trpc';
 import { useOrderTracking } from '@/hooks/useOrderTracking';
 import { OrderProgressBar, OrderStatusBadge } from '@/components/customer/OrderStatus';
 import Image from 'next/image';
-import { Wifi, Phone } from 'lucide-react';
+import { Wifi, Phone, FileText } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { OrderStatus } from '@prisma/client';
 
@@ -50,9 +51,19 @@ export default function OrderTrackingPage() {
           <h1 className="text-4xl font-black text-gray-950 uppercase tracking-tighter">Order #{order.id.slice(-8)}</h1>
           <p className="text-gray-500 font-medium">Coming to you from <span className="text-gray-950 font-bold">{order.vendor.shopName}</span></p>
         </div>
-        <div className={`flex items-center gap-3 px-4 py-2 rounded-2xl border ${isConnected ? 'bg-green-50 border-green-100 text-green-600' : 'bg-gray-50 border-gray-100 text-gray-400'} transition-all`}>
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-ping' : 'bg-gray-300'}`}></div>
-          <span className="text-sm font-black uppercase tracking-widest">{isConnected ? 'Live updates' : 'Offline'}</span>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className={`flex items-center gap-3 px-4 py-2 rounded-2xl border ${isConnected ? 'bg-green-50 border-green-100 text-green-600' : 'bg-gray-50 border-gray-100 text-gray-400'} transition-all`}>
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-ping' : 'bg-gray-300'}`}></div>
+            <span className="text-sm font-black uppercase tracking-widest">{isConnected ? 'Live updates' : 'Offline'}</span>
+          </div>
+          {order.paymentStatus === 'PAID' && (
+            <Link
+              href={`/orders/${orderId}/invoice`}
+              className="flex items-center gap-2 text-sm font-black text-orange-600 bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-2xl border border-orange-100 transition-colors"
+            >
+              <FileText size={15} /> View Invoice
+            </Link>
+          )}
         </div>
       </div>
 

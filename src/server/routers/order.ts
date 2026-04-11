@@ -435,4 +435,29 @@ export const orderRouter = createTRPCRouter({
       weeklyOrders,
     };
   }),
+
+
+  /** Invoice data — accessible by the customer who placed it OR the vendor */
+  invoice: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const order = await ctx.prisma.order.findFirst({
+        where: {
+          id: input.id,
+          OR: [
+            { userId: ctx.user.id },
+            { vendor: { userId: ctx.user.id } },
+          ],
+        },
+        include: {
+          vendor: { select: { shopName: true, phone: true, email: true, address: true, city: true, logo: true } },
+          address: true,
+          user: { select: { name: true, phone: true, email: true } },
+          items: true,
+          timeline: { orderBy: { createdAt: 'asc' } },
+        },
+      });
+      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+      return order;
+    }),
 });
