@@ -216,6 +216,7 @@ model Order {
   commission      Float
   vendorAmount    Float
   notes           String?
+  couponId        String?
   deliveredAt     DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -224,6 +225,7 @@ model Order {
   user      User            @relation(fields: [userId], references: [id], onDelete: Restrict)
   vendor    Vendor          @relation(fields: [vendorId], references: [id], onDelete: Restrict)
   address   Address         @relation(fields: [addressId], references: [id], onDelete: Restrict)
+  coupon    Coupon?         @relation(fields: [couponId], references: [id], onDelete: SetNull)
   items     OrderItem[]
   timeline  OrderTimeline[]
 
@@ -327,4 +329,32 @@ model ServiceArea {
 
   @@index([zone])
   @@index([isServiceable])
+}
+
+
+enum DiscountType {
+  FIXED
+  PERCENT
+}
+
+
+model Coupon {
+  id          String       @id @default(cuid())
+  code        String       @unique
+  type        DiscountType
+  value       Float                         // rupees for FIXED, percentage for PERCENT
+  minOrder    Float        @default(0)      // minimum cart value to apply
+  maxUses     Int          @default(0)      // 0 = unlimited
+  usedCount   Int          @default(0)
+  expiresAt   DateTime?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+
+  orders Order[]
+
+
+  @@index([code])
+  @@index([isActive])
 }

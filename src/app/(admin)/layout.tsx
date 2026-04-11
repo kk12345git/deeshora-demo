@@ -6,17 +6,18 @@ import { useUser, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Store, ShoppingCart, CreditCard, Settings, Loader2, Menu, X, Package, MapPin } from "lucide-react";
+import { LayoutDashboard, Users, Store, ShoppingCart, CreditCard, Settings, Loader2, Menu, X, Package, MapPin, Tag } from "lucide-react";
 
 const navItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "Vendors", href: "/admin/vendors", icon: Store },
-  { name: "Products", href: "/admin/products", icon: Package },
-  { name: "Users", href: "/admin/users", icon: Users },
-  { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
-  { name: "Payouts", href: "/admin/payouts", icon: CreditCard },
-  { name: "Coverage", href: "/admin/coverage", icon: MapPin },
-  { name: "Settings", href: "/admin/settings", icon: Settings },
+  { name: "Vendors",   href: "/admin/vendors",  icon: Store },
+  { name: "Products",  href: "/admin/products", icon: Package },
+  { name: "Users",     href: "/admin/users",    icon: Users },
+  { name: "Orders",    href: "/admin/orders",   icon: ShoppingCart },
+  { name: "Payouts",   href: "/admin/payouts",  icon: CreditCard },
+  { name: "Coupons",   href: "/admin/coupons",  icon: Tag },
+  { name: "Coverage",  href: "/admin/coverage", icon: MapPin },
+  { name: "Settings",  href: "/admin/settings", icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

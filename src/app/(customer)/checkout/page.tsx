@@ -7,7 +7,7 @@ import { useCart } from '@/hooks/useCart';
 import { trpc } from '@/lib/trpc';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Home, Plus, Loader2 } from 'lucide-react';
+import { Home, Plus, Loader2, Tag, X, CheckCircle } from 'lucide-react';
 
 
 declare global {
@@ -28,6 +28,8 @@ export default function CheckoutPage() {
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [notes, setNotes] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<null | { id: string; code: string; discount: number; description: string }>(null);
 
 
   const addAddressMutation = trpc.vendor.addAddress.useMutation({
@@ -42,6 +44,14 @@ export default function CheckoutPage() {
 
   const createOrderMutation = trpc.order.createPaymentOrder.useMutation();
   const verifyPaymentMutation = trpc.order.verifyPayment.useMutation();
+  const validateCoupon = trpc.coupon.validate.useMutation({
+    onSuccess: (data) => {
+      setAppliedCoupon(data);
+      setCouponCode('');
+      toast.success(`Coupon applied! ${data.description}`);
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
 
   useEffect(() => {
@@ -199,6 +209,39 @@ export default function CheckoutPage() {
               </form>
             )}
           </div>
+          {/* Coupon Code */}
+          <div className="card p-6 mt-6">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Tag size={18} className="text-orange-500" /> Promo Code</h2>
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={16} className="text-emerald-500" />
+                  <span className="font-black text-emerald-700 font-mono tracking-widest text-sm">{appliedCoupon.code}</span>
+                  <span className="text-xs text-emerald-600">— {appliedCoupon.description}</span>
+                </div>
+                <button onClick={() => setAppliedCoupon(null)} className="w-7 h-7 rounded-lg bg-emerald-100 hover:bg-emerald-200 flex items-center justify-center text-emerald-600 transition-colors">
+                  <X size={13} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  value={couponCode}
+                  onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder="ENTER CODE"
+                  className="flex-1 px-4 py-3 bg-gray-50 font-mono font-bold tracking-widest text-sm rounded-xl border-2 border-transparent focus:border-orange-400 focus:bg-white outline-none transition-all uppercase"
+                  onKeyDown={e => { if (e.key === 'Enter' && couponCode) validateCoupon.mutate({ code: couponCode, cartTotal: total() }); }}
+                />
+                <button
+                  onClick={() => couponCode && validateCoupon.mutate({ code: couponCode, cartTotal: total() })}
+                  disabled={validateCoupon.isPending || !couponCode}
+                  className="px-5 py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white font-black text-sm rounded-xl transition-all flex items-center gap-1.5"
+                >
+                  {validateCoupon.isPending ? <Loader2 size={14} className="animate-spin" /> : 'Apply'}
+                </button>
+              </div>
+            )}
+          </div>
           {/* Delivery Notes */}
           <div className="card p-6 mt-6">
             <h2 className="text-xl font-bold mb-4">Delivery Notes</h2>
@@ -225,10 +268,20 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 pt-4 border-t">
-              <div className="flex justify-between items-baseline">
+            <div className="mt-4 pt-4 border-t space-y-2">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Subtotal</span>
+                <span>₹{total().toFixed(2)}</span>
+              </div>
+              {appliedCoupon && (
+                <div className="flex justify-between text-sm text-emerald-600 font-bold">
+                  <span className="flex items-center gap-1"><Tag size={12} /> {appliedCoupon.code}</span>
+                  <span>-₹{appliedCoupon.discount.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-baseline pt-2 border-t">
                 <span className="text-lg font-bold">Total to Pay</span>
-                <span className="text-xl font-extrabold">₹{total().toFixed(2)}</span>
+                <span className="text-xl font-extrabold">₹{Math.max(0, total() - (appliedCoupon?.discount ?? 0)).toFixed(2)}</span>
               </div>
             </div>
             <button
@@ -236,7 +289,7 @@ export default function CheckoutPage() {
               disabled={isPlacingOrder || items.length === 0}
               className="btn-primary w-full text-center mt-6 text-base"
             >
-              {isPlacingOrder ? <Loader2 className="animate-spin mx-auto" /> : `Pay ₹${total().toFixed(2)}`}
+              {isPlacingOrder ? <Loader2 className="animate-spin mx-auto" /> : `Pay ₹${Math.max(0, total() - (appliedCoupon?.discount ?? 0)).toFixed(2)}`}
             </button>
           </div>
         </div>

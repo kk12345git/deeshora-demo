@@ -6,6 +6,7 @@ import { cartRouter } from './routers/cart';
 import { vendorRouter } from './routers/vendor';
 import { adminRouter } from './routers/admin';
 import { userRouter } from './routers/user';
+import { couponRouter } from './routers/coupon';
 
 
 export const appRouter = createTRPCRouter({
@@ -15,6 +16,7 @@ export const appRouter = createTRPCRouter({
   vendor: vendorRouter,
   admin: adminRouter,
   user: userRouter,
+  coupon: couponRouter,
 });
 
 

@@ -430,4 +430,50 @@ export const adminRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.serviceArea.delete({ where: { id: input.id } });
     }),
+
+  /** Admin: manually override any order's status */
+  updateOrderStatus: adminProcedure
+    .input(
+      z.object({
+        orderId: z.string(),
+        status: z.nativeEnum(OrderStatus),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { pusherServer, CHANNELS, EVENTS } = await import('@/lib/pusher');
+      const { orderId, status } = input;
+
+      const order = await ctx.prisma.order.findUnique({ where: { id: orderId } });
+      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+
+      const messages: Record<OrderStatus, string> = {
+        CONFIRMED:        'Order confirmed by admin.',
+        PREPARING:        'Your order is being prepared.',
+        READY:            'Your order is ready for pickup.',
+        OUT_FOR_DELIVERY: 'Your order is out for delivery.',
+        DELIVERED:        'Your order has been delivered.',
+        CANCELLED:        'Your order has been cancelled.',
+        REFUNDED:         'Your order has been refunded.',
+        PENDING:          '',
+      };
+
+      const updated = await ctx.prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status,
+          deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
+          timeline: {
+            create: { status, message: messages[status] },
+          },
+        },
+      });
+
+      await pusherServer.trigger(
+        CHANNELS.ORDER(orderId),
+        EVENTS.ORDER_STATUS_UPDATED,
+        { status, message: messages[status] }
+      );
+
+      return updated;
+    }),
 });
