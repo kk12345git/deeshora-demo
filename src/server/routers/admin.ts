@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createTRPCRouter, adminProcedure } from '@/server/trpc';
+import { createTRPCRouter, adminProcedure, publicProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { VendorStatus, UserRole, OrderStatus } from '@prisma/client';
 import { uploadImage } from '@/lib/cloudinary';
@@ -361,5 +361,73 @@ export const adminRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.product.delete({ where: { id: input.id } });
+    }),
+
+
+  // ─── SERVICE AREA MANAGEMENT ───────────────────────────────────────────
+
+  /** Public: get all active areas (used by OnboardingModal & profile page) */
+  getServiceAreas: publicProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.serviceArea.findMany({
+      where: { isActive: true },
+      orderBy: [{ isServiceable: 'desc' }, { sortOrder: 'asc' }, { label: 'asc' }],
+    });
+  }),
+
+
+  /** Admin: get ALL areas including inactive */
+  getAllServiceAreas: adminProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.serviceArea.findMany({
+      orderBy: [{ isServiceable: 'desc' }, { sortOrder: 'asc' }],
+    });
+  }),
+
+
+  /** Admin: create a new service area */
+  createServiceArea: adminProcedure
+    .input(
+      z.object({
+        label: z.string().min(2, 'Label required'),
+        value: z.string().min(2, 'Value required'),
+        zone: z.string().min(2, 'Zone required'),
+        pincode: z.string().optional(),
+        isServiceable: z.boolean().default(true),
+        sortOrder: z.number().int().default(0),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.serviceArea.create({
+        data: { ...input, isActive: true },
+      });
+    }),
+
+
+  /** Admin: update an existing service area */
+  updateServiceArea: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        label: z.string().min(2).optional(),
+        zone: z.string().min(2).optional(),
+        pincode: z.string().optional(),
+        isServiceable: z.boolean().optional(),
+        isActive: z.boolean().optional(),
+        sortOrder: z.number().int().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return ctx.prisma.serviceArea.update({
+        where: { id },
+        data,
+      });
+    }),
+
+
+  /** Admin: delete an area */
+  deleteServiceArea: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.serviceArea.delete({ where: { id: input.id } });
     }),
 });

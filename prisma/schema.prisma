@@ -310,3 +310,21 @@ model SiteConfig {
   key   String @unique
   value String
 }
+
+
+model ServiceArea {
+  id            String   @id @default(cuid())
+  label         String              // Display name shown to customers
+  value         String   @unique    // Stored in user.area field
+  zone          String              // Parent zone (e.g. "Thiruvottriyur")
+  pincode       String?             // Primary pincode for auto-fill
+  isServiceable Boolean  @default(true)  // false = "Coming Soon"
+  isActive      Boolean  @default(true)  // false = hidden entirely
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+
+  @@index([zone])
+  @@index([isServiceable])
+}

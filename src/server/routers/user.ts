@@ -2,7 +2,19 @@
 import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
-import { isAreaServiceable } from '@/lib/areas';
+
+/** Check DB for serviceability — falls back to false if not found */
+async function checkServiceable(prisma: any, area: string | null | undefined): Promise<boolean> {
+  if (!area) return false;
+  const count = await prisma.serviceArea.count({
+    where: {
+      value: area,
+      isServiceable: true,
+      isActive: true,
+    },
+  });
+  return count > 0;
+}
 
 export const userRouter = createTRPCRouter({
   // Fetch the current logged-in user's full profile
@@ -31,7 +43,6 @@ export const userRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Filter out undefined values
       const data = Object.fromEntries(
         Object.entries(input).filter(([, v]) => v !== undefined)
       );
@@ -42,7 +53,7 @@ export const userRouter = createTRPCRouter({
       return updated;
     }),
 
-  // Mark onboarding as complete — requires at minimum a phone number
+  // Mark onboarding as complete
   completeOnboarding: protectedProcedure
     .input(
       z.object({
@@ -65,10 +76,8 @@ export const userRouter = createTRPCRouter({
           isOnboarded: true,
         },
       });
-      return {
-        user: updated,
-        isServiceable: isAreaServiceable(input.area),
-      };
+      const isServiceable = await checkServiceable(ctx.prisma, input.area);
+      return { user: updated, isServiceable };
     }),
 
   // Quick check: can this user place an order?
@@ -81,7 +90,7 @@ export const userRouter = createTRPCRouter({
     if (!user.isOnboarded || !user.phone) {
       return { canOrder: false, reason: 'incomplete_profile' };
     }
-    const serviceable = isAreaServiceable(user.area);
+    const serviceable = await checkServiceable(ctx.prisma, user.area);
     if (!serviceable) {
       return { canOrder: false, reason: 'outside_area', area: user.area };
     }

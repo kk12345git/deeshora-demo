@@ -26,6 +26,9 @@
   .input {
     @apply block w-full px-5 py-3 text-sm text-gray-900 bg-gray-50/50 backdrop-blur-sm border border-gray-100 rounded-2xl transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 focus:bg-white;
   }
+  .input-style {
+    @apply block w-full px-4 py-3 text-sm text-gray-900 bg-gray-50 border-2 border-transparent rounded-xl transition-all outline-none focus:border-orange-500 focus:bg-white;
+  }
   .badge {
     @apply inline-flex items-center text-[10px] tracking-wider uppercase font-black px-3 py-1 rounded-full;
   }

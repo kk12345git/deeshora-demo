@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { trpc } from '@/lib/trpc';
 import { X, User, Phone, MapPin, CheckCircle, AlertTriangle, Loader2, ChevronRight, Sparkles, Clock } from 'lucide-react';
-import { THIRUVOTTRIYUR_LOCALITIES, COMING_SOON_AREAS, isAreaServiceable } from '@/lib/areas';
+import type { ServiceArea } from '@prisma/client';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -38,6 +38,11 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
   useEffect(() => {
     if (isOpen) setStep('intro');
   }, [isOpen]);
+
+  // Fetch live areas from DB
+  const { data: allAreas = [] } = trpc.admin.getServiceAreas.useQuery();
+  const liveAreas = allAreas.filter((a: ServiceArea) => a.isServiceable);
+  const comingSoonAreas = allAreas.filter((a: ServiceArea) => !a.isServiceable);
 
   const utils = trpc.useUtils();
   const completeOnboarding = trpc.user.completeOnboarding.useMutation({
@@ -77,7 +82,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
   };
 
   // Auto fill pincode when area is selected
-  const selectLocality = (value: string, pincode?: string) => {
+  const selectLocality = (value: string, pincode?: string | null) => {
     setFormData(prev => ({
       ...prev,
       area: value,
@@ -134,7 +139,9 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
               </div>
               <div>
                 <p className="text-xs font-black text-emerald-700 uppercase tracking-wider">Now Delivering In</p>
-                <p className="text-sm font-bold text-emerald-900 mt-0.5">Thiruvottriyur &amp; 12 localities, Chennai</p>
+                <p className="text-sm font-bold text-emerald-900 mt-0.5">
+                  Thiruvottriyur &amp; {liveAreas.length} localities, Chennai
+                </p>
                 <p className="text-xs text-emerald-600 mt-0.5">More areas coming soon ✨</p>
               </div>
             </div>
@@ -240,10 +247,10 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
                 <span className="text-xs font-bold text-gray-700">Thiruvottriyur, Chennai</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {THIRUVOTTRIYUR_LOCALITIES.map((loc) => (
+                {liveAreas.map((loc: ServiceArea) => (
                   <button
                     key={loc.value}
-                    onClick={() => selectLocality(loc.value, loc.pincode)}
+                    onClick={() => selectLocality(loc.value, loc.pincode ?? undefined)}
                     className={`p-3 rounded-2xl border-2 text-left transition-all flex flex-col gap-0.5 ${
                       formData.area === loc.value
                         ? 'border-emerald-500 bg-emerald-50'
@@ -273,7 +280,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
                 <span className="text-xs font-bold text-gray-500">Expanding to more Chennai areas</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {COMING_SOON_AREAS.map((loc) => (
+                {comingSoonAreas.map((loc: ServiceArea) => (
                   <div
                     key={loc.value}
                     className="p-3 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 opacity-70 cursor-not-allowed"
@@ -286,7 +293,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
             </div>
 
             {/* Optional pincode + landmark (shown when a locality is selected) */}
-            {formData.area && isAreaServiceable(formData.area) && (
+            {formData.area && liveAreas.some((a: ServiceArea) => a.value === formData.area) && (
               <div className="space-y-3 animate-in fade-in duration-300 border-t pt-4">
                 <p className="text-xs font-black uppercase tracking-widest text-gray-400">Fine-tune your location (optional)</p>
                 <input
@@ -371,7 +378,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
             </div>
             <div className="w-full bg-orange-50 border border-orange-100 rounded-2xl p-4 text-left space-y-1">
               <p className="text-xs font-black text-orange-700 uppercase tracking-wider">Coming to your area soon:</p>
-              {COMING_SOON_AREAS.map(a => (
+              {comingSoonAreas.map((a: ServiceArea) => (
                 <p key={a.value} className="text-xs text-orange-600 font-medium">• {a.label}</p>
               ))}
             </div>

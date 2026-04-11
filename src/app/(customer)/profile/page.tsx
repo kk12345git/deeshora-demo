@@ -12,7 +12,7 @@ import {
   ShoppingBag, Camera,
 } from 'lucide-react';
 import OnboardingModal from '@/components/customer/OnboardingModal';
-import { THIRUVOTTRIYUR_LOCALITIES, isAreaServiceable } from '@/lib/areas';
+import type { ServiceArea } from '@prisma/client';
 
 type EditSection = 'basic' | 'location' | null;
 
@@ -24,8 +24,10 @@ export default function MySpacePage() {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   const { data: profile, isLoading, refetch } = trpc.user.me.useQuery(undefined, {
-    retry: false, // Don't retry on UNAUTHORIZED — user just needs to sign in
+    retry: false,
   });
+  const { data: serviceAreas = [] } = trpc.admin.getServiceAreas.useQuery();
+  const liveAreas = serviceAreas.filter((a: ServiceArea) => a.isServiceable);
 
   const updateProfile = trpc.user.updateProfile.useMutation({
     onSuccess: () => {
@@ -81,7 +83,7 @@ export default function MySpacePage() {
   }
 
   // ─── DERIVED STATE ────────────────────────────────────────────────────────
-  const isServiceable = isAreaServiceable(profile.area);
+  const isServiceable = liveAreas.some((a: ServiceArea) => a.value === profile.area);
   const isProfileComplete = !!profile.phone && !!profile.area;
   const completionScore = [!!profile.phone, !!profile.area, !!profile.pincode, !!profile.landmark].filter(Boolean).length;
   const completionPct = Math.round((completionScore / 4) * 100);
@@ -330,7 +332,7 @@ export default function MySpacePage() {
               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-gray-400 block mb-3">Select Your Area</label>
               <div className="grid grid-cols-2 gap-2">
-                  {THIRUVOTTRIYUR_LOCALITIES.map((opt) => (
+                  {liveAreas.map((opt: ServiceArea) => (
                     <button
                       key={opt.value}
                       onClick={() => setEditData({ ...editData, area: opt.value, pincode: opt.pincode ?? editData.pincode })}
