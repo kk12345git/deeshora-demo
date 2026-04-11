@@ -15,8 +15,11 @@ export default function VendorSettingsPage() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries());
-    updateMutation.mutate(data as any);
+    // Filter out empty strings so we don't overwrite existing values with blanks
+    const data = Object.fromEntries(
+      Array.from(formData.entries()).filter(([, v]) => v !== '' && typeof v === 'string')
+    );
+    updateMutation.mutate(data as Parameters<typeof updateMutation.mutate>[0]);
   };
 
   if (isLoading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-orange-500" /></div>;

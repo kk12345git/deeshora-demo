@@ -1,5 +1,5 @@
-// src/hooks/useOnboarding.ts
 'use client';
+// src/hooks/useOnboarding.ts
 
 import { useState } from 'react';
 import { useUser } from '@clerk/nextjs';

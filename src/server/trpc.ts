@@ -7,7 +7,7 @@ import { User } from '@prisma/client';
 
 
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const { userId } = auth();
+  const { userId } = await auth();
   let user: User | null = null;
 
 

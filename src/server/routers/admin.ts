@@ -1,8 +1,7 @@
-// src/server/routers/admin.ts
 import { z } from 'zod';
 import { createTRPCRouter, adminProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
-import { VendorStatus, UserRole } from '@prisma/client';
+import { VendorStatus, UserRole, OrderStatus } from '@prisma/client';
 import { uploadImage } from '@/lib/cloudinary';
 import slugify from 'slugify';
 
@@ -146,7 +145,7 @@ export const adminRouter = createTRPCRouter({
       z.object({
         limit: z.number().min(1).max(100).nullish(),
         cursor: z.string().nullish(),
-        status: z.nativeEnum(VendorStatus).optional(),
+        status: z.nativeEnum(OrderStatus).optional(),
       })
     )
     .query(async ({ ctx, input }) => {

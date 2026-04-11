@@ -9,12 +9,10 @@ import { cache } from 'react';
  * This wraps the tRPC context creation in a way that can be used in Next.js Server Components.
  */
 const createContext = cache(async () => {
-  const heads = new Headers(headers());
-  heads.set('x-trpc-source', 'rsc');
-
-
+  const heads = await headers();
+  // Note: We can read from ReadonlyHeaders directly - no need to copy
   return createTRPCContext({
-    headers: heads,
+    headers: heads as unknown as Headers,
   });
 });
 
