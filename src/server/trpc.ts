@@ -1,6 +1,6 @@
 // src/server/trpc.ts
 import { initTRPC, TRPCError } from '@trpc/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import superjson from 'superjson';
 import prisma from '@/lib/prisma';
 import { User } from '@prisma/client';
@@ -12,9 +12,37 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
 
 
   if (userId) {
+    // Try to find existing user
     user = await prisma.user.findUnique({
       where: { clerkId: userId },
     });
+
+    // Auto-create DB record if user signed in via Google OAuth but
+    // the Clerk webhook didn't fire (common in local dev & first deploys)
+    if (!user) {
+      try {
+        const clerkUser = await currentUser();
+        if (clerkUser) {
+          const email = clerkUser.emailAddresses[0]?.emailAddress ?? '';
+          const firstName = clerkUser.firstName ?? '';
+          const lastName = clerkUser.lastName ?? '';
+          const name = `${firstName} ${lastName}`.trim() || email.split('@')[0];
+          user = await prisma.user.upsert({
+            where: { clerkId: userId },
+            create: {
+              clerkId: userId,
+              email,
+              name,
+              avatar: clerkUser.imageUrl,
+            },
+            update: {}, // Don't overwrite existing data on race conditions
+          });
+        }
+      } catch (e) {
+        // Non-fatal — protected routes will throw UNAUTHORIZED if user is null
+        console.error('[tRPC] Failed to auto-create user:', e);
+      }
+    }
   }
 
 

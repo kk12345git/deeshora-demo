@@ -1,7 +1,7 @@
 // src/components/customer/OnboardingModal.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { trpc } from '@/lib/trpc';
 import { X, User, Phone, MapPin, CheckCircle, AlertTriangle, Loader2, ChevronRight, Sparkles } from 'lucide-react';
@@ -20,13 +20,25 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
   const { user: clerkUser } = useUser();
   const [step, setStep] = useState<Step>('intro');
   const [formData, setFormData] = useState({
-    name: clerkUser?.fullName ?? '',
+    name: '',
     phone: '',
     area: '',
     pincode: '',
     landmark: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Pre-fill name when Clerk user data loads
+  useEffect(() => {
+    if (clerkUser?.fullName && !formData.name) {
+      setFormData(prev => ({ ...prev, name: clerkUser.fullName ?? '' }));
+    }
+  }, [clerkUser?.fullName]);
+
+  // Reset step when modal opens
+  useEffect(() => {
+    if (isOpen) setStep('intro');
+  }, [isOpen]);
 
   const utils = trpc.useUtils();
   const completeOnboarding = trpc.user.completeOnboarding.useMutation({

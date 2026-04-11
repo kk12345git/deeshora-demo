@@ -1,7 +1,7 @@
 // src/app/(customer)/profile/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { trpc } from '@/lib/trpc';
 import Image from 'next/image';
@@ -9,8 +9,9 @@ import Link from 'next/link';
 import {
   User, Phone, MapPin, Mail, Package, Star, Edit3, Save,
   X, CheckCircle, AlertTriangle, ChevronRight, Loader2,
-  ShoppingBag, Clock, Heart, Settings, Camera,
+  ShoppingBag, Camera,
 } from 'lucide-react';
+import OnboardingModal from '@/components/customer/OnboardingModal';
 
 const SERVICEABLE_AREA = 'Thiruvottriyur';
 
@@ -21,8 +22,12 @@ export default function MySpacePage() {
   const [editSection, setEditSection] = useState<EditSection>(null);
   const [editData, setEditData] = useState<Record<string, string>>({});
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
-  const { data: profile, isLoading, refetch } = trpc.user.me.useQuery();
+  const { data: profile, isLoading, refetch } = trpc.user.me.useQuery(undefined, {
+    retry: false, // Don't retry on UNAUTHORIZED — user just needs to sign in
+  });
+
   const updateProfile = trpc.user.updateProfile.useMutation({
     onSuccess: () => {
       refetch();
@@ -32,6 +37,16 @@ export default function MySpacePage() {
     },
   });
 
+  // Auto-open onboarding for users who haven't completed it yet
+  useEffect(() => {
+    if (profile && !profile.isOnboarded) {
+      // Small delay so page renders first
+      const t = setTimeout(() => setShowOnboarding(true), 600);
+      return () => clearTimeout(t);
+    }
+  }, [profile]);
+
+  // ─── LOADING STATE ────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -43,17 +58,30 @@ export default function MySpacePage() {
     );
   }
 
+  // ─── NOT SIGNED IN ────────────────────────────────────────────────────────
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-center px-4">
-        <div>
-          <p className="text-xl font-black text-gray-900">Profile not found.</p>
-          <Link href="/sign-in" className="btn-primary mt-4 inline-block">Sign In</Link>
+      <div className="min-h-screen flex items-center justify-center text-center px-4 bg-gray-50">
+        <div className="bg-white rounded-3xl p-10 shadow-xl border border-gray-100 max-w-sm w-full space-y-6">
+          <div className="w-20 h-20 bg-orange-50 rounded-3xl flex items-center justify-center mx-auto">
+            <User size={36} className="text-orange-500" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-gray-900">Sign in to continue</h1>
+            <p className="text-gray-400 text-sm mt-2">Access your profile, orders, and more.</p>
+          </div>
+          <Link href="/sign-in" className="btn-primary w-full text-center block">
+            Sign In
+          </Link>
+          <Link href="/sign-up" className="text-sm font-bold text-orange-500 hover:underline block">
+            New here? Create an account →
+          </Link>
         </div>
       </div>
     );
   }
 
+  // ─── DERIVED STATE ────────────────────────────────────────────────────────
   const isServiceable = profile.area?.toLowerCase().includes(SERVICEABLE_AREA.toLowerCase());
   const isProfileComplete = !!profile.phone && !!profile.area;
   const completionScore = [!!profile.phone, !!profile.area, !!profile.pincode, !!profile.landmark].filter(Boolean).length;
@@ -71,11 +99,23 @@ export default function MySpacePage() {
   };
 
   const handleSave = () => {
-    updateProfile.mutate(editData as any);
+    updateProfile.mutate(editData as Parameters<typeof updateProfile.mutate>[0]);
   };
 
+  // ─── MAIN RENDER ─────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+
+      {/* Onboarding Modal — auto-opens for new users */}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onSuccess={() => {
+          setShowOnboarding(false);
+          refetch();
+        }}
+      />
+
       {/* Hero Banner */}
       <div className="relative bg-gray-950 overflow-hidden">
         <div className="absolute inset-0">
@@ -113,9 +153,12 @@ export default function MySpacePage() {
                     <AlertTriangle size={12} /> Area Not Serviceable
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-400 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
-                    <MapPin size={12} /> Location Not Set
-                  </span>
+                  <button
+                    onClick={() => setShowOnboarding(true)}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-300 bg-white/5 border border-white/10 px-3 py-1 rounded-full hover:bg-orange-500/10 hover:border-orange-500/30 hover:text-orange-400 transition-all"
+                  >
+                    <MapPin size={12} /> Set your location →
+                  </button>
                 )}
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-400 bg-white/5 border border-white/10 px-3 py-1 rounded-full capitalize">
                   {profile.role.toLowerCase()}
@@ -160,7 +203,7 @@ export default function MySpacePage() {
           </div>
           {completionPct < 100 && (
             <button
-              onClick={() => startEdit('basic')}
+              onClick={() => setShowOnboarding(true)}
               className="flex-shrink-0 btn-primary py-2.5 px-5 text-xs rounded-xl"
             >
               Complete →
@@ -176,6 +219,25 @@ export default function MySpacePage() {
           <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl animate-in slide-in-from-top duration-300">
             <CheckCircle size={20} className="text-emerald-500" />
             <p className="text-sm font-bold text-emerald-700">Profile updated successfully!</p>
+          </div>
+        )}
+
+        {/* Not onboarded yet — banner prompt */}
+        {!profile.isOnboarded && (
+          <div className="p-5 bg-orange-50 border border-orange-200 rounded-2xl flex items-start gap-4">
+            <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+              <CheckCircle size={20} className="text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="font-black text-orange-800 text-sm">Complete your profile to start ordering!</p>
+              <p className="text-xs text-orange-600 mt-1">Add your phone number and delivery area to unlock full access.</p>
+            </div>
+            <button
+              onClick={() => setShowOnboarding(true)}
+              className="flex-shrink-0 btn-primary py-2 px-4 text-xs rounded-xl"
+            >
+              Setup →
+            </button>
           </div>
         )}
 
@@ -266,7 +328,6 @@ export default function MySpacePage() {
 
           {editSection === 'location' ? (
             <div className="p-5 space-y-4 animate-in fade-in duration-300">
-              {/* Area chips */}
               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-gray-400 block mb-3">Select Your Area</label>
                 <div className="grid grid-cols-1 gap-2">
