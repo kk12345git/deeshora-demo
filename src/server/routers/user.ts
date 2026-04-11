@@ -23,13 +23,26 @@ export const userRouter = createTRPCRouter({
       where: { id: ctx.user.id },
       include: {
         addresses: { orderBy: { isDefault: 'desc' } },
-        orders: { take: 5, orderBy: { createdAt: 'desc' } },
+        orders: {
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            status: true,
+            total: true,
+            createdAt: true,
+            paymentStatus: true,
+            vendor: { select: { shopName: true } },
+            items: { take: 1, select: { image: true, name: true } },
+          },
+        },
         _count: { select: { orders: true, reviews: true } },
       },
     });
     if (!user) throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
     return user;
   }),
+
 
   // Update profile fields (all optional — user can fill progressively)
   updateProfile: protectedProcedure

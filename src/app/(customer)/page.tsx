@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { trpc } from '@/lib/trpc';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingBag, CheckCircle, Truck, ArrowRight, Star, MapPin, Loader2 } from 'lucide-react';
+import { ShoppingBag, CheckCircle, Truck, ArrowRight, Star, MapPin, Loader2, X } from 'lucide-react';
 import ProductCard from '@/components/customer/ProductCard';
 import CitySelector from '@/components/customer/CitySelector';
 
@@ -207,7 +207,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-const X = ({ size }: { size: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-);

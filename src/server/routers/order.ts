@@ -392,39 +392,60 @@ export const orderRouter = createTRPCRouter({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
 
-
-    const stats = await ctx.prisma.order.aggregate({
-      where: { vendorId: ctx.vendor.id },
-      _count: { id: true },
-    });
-
-
-    const todayOrders = await ctx.prisma.order.count({
-      where: { vendorId: ctx.vendor.id, createdAt: { gte: today } },
-    });
-
-
-    const pendingOrders = await ctx.prisma.order.count({
-      where: {
-        vendorId: ctx.vendor.id,
-        status: { in: ['PENDING', 'CONFIRMED', 'PREPARING'] },
-      },
-    });
-
-
-    const totalRevenue = await ctx.prisma.order.aggregate({
-      where: { vendorId: ctx.vendor.id, paymentStatus: 'PAID' },
-      _sum: { vendorAmount: true },
-    });
-    
-    const weeklyOrders = await ctx.prisma.order.count({
+    const [stats, todayOrders, pendingOrders, totalRevenue, weeklyOrders, last7DaysOrders] = await Promise.all([
+      ctx.prisma.order.aggregate({
+        where: { vendorId: ctx.vendor.id },
+        _count: { id: true },
+      }),
+      ctx.prisma.order.count({
+        where: { vendorId: ctx.vendor.id, createdAt: { gte: today } },
+      }),
+      ctx.prisma.order.count({
+        where: {
+          vendorId: ctx.vendor.id,
+          status: { in: ['PENDING', 'CONFIRMED', 'PREPARING'] },
+        },
+      }),
+      ctx.prisma.order.aggregate({
+        where: { vendorId: ctx.vendor.id, paymentStatus: 'PAID' },
+        _sum: { vendorAmount: true },
+      }),
+      ctx.prisma.order.count({
         where: { vendorId: ctx.vendor.id, createdAt: { gte: sevenDaysAgo } },
-    });
+      }),
+      // Last 7 days of paid orders for sparkline
+      ctx.prisma.order.findMany({
+        where: {
+          vendorId: ctx.vendor.id,
+          paymentStatus: 'PAID',
+          createdAt: { gte: sevenDaysAgo },
+        },
+        select: { createdAt: true, vendorAmount: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
 
+    // Build 7-day series (Mon–Sun / today–6 days ago)
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dailySeries = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(sevenDaysAgo);
+      d.setDate(d.getDate() + i);
+      const nextD = new Date(d);
+      nextD.setDate(nextD.getDate() + 1);
+      const dayOrders = last7DaysOrders.filter(o => {
+        const t = new Date(o.createdAt);
+        return t >= d && t < nextD;
+      });
+      return {
+        day: dayLabels[d.getDay()],
+        revenue: dayOrders.reduce((s, o) => s + o.vendorAmount, 0),
+        orders: dayOrders.length,
+      };
+    });
 
     return {
       totalOrders: stats._count.id,
@@ -433,6 +454,7 @@ export const orderRouter = createTRPCRouter({
       totalRevenue: totalRevenue._sum.vendorAmount ?? 0,
       pendingPayout: ctx.vendor.pendingPayout,
       weeklyOrders,
+      dailySeries,
     };
   }),
 

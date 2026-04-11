@@ -9,12 +9,37 @@ import Link from 'next/link';
 import {
   User, Phone, MapPin, Mail, Package, Star, Edit3, Save,
   X, CheckCircle, AlertTriangle, ChevronRight, Loader2,
-  ShoppingBag, Camera,
+  ShoppingBag, Camera, ArrowRight, IndianRupee, Flame,
+  Shield, Crown, Zap,
 } from 'lucide-react';
 import OnboardingModal from '@/components/customer/OnboardingModal';
+import { OrderStatusBadge } from '@/components/customer/OrderStatus';
 import type { ServiceArea } from '@prisma/client';
 
 type EditSection = 'basic' | 'location' | null;
+
+// ─── Loyalty tier logic ───────────────────────────────────────────────────────
+function getLoyaltyTier(orderCount: number) {
+  if (orderCount >= 50) return { name: 'Platinum', iconKey: 'crown',  color: 'from-violet-500 to-purple-600', textColor: 'text-violet-100', min: 50, next: null, emoji: '👑' };
+  if (orderCount >= 20) return { name: 'Gold',     iconKey: 'flame',  color: 'from-amber-400 to-yellow-500',   textColor: 'text-amber-100',  min: 20, next: 50, emoji: '🔥' };
+  if (orderCount >= 5)  return { name: 'Silver',   iconKey: 'shield', color: 'from-slate-400 to-slate-500',    textColor: 'text-slate-100',  min: 5,  next: 20, emoji: '🛡️' };
+  return                       { name: 'Bronze',   iconKey: 'zap',    color: 'from-orange-400 to-orange-500',  textColor: 'text-orange-100', min: 0,  next: 5, emoji: '⚡' };
+}
+
+// ─── Status dot (unused directly, kept for reference)
+const _STATUS_DOT: Record<string, string> = {
+  PENDING: 'bg-amber-400',
+  DELIVERED: 'bg-emerald-500',
+  CANCELLED: 'bg-red-400',
+};
+
+// ─── Tier icon resolver ────────────────────────────────────────────────────────
+function TierIcon({ iconKey, size = 16 }: { iconKey: string; size?: number }) {
+  if (iconKey === 'crown')  return <Crown size={size} />;
+  if (iconKey === 'flame')  return <Flame size={size} />;
+  if (iconKey === 'shield') return <Shield size={size} />;
+  return <Zap size={size} />;
+}
 
 export default function MySpacePage() {
   const { user: clerkUser } = useUser();
@@ -23,9 +48,7 @@ export default function MySpacePage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  const { data: profile, isLoading, refetch } = trpc.user.me.useQuery(undefined, {
-    retry: false,
-  });
+  const { data: profile, isLoading, refetch } = trpc.user.me.useQuery(undefined, { retry: false });
   const { data: serviceAreas = [] } = trpc.admin.getServiceAreas.useQuery();
   const liveAreas = serviceAreas.filter((a: ServiceArea) => a.isServiceable);
 
@@ -38,55 +61,46 @@ export default function MySpacePage() {
     },
   });
 
-  // Auto-open onboarding for users who haven't completed it yet
   useEffect(() => {
     if (profile && !profile.isOnboarded) {
-      // Small delay so page renders first
       const t = setTimeout(() => setShowOnboarding(true), 600);
       return () => clearTimeout(t);
     }
   }, [profile]);
 
-  // ─── LOADING STATE ────────────────────────────────────────────────────────
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
-          <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Loading your space...</p>
-        </div>
+  if (isLoading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
+        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Loading your space...</p>
       </div>
-    );
-  }
+    </div>
+  );
 
-  // ─── NOT SIGNED IN ────────────────────────────────────────────────────────
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-center px-4 bg-gray-50">
-        <div className="bg-white rounded-3xl p-10 shadow-xl border border-gray-100 max-w-sm w-full space-y-6">
-          <div className="w-20 h-20 bg-orange-50 rounded-3xl flex items-center justify-center mx-auto">
-            <User size={36} className="text-orange-500" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-gray-900">Sign in to continue</h1>
-            <p className="text-gray-400 text-sm mt-2">Access your profile, orders, and more.</p>
-          </div>
-          <Link href="/sign-in" className="btn-primary w-full text-center block">
-            Sign In
-          </Link>
-          <Link href="/sign-up" className="text-sm font-bold text-orange-500 hover:underline block">
-            New here? Create an account →
-          </Link>
+  if (!profile) return (
+    <div className="min-h-screen flex items-center justify-center text-center px-4 bg-gray-50">
+      <div className="bg-white rounded-3xl p-10 shadow-xl border border-gray-100 max-w-sm w-full space-y-6">
+        <div className="w-20 h-20 bg-orange-50 rounded-3xl flex items-center justify-center mx-auto">
+          <User size={36} className="text-orange-500" />
         </div>
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">Sign in to continue</h1>
+          <p className="text-gray-400 text-sm mt-2">Access your profile, orders, and more.</p>
+        </div>
+        <Link href="/sign-in" className="btn-primary w-full text-center block">Sign In</Link>
+        <Link href="/sign-up" className="text-sm font-bold text-orange-500 hover:underline block">New here? Create an account →</Link>
       </div>
-    );
-  }
+    </div>
+  );
 
-  // ─── DERIVED STATE ────────────────────────────────────────────────────────
+  // Derived state
   const isServiceable = liveAreas.some((a: ServiceArea) => a.value === profile.area);
   const isProfileComplete = !!profile.phone && !!profile.area;
   const completionScore = [!!profile.phone, !!profile.area, !!profile.pincode, !!profile.landmark].filter(Boolean).length;
   const completionPct = Math.round((completionScore / 4) * 100);
+  const tier = getLoyaltyTier(profile._count.orders);
+  const nextTier = tier.next ? getLoyaltyTier(tier.next) : null;
+  const recentOrders = (profile as any).orders ?? [];
 
   const startEdit = (section: EditSection) => {
     setEditSection(section);
@@ -103,30 +117,24 @@ export default function MySpacePage() {
     updateProfile.mutate(editData as Parameters<typeof updateProfile.mutate>[0]);
   };
 
-  // ─── MAIN RENDER ─────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-
-      {/* Onboarding Modal — auto-opens for new users */}
       <OnboardingModal
         isOpen={showOnboarding}
         onClose={() => setShowOnboarding(false)}
-        onSuccess={() => {
-          setShowOnboarding(false);
-          refetch();
-        }}
+        onSuccess={() => { setShowOnboarding(false); refetch(); }}
       />
 
       {/* Hero Banner */}
       <div className="relative bg-gray-950 overflow-hidden">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-orange-500/20 to-transparent blur-3xl" />
           <div className="absolute bottom-0 left-0 w-1/3 h-full bg-gradient-to-r from-emerald-500/10 to-transparent blur-3xl" />
         </div>
-        <div className="container mx-auto px-4 pt-12 pb-24 relative z-10">
+        <div className="container mx-auto px-4 pt-10 pb-24 relative z-10">
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6">
             {/* Avatar */}
-            <div className="relative flex-shrink-0 group">
+            <div className="relative flex-shrink-0">
               <div className="w-28 h-28 rounded-[2rem] overflow-hidden border-4 border-white/10 shadow-2xl">
                 {clerkUser?.imageUrl ? (
                   <Image src={clerkUser.imageUrl} alt={profile.name} width={112} height={112} className="w-full h-full object-cover" />
@@ -136,18 +144,21 @@ export default function MySpacePage() {
                   </div>
                 )}
               </div>
-              <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg ring-2 ring-gray-950">
-                <Camera size={14} className="text-white" />
+              {/* Loyalty tier badge */}
+              <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-gradient-to-r ${tier.color} px-3 py-1 rounded-full shadow-lg`}>
+                <span className="text-white"><TierIcon iconKey={tier.iconKey} /></span>
+                <span className={`text-[10px] font-black uppercase tracking-wider ${tier.textColor}`}>{tier.name}</span>
               </div>
             </div>
 
             {/* Name & Status */}
-            <div className="text-center sm:text-left space-y-2 flex-1">
+            <div className="text-center sm:text-left space-y-2 flex-1 mt-4 sm:mt-0">
               <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">{profile.name}</h1>
+              <p className="text-gray-400 text-sm">{profile.email}</p>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 {isServiceable ? (
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
-                    <CheckCircle size={12} /> Thiruvottriyur Verified
+                    <CheckCircle size={12} /> Area Verified
                   </span>
                 ) : profile.area ? (
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 px-3 py-1 rounded-full">
@@ -161,9 +172,6 @@ export default function MySpacePage() {
                     <MapPin size={12} /> Set your location →
                   </button>
                 )}
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-400 bg-white/5 border border-white/10 px-3 py-1 rounded-full capitalize">
-                  {profile.role.toLowerCase()}
-                </span>
               </div>
             </div>
 
@@ -183,7 +191,7 @@ export default function MySpacePage() {
       </div>
 
       {/* Profile Completion Bar */}
-      <div className="container mx-auto px-4 -mt-6 relative z-20 mb-6">
+      <div className="container mx-auto px-4 -mt-6 relative z-20 mb-5">
         <div className="bg-white rounded-2xl p-5 shadow-xl border border-gray-100 flex items-center gap-4">
           <div className="flex-1">
             <div className="flex justify-between items-center mb-2">
@@ -198,24 +206,26 @@ export default function MySpacePage() {
             </div>
             {!isProfileComplete && (
               <p className="text-xs text-gray-400 mt-1.5">
-                {!profile.phone ? '📞 Missing phone number. ' : ''}{!profile.area ? '📍 Missing delivery area.' : ''}
+                {!profile.phone ? '📞 Missing phone. ' : ''}{!profile.area ? '📍 Missing delivery area.' : ''}
               </p>
             )}
           </div>
           {completionPct < 100 && (
-            <button
-              onClick={() => setShowOnboarding(true)}
-              className="flex-shrink-0 btn-primary py-2.5 px-5 text-xs rounded-xl"
-            >
+            <button onClick={() => setShowOnboarding(true)} className="flex-shrink-0 btn-primary py-2.5 px-5 text-xs rounded-xl">
               Complete →
             </button>
+          )}
+          {completionPct === 100 && (
+            <div className="flex-shrink-0 w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+              <CheckCircle size={20} className="text-emerald-500" />
+            </div>
           )}
         </div>
       </div>
 
       <div className="container mx-auto px-4 space-y-4">
 
-        {/* Save Success Toast */}
+        {/* Save Success */}
         {saveSuccess && (
           <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl animate-in slide-in-from-top duration-300">
             <CheckCircle size={20} className="text-emerald-500" />
@@ -223,7 +233,7 @@ export default function MySpacePage() {
           </div>
         )}
 
-        {/* Not onboarded yet — banner prompt */}
+        {/* Onboarding nudge */}
         {!profile.isOnboarded && (
           <div className="p-5 bg-orange-50 border border-orange-200 rounded-2xl flex items-start gap-4">
             <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -231,18 +241,98 @@ export default function MySpacePage() {
             </div>
             <div className="flex-1">
               <p className="font-black text-orange-800 text-sm">Complete your profile to start ordering!</p>
-              <p className="text-xs text-orange-600 mt-1">Add your phone number and delivery area to unlock full access.</p>
+              <p className="text-xs text-orange-600 mt-1">Add phone & delivery area to unlock ordering.</p>
             </div>
-            <button
-              onClick={() => setShowOnboarding(true)}
-              className="flex-shrink-0 btn-primary py-2 px-4 text-xs rounded-xl"
-            >
+            <button onClick={() => setShowOnboarding(true)} className="flex-shrink-0 btn-primary py-2 px-4 text-xs rounded-xl">
               Setup →
             </button>
           </div>
         )}
 
-        {/* Basic Info Card */}
+        {/* Loyalty Card */}
+        <div className={`bg-gradient-to-br ${tier.color} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden`}>
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.4),transparent)]" />
+          <div className="relative z-10 flex items-center justify-between">
+            <div>
+              <p className={`text-xs font-black uppercase tracking-widest ${tier.textColor} mb-1`}>Your Loyalty Status</p>
+              <div className="flex items-center gap-2">
+                <TierIcon iconKey={tier.iconKey} />
+                <span className="text-2xl font-black">{tier.name} Member</span>
+              </div>
+              <p className={`text-xs ${tier.textColor} mt-1`}>
+                {tier.next
+                  ? `${tier.next - profile._count.orders} more orders to reach ${nextTier?.name}`
+                  : '🏆 You have reached the highest tier!'}
+              </p>
+            </div>
+            <div className="text-4xl opacity-30">{profile._count.orders >= 50 ? '👑' : profile._count.orders >= 20 ? '🔥' : profile._count.orders >= 5 ? '🛡️' : '⚡'}</div>
+          </div>
+          {tier.next && (
+            <div className="relative z-10 mt-4">
+              <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white/70 rounded-full transition-all duration-700"
+                  style={{ width: `${Math.min(((profile._count.orders - tier.min) / (tier.next - tier.min)) * 100, 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className={`text-[10px] ${tier.textColor} font-bold`}>{profile._count.orders} orders</span>
+                <span className={`text-[10px] ${tier.textColor} font-bold`}>{tier.next} for {nextTier?.name}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Recent Orders strip */}
+        {recentOrders.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+              <h2 className="font-black text-gray-900 flex items-center gap-2">
+                <ShoppingBag size={16} className="text-orange-500" /> Recent Orders
+              </h2>
+              <Link href="/orders" className="text-xs font-black text-orange-500 hover:text-orange-600 flex items-center gap-1">
+                All orders <ArrowRight size={12} />
+              </Link>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {recentOrders.map((order: any) => (
+                <Link
+                  key={order.id}
+                  href={`/orders/${order.id}`}
+                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition-colors group"
+                >
+                  {/* Item thumbnail */}
+                  <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                    {order.items[0]?.image
+                      ? <Image src={order.items[0].image} alt="" fill className="object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center"><Package size={14} className="text-gray-300" /></div>
+                    }
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-black text-gray-900 text-sm">#{order.id.slice(-6).toUpperCase()}</span>
+                      <OrderStatusBadge status={order.status} />
+                    </div>
+                    <p className="text-xs text-gray-400 font-medium mt-0.5 truncate">{order.vendor.shopName}</p>
+                  </div>
+                  {/* Amount + date */}
+                  <div className="text-right flex-shrink-0">
+                    <div className="flex items-center gap-0.5 font-black text-gray-900 text-sm">
+                      <IndianRupee size={12} />{order.total.toFixed(0)}
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                    </p>
+                  </div>
+                  <ChevronRight size={14} className="text-gray-200 group-hover:text-orange-400 transition-colors flex-shrink-0" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Personal Info Card */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-gray-50">
             <div className="flex items-center gap-3">
@@ -252,7 +342,7 @@ export default function MySpacePage() {
               <h2 className="font-black text-gray-900">Personal Info</h2>
             </div>
             {editSection !== 'basic' && (
-              <button onClick={() => startEdit('basic')} className="flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-600 transition-colors">
+              <button onClick={() => startEdit('basic')} className="flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-600">
                 <Edit3 size={14} /> Edit
               </button>
             )}
@@ -264,7 +354,7 @@ export default function MySpacePage() {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-400">Full Name</label>
                 <input
                   value={editData.name ?? ''}
-                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                  onChange={e => setEditData({ ...editData, name: e.target.value })}
                   className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all"
                   placeholder="Your full name"
                 />
@@ -275,18 +365,14 @@ export default function MySpacePage() {
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-black text-gray-400 border-r border-gray-200 pr-2">+91</span>
                   <input
                     value={editData.phone ?? ''}
-                    onChange={(e) => setEditData({ ...editData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                    onChange={e => setEditData({ ...editData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                     className="w-full pl-14 pr-4 py-3 bg-gray-50 rounded-xl text-sm font-medium border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all"
                     placeholder="10-digit mobile number"
                   />
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <button
-                  onClick={handleSave}
-                  disabled={updateProfile.isPending}
-                  className="btn-primary flex-1 h-11 rounded-xl text-sm flex items-center justify-center gap-2"
-                >
+                <button onClick={handleSave} disabled={updateProfile.isPending} className="btn-primary flex-1 h-11 rounded-xl text-sm flex items-center justify-center gap-2">
                   {updateProfile.isPending ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                   Save Changes
                 </button>
@@ -298,12 +384,7 @@ export default function MySpacePage() {
           ) : (
             <div className="divide-y divide-gray-50">
               <InfoRow icon={<Mail size={15} />} label="Email" value={profile.email} />
-              <InfoRow
-                icon={<Phone size={15} />}
-                label="Phone"
-                value={profile.phone ? `+91 ${profile.phone}` : undefined}
-                missing="Not added yet"
-              />
+              <InfoRow icon={<Phone size={15} />} label="Phone" value={profile.phone ? `+91 ${profile.phone}` : undefined} missing="Not added yet" />
             </div>
           )}
         </div>
@@ -321,7 +402,7 @@ export default function MySpacePage() {
               </div>
             </div>
             {editSection !== 'location' && (
-              <button onClick={() => startEdit('location')} className="flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-600 transition-colors">
+              <button onClick={() => startEdit('location')} className="flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-600">
                 <Edit3 size={14} /> {profile.area ? 'Edit' : 'Add'}
               </button>
             )}
@@ -331,7 +412,7 @@ export default function MySpacePage() {
             <div className="p-5 space-y-4 animate-in fade-in duration-300">
               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-gray-400 block mb-3">Select Your Area</label>
-              <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {liveAreas.map((opt: ServiceArea) => (
                     <button
                       key={opt.value}
@@ -350,13 +431,13 @@ export default function MySpacePage() {
               </div>
               <input
                 value={editData.pincode ?? ''}
-                onChange={(e) => setEditData({ ...editData, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                onChange={e => setEditData({ ...editData, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
                 className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all"
                 placeholder="Pincode (e.g. 600019)"
               />
               <input
                 value={editData.landmark ?? ''}
-                onChange={(e) => setEditData({ ...editData, landmark: e.target.value })}
+                onChange={e => setEditData({ ...editData, landmark: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all"
                 placeholder="Landmark (optional)"
               />
@@ -389,7 +470,7 @@ export default function MySpacePage() {
           </div>
         </div>
 
-        {/* Non-serviceable Notice */}
+        {/* Non-serviceable notice */}
         {profile.area && !isServiceable && (
           <div className="p-5 bg-orange-50 border border-orange-100 rounded-2xl flex items-start gap-4">
             <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -398,7 +479,7 @@ export default function MySpacePage() {
             <div>
               <p className="font-black text-orange-800 text-sm">Delivery not available in your area</p>
               <p className="text-xs text-orange-600 mt-1">
-                Deeshora currently serves <strong>Thiruvottriyur &amp; nearby localities, Chennai</strong>. Update your location above if you're in our area, or watch for us to expand soon!
+                Deeshora currently serves <strong>Thiruvottriyur & nearby localities, Chennai</strong>. Watch for us to expand soon!
               </p>
             </div>
           </div>
@@ -408,13 +489,11 @@ export default function MySpacePage() {
   );
 }
 
-// Helper components
+// ─── Helper components ─────────────────────────────────────────────────────────
 function InfoRow({ icon, label, value, missing = 'Not provided' }: { icon: React.ReactNode; label: string; value?: string | null; missing?: string }) {
   return (
     <div className="flex items-center gap-4 px-5 py-4">
-      <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 flex-shrink-0">
-        {icon}
-      </div>
+      <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 flex-shrink-0">{icon}</div>
       <div className="flex-1 min-w-0">
         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{label}</p>
         <p className={`text-sm font-bold truncate mt-0.5 ${value ? 'text-gray-800' : 'text-gray-300 italic'}`}>
@@ -432,9 +511,7 @@ function QuickLink({ href, icon, label, badge }: { href: string; icon: React.Rea
         {icon}
       </div>
       <span className="flex-1 text-sm font-bold text-gray-700">{label}</span>
-      {badge && (
-        <span className="text-xs font-black bg-orange-100 text-orange-600 px-2.5 py-1 rounded-full">{badge}</span>
-      )}
+      {badge && <span className="text-xs font-black bg-orange-100 text-orange-600 px-2.5 py-1 rounded-full">{badge}</span>}
       <ChevronRight size={16} className="text-gray-300 group-hover:text-orange-500 transition-colors" />
     </Link>
   );
