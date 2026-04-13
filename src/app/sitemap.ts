@@ -16,6 +16,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     select: { slug: true, updatedAt: true },
   });
 
+  // Fetch all vendors
+  const vendors = await prisma.vendor.findMany({
+    select: { id: true, updatedAt: true },
+  });
+
   const categoryEntries = categories.map((cat) => ({
     url: `${baseUrl}/category/${cat.slug}`,
     lastModified: cat.updatedAt,
@@ -28,6 +33,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: prod.updatedAt,
     changeFrequency: 'daily' as const,
     priority: 0.6,
+  }));
+
+  const vendorEntries = vendors.map((v) => ({
+    url: `${baseUrl}/vendor/${v.id}`,
+    lastModified: v.updatedAt,
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
   }));
 
   const staticPages = [
@@ -51,5 +63,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   ];
 
-  return [...staticPages, ...categoryEntries, ...productEntries];
+  return [...staticPages, ...categoryEntries, ...productEntries, ...vendorEntries];
 }

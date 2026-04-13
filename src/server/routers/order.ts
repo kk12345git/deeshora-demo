@@ -395,10 +395,23 @@ export const orderRouter = createTRPCRouter({
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
     fourteenDaysAgo.setHours(0, 0, 0, 0);
 
+    const twentyEightDaysAgo = new Date();
+    twentyEightDaysAgo.setDate(twentyEightDaysAgo.getDate() - 28);
+    twentyEightDaysAgo.setHours(0, 0, 0, 0);
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [stats, todayOrders, pendingOrders, totalRevenue, last14DaysOrders, topItems] = await Promise.all([
+    const [
+      stats, 
+      todayOrders, 
+      pendingOrders, 
+      totalRevenue, 
+      last14DaysOrders, 
+      previous14DaysOrders,
+      topItems,
+      allTimeOrders
+    ] = await Promise.all([
       ctx.prisma.order.aggregate({
         where: { vendorId: ctx.vendor.id },
         _count: { id: true },
@@ -422,8 +435,16 @@ export const orderRouter = createTRPCRouter({
           paymentStatus: 'PAID',
           createdAt: { gte: fourteenDaysAgo },
         },
-        select: { createdAt: true, vendorAmount: true },
+        select: { createdAt: true, vendorAmount: true, deliveredAt: true },
         orderBy: { createdAt: 'asc' },
+      }),
+      ctx.prisma.order.aggregate({
+        where: {
+          vendorId: ctx.vendor.id,
+          paymentStatus: 'PAID',
+          createdAt: { gte: twentyEightDaysAgo, lt: fourteenDaysAgo },
+        },
+        _sum: { vendorAmount: true },
       }),
       ctx.prisma.orderItem.groupBy({
         by: ['productId', 'name'],
@@ -438,7 +459,43 @@ export const orderRouter = createTRPCRouter({
         orderBy: { _sum: { quantity: 'desc' } },
         take: 5
       }),
+      ctx.prisma.order.findMany({
+        where: { vendorId: ctx.vendor.id, paymentStatus: 'PAID' },
+        select: { userId: true },
+      }),
     ]);
+
+    // 1. Calculate Growth
+    const currentRevenue = last14DaysOrders.reduce((s, o) => s + o.vendorAmount, 0);
+    const previousRevenue = previous14DaysOrders._sum.vendorAmount ?? 0;
+    const growthRate = previousRevenue === 0 ? 100 : Math.round(((currentRevenue - previousRevenue) / previousRevenue) * 100);
+
+    // 2. Calculate average fulfillment speed (minutes)
+    const deliveredOrders = last14DaysOrders.filter(o => o.deliveredAt);
+    const avgFulfillmentMinutes = deliveredOrders.length > 0
+      ? Math.round(
+          deliveredOrders.reduce((acc, current) => {
+            return acc + (current.deliveredAt!.getTime() - current.createdAt.getTime());
+          }, 0) / (deliveredOrders.length * 60000)
+        )
+      : 0;
+
+    // 3. Calculate Retention
+    const userOrderCounts: Record<string, number> = {};
+    allTimeOrders.forEach(o => {
+      userOrderCounts[o.userId] = (userOrderCounts[o.userId] || 0) + 1;
+    });
+    const uniqueUsers = Object.keys(userOrderCounts).length;
+    const repeatUsers = Object.values(userOrderCounts).filter(count => count > 1).length;
+    const retentionRate = uniqueUsers === 0 ? 0 : Math.round((repeatUsers / uniqueUsers) * 100);
+
+    // 4. Calculate SEO Readiness Score
+    let seoScore = 0;
+    if (ctx.vendor.logo) seoScore += 25;
+    if (ctx.vendor.coverImage) seoScore += 25;
+    if (ctx.vendor.description && ctx.vendor.description.length > 50) seoScore += 25;
+    const productsCount = await ctx.prisma.product.count({ where: { vendorId: ctx.vendor.id, isActive: true } });
+    if (productsCount >= 5) seoScore += 25;
 
     const dailySeries = Array.from({ length: 14 }, (_, i) => {
       const d = new Date(fourteenDaysAgo);
@@ -467,7 +524,12 @@ export const orderRouter = createTRPCRouter({
         name: item.name,
         quantity: item._sum.quantity || 0,
         revenue: item._sum.total || 0
-      }))
+      })),
+      // Elite Analytics
+      growthRate,
+      avgFulfillmentMinutes,
+      retentionRate,
+      seoScore
     };
   }),
 

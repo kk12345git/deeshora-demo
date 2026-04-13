@@ -195,16 +195,19 @@ export default function VendorDashboardPage() {
       </div>
 
       {/* Action Banners */}
-      <div className="grid gap-4">
+      <div className="grid lg:grid-cols-2 gap-4">
         {(stats?.pendingPayout ?? 0) > 0 && (
           <div className="flex items-center gap-4 bg-emerald-50 border border-emerald-100 px-6 py-5 rounded-3xl">
             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-emerald-500 shrink-0">
                <Wallet size={24} />
             </div>
-            <p className="text-sm font-bold text-emerald-700">
-              <span className="font-black text-lg block">₹{stats?.pendingPayout.toLocaleString()}</span>
-              Ready for next payout cycle.
-            </p>
+            <div className="flex-1">
+              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Settlement Pending</p>
+              <p className="text-sm font-bold text-emerald-700">
+                <span className="font-black text-lg block text-emerald-900">₹{stats?.pendingPayout.toLocaleString()}</span>
+                Ready for next payout cycle.
+              </p>
+            </div>
           </div>
         )}
         {(stats?.pendingOrders ?? 0) > 0 && (
@@ -232,15 +235,16 @@ export default function VendorDashboardPage() {
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-2">
                   <BarChart3 size={12} className="text-orange-500" /> Revenue Growth
                 </p>
-                <h3 className="text-4xl font-black text-gray-900 mt-2 tracking-tighter">
-                  ₹{fourteenDayRevenue.toLocaleString()}
-                </h3>
-                <p className="text-xs font-bold text-gray-400 mt-1">Gross sales over the last 14 days</p>
-              </div>
-              <div className="text-right">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 shadow-sm">
-                   <ArrowUpRight size={10} /> {stats?.dailySeries.filter(d => d.revenue > 0).length} Active Days
+                <div className="flex items-baseline gap-3 mt-2">
+                  <h3 className="text-4xl font-black text-gray-900 tracking-tighter">
+                    ₹{fourteenDayRevenue.toLocaleString()}
+                  </h3>
+                  <div className={`px-2 py-1 rounded-lg text-[10px] font-black flex items-center gap-1 ${(stats?.growthRate ?? 0) >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                    {(stats?.growthRate ?? 0) >= 0 ? <TrendingUp size={10} /> : <TrendingUp size={10} className="rotate-180" />}
+                    {stats?.growthRate ?? 0}%
+                  </div>
                 </div>
+                <p className="text-xs font-bold text-gray-400 mt-1">Gross sales over the last 14 days</p>
               </div>
             </div>
             
@@ -251,6 +255,73 @@ export default function VendorDashboardPage() {
                 <p className="text-sm font-bold uppercase tracking-widest">No transaction history</p>
               </div>
             )}
+          </div>
+
+          {/* Advanced Stats Grid */}
+          <div className="grid md:grid-cols-2 gap-6">
+             {/* Speed Card */}
+             <div className="bg-white rounded-[2.5rem] p-8 border border-gray-50 shadow-xl shadow-gray-200/20 flex flex-col justify-between h-56">
+                <div>
+                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Fulfillment Speed</p>
+                   <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 bg-orange-50 text-orange-600 rounded-3xl flex items-center justify-center flex-shrink-0">
+                         <Clock size={28} />
+                      </div>
+                      <div>
+                        <span className="text-3xl font-black text-gray-900">
+                          {stats?.avgFulfillmentMinutes ?? 0}
+                          <span className="text-sm font-bold text-gray-400 ml-1">mins</span>
+                        </span>
+                        <p className="text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1 mt-0.5">
+                           <Zap size={10} /> Elite Performance
+                        </p>
+                      </div>
+                   </div>
+                </div>
+                <p className="text-xs text-gray-400 font-medium leading-relaxed">
+                  Average time from order placement to customer delivery in Thiruvottriyur.
+                </p>
+             </div>
+
+             {/* Retention Card */}
+             <div className="bg-white rounded-[2.5rem] p-8 border border-gray-50 shadow-xl shadow-gray-200/20 flex flex-col justify-between h-56">
+                <div>
+                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Customer Loyalty</p>
+                   <div className="flex items-center gap-4">
+                      <div className="relative w-16 h-16 shrink-0">
+                        <svg className="w-full h-full" viewBox="0 0 36 36">
+                          <path
+                            className="text-gray-100"
+                            strokeDasharray="100, 100"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="text-orange-500"
+                            strokeDasharray={`${stats?.retentionRate ?? 0}, 100`}
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center font-black text-xs">
+                          {stats?.retentionRate ?? 0}%
+                        </div>
+                      </div>
+                      <div>
+                        <p className="font-black text-gray-900 text-lg leading-tight uppercase">Repeat Buyers</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Community Trust Level</p>
+                      </div>
+                   </div>
+                </div>
+                <p className="text-xs text-gray-400 font-medium leading-relaxed">
+                  Neighbors who ordered from your shop more than once.
+                </p>
+             </div>
           </div>
 
           {/* Top Products */}
@@ -277,7 +348,7 @@ export default function VendorDashboardPage() {
                       </div>
                       <div className="text-right">
                          <p className="font-black text-gray-900 text-sm">₹{p.revenue.toLocaleString()}</p>
-                         <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mt-0.5">Profitable</p>
+                         <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mt-0.5">Highly Profitable</p>
                       </div>
                     </div>
                   ))
@@ -316,6 +387,41 @@ export default function VendorDashboardPage() {
               <div className="mt-10">
                  {sparklineData.length > 0 && <Sparkline data={sparklineData} color="#f97316" />}
                  <p className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em] mt-3 text-center">14-day pulse monitor</p>
+              </div>
+           </div>
+
+           {/* SEO Visibility Score */}
+           <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl shadow-gray-200/20">
+              <div className="flex items-center justify-between mb-6">
+                 <div>
+                    <h4 className="text-sm font-black uppercase tracking-tight">SEO Presence</h4>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Search discoverability</p>
+                 </div>
+                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xs ${(stats?.seoScore ?? 0) >= 75 ? 'bg-emerald-500' : 'bg-orange-500'}`}>
+                    {stats?.seoScore ?? 0}%
+                 </div>
+              </div>
+              
+              <div className="space-y-3">
+                 {[
+                   { label: 'Branding Logo', complete: !!vendorProfile?.logo },
+                   { label: 'Store Bio (50+ words)', complete: (vendorProfile?.description?.length || 0) > 50 },
+                   { label: 'Cover Art', complete: !!vendorProfile?.coverImage },
+                   { label: 'Active Catalog (5+ Items)', complete: (vendorProfile?._count.products || 0) >= 5 },
+                 ].map(item => (
+                    <div key={item.label} className="flex items-center gap-3">
+                       <div className={`w-5 h-5 rounded-md flex items-center justify-center border-2 ${item.complete ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-100 text-gray-200'}`}>
+                          {item.complete && <CheckCircle size={10} />}
+                       </div>
+                       <span className={`text-[11px] font-bold ${item.complete ? 'text-gray-900' : 'text-gray-300'}`}>{item.label}</span>
+                    </div>
+                 ))}
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-gray-50">
+                 <p className="text-[10px] text-gray-400 font-medium leading-relaxed uppercase">
+                    Our AI Agents require these to feature your shop in local searches.
+                 </p>
               </div>
            </div>
 

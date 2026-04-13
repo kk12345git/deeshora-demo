@@ -19,12 +19,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://deeshora.com'),
   title: {
-    default: "Deeshora - Your Local Delivery Partner",
+    default: "Deeshora - Instant Delivery in Thiruvottriyur, Chennai",
     template: "%s | Deeshora"
   },
-  description: "Hyperlocal delivery platform connecting local shops with customers. Instant delivery in minutes across India.",
-  keywords: ["hyperlocal delivery", "delivery app", "local shops", "instant delivery", "grocery delivery", "deeshora"],
+  description: "Shop local, get it now. Deeshora is Thiruvottriyur's favorite delivery platform connecting you with neighborhood shops for groceries, food, and essentials in minutes.",
+  keywords: ["Thiruvottriyur delivery", "Chennai local shops", "instant delivery Chennai", "grocery delivery Thiruvottriyur", "Deeshora Chennai", "hyperlocal marketplace"],
   authors: [{ name: "Deeshora Team" }],
   creator: "Deeshora Inc.",
   publisher: "Deeshora Inc.",
@@ -37,23 +38,23 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_IN",
     url: "https://deeshora.com",
-    title: "Deeshora - Your Local Delivery Partner",
-    description: "The fastest way to get items from your local neighborhood shops delivered.",
+    title: "Deeshora - Your Local Delivery Partner in Chennai",
+    description: "The fastest way to get items from your local neighborhood shops delivered in Thiruvottriyur and across North Chennai.",
     siteName: "Deeshora",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/og-main.jpg",
         width: 1200,
         height: 630,
-        alt: "Deeshora - Local Commerce Platform",
+        alt: "Deeshora - Local Commerce Platform Chennai",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Deeshora - Instant Local Delivery",
-    description: "Your city's shops, delivered fast.",
-    images: ["/twitter-image.jpg"],
+    title: "Deeshora - Instant Delivery in Thiruvottriyur",
+    description: "Your city's shops, delivered fast to your doorstep.",
+    images: ["/og-main.jpg"],
     creator: "@deeshora",
   },
   icons: {
