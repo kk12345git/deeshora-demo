@@ -16,6 +16,7 @@ export default function NewProductPage() {
 
   const [images, setImages] = useState<{ file: File; preview: string; base64: string }[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [form, setForm] = useState({
     name: '', description: '', price: '', mrp: '',
     stock: '', unit: 'kg', categoryId: '', isFeatured: false,
     gstRate: '0',
