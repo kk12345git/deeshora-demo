@@ -8,10 +8,25 @@ import Image from 'next/image';
 import { ShoppingBag, CheckCircle, Truck, ArrowRight, Star, MapPin, Loader2, X } from 'lucide-react';
 import ProductCard from '@/components/customer/ProductCard';
 import CitySelector from '@/components/customer/CitySelector';
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
   const [selectedCity, setSelectedCity] = useState<string | undefined>(undefined);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { user, isLoaded: isUserLoaded } = useUser();
+  const router = useRouter();
+
+  // Auto-redirect admins and vendors to their dashboards
+  useEffect(() => {
+    if (!isUserLoaded) return;
+    const role = user?.publicMetadata?.role as string | undefined;
+    if (role === 'ADMIN') {
+      router.replace('/admin');
+    } else if (role === 'VENDOR') {
+      router.replace('/vendor/dashboard');
+    }
+  }, [user, isUserLoaded, router]);
 
   useEffect(() => {
     const savedCity = localStorage.getItem("deeshora_city");
@@ -30,7 +45,16 @@ export default function HomePage() {
     city: selectedCity 
   });
 
-  if (!isLoaded) return null;
+  // Show spinner while checking role to prevent flash of customer page
+  if (!isLoaded || !isUserLoaded) return null;
+  const role = user?.publicMetadata?.role as string | undefined;
+  if (role === 'ADMIN' || role === 'VENDOR') {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-0">

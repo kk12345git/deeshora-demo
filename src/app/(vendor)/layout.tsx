@@ -29,7 +29,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
     );
   }
 
-  if (isLoaded && user?.publicMetadata.role !== "VENDOR") {
+  if (isLoaded && user?.publicMetadata.role !== "VENDOR" && user?.publicMetadata.role !== "ADMIN") {
     router.push('/');
     return null;
   }

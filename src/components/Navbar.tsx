@@ -88,6 +88,18 @@ export default function Navbar() {
               <span>{city}</span>
             </div>
 
+            {/* Role-based dashboard quick links (Desktop) */}
+            {isSignedIn && user?.publicMetadata?.role === 'ADMIN' && (
+              <Link href="/admin" className="hidden md:flex items-center gap-2 text-xs font-black text-white bg-gray-900 hover:bg-gray-700 px-4 py-2.5 rounded-2xl transition-colors">
+                <LayoutDashboard size={14} /> Admin
+              </Link>
+            )}
+            {isSignedIn && user?.publicMetadata?.role === 'VENDOR' && (
+              <Link href="/vendor/dashboard" className="hidden md:flex items-center gap-2 text-xs font-black text-white bg-orange-500 hover:bg-orange-600 px-4 py-2.5 rounded-2xl transition-colors">
+                <Store size={14} /> Vendor
+              </Link>
+            )}
+
             <Link href="/cart" className="relative w-10 md:w-11 h-10 md:h-11 flex items-center justify-center rounded-2xl hover:bg-gray-100 transition-colors text-gray-700">
               <ShoppingCart size={20} strokeWidth={2} />
               {cart.itemCount() > 0 && (
