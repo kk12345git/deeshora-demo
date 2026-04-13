@@ -6,7 +6,7 @@ import { useUser, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, ShoppingCart, Settings, Loader2, Menu, X, Store } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Settings, Loader2, Menu, X, Store, FileText } from "lucide-react";
 
 const navItems = [
   { name: "Summary", href: "/vendor/dashboard", icon: LayoutDashboard },
