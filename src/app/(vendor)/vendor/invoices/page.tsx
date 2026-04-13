@@ -3,11 +3,18 @@
 
 import { trpc } from '@/lib/trpc';
 import Link from 'next/link';
-import { FileText, Search, IndianRupee, Printer, ExternalLink, Loader2, Calendar, ShoppingBag } from 'lucide-react';
-import { useState } from 'react';
+import { FileText, Search, IndianRupee, Printer, ExternalLink, Loader2, Calendar, ShoppingBag, Send } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { getWhatsAppUrl, WHATSAPP_TEMPLATES } from '@/lib/whatsapp';
 
 export default function VendorInvoicesPage() {
   const [search, setSearch] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
+
+  useEffect(() => {
+    setBaseUrl(window.location.origin);
+  }, []);
+
   const { data, isLoading } = trpc.order.vendorOrdersList.useQuery({ limit: 50 });
 
   const filteredOrders = data?.orders.filter(order => 
@@ -97,6 +104,25 @@ export default function VendorInvoicesPage() {
                       >
                         <Printer size={14} /> Print
                       </Link>
+
+                      {order.user.phone && (
+                        <a
+                          href={getWhatsAppUrl(
+                            order.user.phone, 
+                            WHATSAPP_TEMPLATES.INVOICE_SHARE(
+                              order.id, 
+                              order.vendor?.shopName || 'Deeshora', 
+                              `${baseUrl}/vendor/invoices/${order.id}`
+                            )
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                        >
+                          <Send size={14} /> Share
+                        </a>
+                      )}
+
                       <Link 
                         href={`/vendor/orders/${order.id}`}
                         className="p-3 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-xl transition-all"

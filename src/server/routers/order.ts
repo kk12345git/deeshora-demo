@@ -391,14 +391,14 @@ export const orderRouter = createTRPCRouter({
 
 
   vendorStats: vendorProcedure.query(async ({ ctx }) => {
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    fourteenDaysAgo.setHours(0, 0, 0, 0);
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
-
-    const [stats, todayOrders, pendingOrders, totalRevenue, weeklyOrders, last7DaysOrders] = await Promise.all([
+    const [stats, todayOrders, pendingOrders, totalRevenue, last14DaysOrders, topItems] = await Promise.all([
       ctx.prisma.order.aggregate({
         where: { vendorId: ctx.vendor.id },
         _count: { id: true },
@@ -416,34 +416,41 @@ export const orderRouter = createTRPCRouter({
         where: { vendorId: ctx.vendor.id, paymentStatus: 'PAID' },
         _sum: { vendorAmount: true },
       }),
-      ctx.prisma.order.count({
-        where: { vendorId: ctx.vendor.id, createdAt: { gte: sevenDaysAgo } },
-      }),
-      // Last 7 days of paid orders for sparkline
       ctx.prisma.order.findMany({
         where: {
           vendorId: ctx.vendor.id,
           paymentStatus: 'PAID',
-          createdAt: { gte: sevenDaysAgo },
+          createdAt: { gte: fourteenDaysAgo },
         },
         select: { createdAt: true, vendorAmount: true },
         orderBy: { createdAt: 'asc' },
       }),
+      ctx.prisma.orderItem.groupBy({
+        by: ['productId', 'name'],
+        where: {
+          order: {
+            vendorId: ctx.vendor.id,
+            paymentStatus: 'PAID',
+            createdAt: { gte: fourteenDaysAgo }
+          }
+        },
+        _sum: { quantity: true, total: true },
+        orderBy: { _sum: { quantity: 'desc' } },
+        take: 5
+      }),
     ]);
 
-    // Build 7-day series (Mon–Sun / today–6 days ago)
-    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const dailySeries = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(sevenDaysAgo);
+    const dailySeries = Array.from({ length: 14 }, (_, i) => {
+      const d = new Date(fourteenDaysAgo);
       d.setDate(d.getDate() + i);
       const nextD = new Date(d);
       nextD.setDate(nextD.getDate() + 1);
-      const dayOrders = last7DaysOrders.filter(o => {
+      const dayOrders = last14DaysOrders.filter(o => {
         const t = new Date(o.createdAt);
         return t >= d && t < nextD;
       });
       return {
-        day: dayLabels[d.getDay()],
+        date: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
         revenue: dayOrders.reduce((s, o) => s + o.vendorAmount, 0),
         orders: dayOrders.length,
       };
@@ -455,8 +462,12 @@ export const orderRouter = createTRPCRouter({
       pendingOrders,
       totalRevenue: totalRevenue._sum.vendorAmount ?? 0,
       pendingPayout: ctx.vendor.pendingPayout,
-      weeklyOrders,
       dailySeries,
+      topProducts: topItems.map(item => ({
+        name: item.name,
+        quantity: item._sum.quantity || 0,
+        revenue: item._sum.total || 0
+      }))
     };
   }),
 
@@ -502,7 +513,8 @@ export const orderRouter = createTRPCRouter({
         where: { vendorId: ctx.vendor.id, paymentStatus: 'PAID' },
         include: {
           items: true,
-          user: { select: { name: true, email: true } },
+          user: { select: { name: true, phone: true, email: true } },
+          vendor: { select: { shopName: true } },
         },
         cursor: cursor ? { id: cursor } : undefined,
         orderBy: { createdAt: 'desc' },

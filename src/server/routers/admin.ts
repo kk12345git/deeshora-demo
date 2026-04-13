@@ -629,4 +629,45 @@ export const adminRouter = createTRPCRouter({
 
       return updated;
     }),
+
+  /** GST and Tax Reporting */
+  gstReport: adminProcedure
+    .input(z.object({ period: z.enum(['MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'ANNUAL']).default('MONTHLY') }))
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+      let since: Date;
+      switch (input.period) {
+        case 'QUARTERLY':   since = new Date(now.getFullYear(), now.getMonth() - 2, 1); break;
+        case 'HALF_YEARLY': since = new Date(now.getFullYear(), now.getMonth() - 5, 1); break;
+        case 'ANNUAL':      since = new Date(now.getFullYear() - 1, now.getMonth(), 1); break;
+        default:            since = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+
+      const items = await ctx.prisma.orderItem.findMany({
+        where: { order: { paymentStatus: 'PAID', createdAt: { gte: since } } },
+        include: { order: { select: { id: true, total: true, vendor: { select: { id: true, shopName: true, gstNumber: true } } } } }
+      });
+
+      const vendorMap: Record<string, { shopName: string; gstNumber: string; taxableAmount: number; gstAmount: number; total: number }> = {};
+      let totalGst = 0;
+      let totalTaxable = 0;
+
+      items.forEach(item => {
+        const v = item.order.vendor;
+        if (!vendorMap[v.id]) {
+          vendorMap[v.id] = { shopName: v.shopName, gstNumber: v.gstNumber || 'No GSTIN', taxableAmount: 0, gstAmount: 0, total: 0 };
+        }
+        const taxable = item.price * item.quantity;
+        vendorMap[v.id].taxableAmount += taxable;
+        vendorMap[v.id].gstAmount += item.gstAmount;
+        vendorMap[v.id].total += (taxable + item.gstAmount);
+        totalGst += item.gstAmount;
+        totalTaxable += taxable;
+      });
+
+      return {
+        summary: { totalGst, totalTaxable, period: input.period, vendorsCount: Object.keys(vendorMap).length },
+        vendors: Object.values(vendorMap).sort((a, b) => b.gstAmount - a.gstAmount)
+      };
+    }),
 });

@@ -6,7 +6,7 @@ import { useUser, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Store, ShoppingCart, CreditCard, Settings, Loader2, Menu, X, Package, MapPin, Tag, BarChart2 } from "lucide-react";
+import { LayoutDashboard, Users, Store, ShoppingCart, CreditCard, Settings, Loader2, Menu, X, Package, MapPin, Tag, BarChart2, FileText } from "lucide-react";
 
 const navItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -15,6 +15,7 @@ const navItems = [
   { name: "Products",  href: "/admin/products", icon: Package },
   { name: "Users",     href: "/admin/users",    icon: Users },
   { name: "Orders",    href: "/admin/orders",   icon: ShoppingCart },
+  { name: "Tax Center",href: "/admin/tax",     icon: FileText },
   { name: "Payouts",   href: "/admin/payouts",  icon: CreditCard },
   { name: "Coupons",   href: "/admin/coupons",  icon: Tag },
   { name: "Coverage",  href: "/admin/coverage", icon: MapPin },

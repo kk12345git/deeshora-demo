@@ -8,10 +8,11 @@ import { OrderStatus } from '@prisma/client';
 import { OrderStatusBadge } from '@/components/customer/OrderStatus';
 import {
   Phone, MapPin, Loader2, Bell, ChevronDown, Package, Clock,
-  CheckCircle, Truck, ShoppingBag, XCircle, IndianRupee, RefreshCw, FileText,
+  CheckCircle, Truck, ShoppingBag, XCircle, IndianRupee, RefreshCw, FileText, Send
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { getWhatsAppUrl, WHATSAPP_TEMPLATES } from '@/lib/whatsapp';
 
 const STATUS_CONFIG: Record<OrderStatus | 'ALL', { label: string; color: string; next?: OrderStatus; nextLabel?: string }> = {
   ALL:              { label: 'All Orders',      color: 'gray' },
@@ -210,11 +211,33 @@ export default function VendorOrdersPage() {
                             {order.address.line1}{order.address.line2 ? `, ${order.address.line2}` : ''}<br/>
                             {order.address.city} - {order.address.pincode}
                           </p>
-                          {order.user.phone && (
-                            <a href={`tel:${order.user.phone}`} className="text-xs flex items-center gap-1.5 text-orange-600 font-bold hover:text-orange-700">
-                              <Phone size={12} /> {order.user.phone}
-                            </a>
-                          )}
+                          <div className="flex flex-wrap gap-2 mt-2">
+                             {order.user.phone && (
+                                <>
+                                  <a href={`tel:${order.user.phone}`} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-gray-200 transition-all">
+                                    <Phone size={12} /> {order.user.phone}
+                                  </a>
+                                  
+                                  <a 
+                                    href={getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES.ORDER_UPDATE(order.id, order.status, vendorProfile?.shopName || 'Deeshora'))}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-100 transition-all"
+                                  >
+                                    <Send size={12} /> Notify
+                                  </a>
+
+                                  <a 
+                                    href={getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES.LOCATION_REQUEST(order.id, vendorProfile?.shopName || 'Deeshora'))}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-blue-100 transition-all"
+                                  >
+                                    <MapPin size={12} /> Get Location
+                                  </a>
+                                </>
+                             )}
+                          </div>
                           {order.notes && (
                             <div className="p-2.5 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-700">
                               💬 Note: {order.notes}
