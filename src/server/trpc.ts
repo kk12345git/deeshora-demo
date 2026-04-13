@@ -4,6 +4,13 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import superjson from 'superjson';
 import prisma from '@/lib/prisma';
 import { User } from '@prisma/client';
+import { clerkClient } from '@clerk/nextjs/server';
+
+
+const ADMIN_EMAILS = [
+  'deeshorasupport@gmail.com',
+  'karthigeyanbs44@gmail.com'
+];
 
 
 export const createTRPCContext = async (opts: { headers: Headers }) => {
@@ -28,7 +35,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
           const lastName = clerkUser.lastName ?? '';
           const name = `${firstName} ${lastName}`.trim() || email.split('@')[0];
           
-          const isAdmin = email.toLowerCase() === 'deeshorasupport@gmail.com';
+          const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
           
           user = await prisma.user.upsert({
             where: { clerkId: userId },
@@ -43,6 +50,14 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
               role: isAdmin ? 'ADMIN' : undefined,
             },
           });
+
+          // Sync with Clerk metadata to prevent redirection in AdminLayout
+          if (isAdmin) {
+            const clerk = await clerkClient();
+            await clerk.users.updateUserMetadata(userId, {
+              publicMetadata: { role: 'ADMIN' }
+            });
+          }
 
           // If admin, ensure they have a vendor profile to upload products
           if (isAdmin) {
@@ -68,11 +83,17 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
       }
     } else {
       // Logic for existing users who might have just been designated as admin
-      const isAdmin = user.email.toLowerCase() === 'deeshorasupport@gmail.com';
+      const isAdmin = ADMIN_EMAILS.includes(user.email.toLowerCase());
       if (isAdmin && user.role !== 'ADMIN') {
         user = await prisma.user.update({
           where: { id: user.id },
           data: { role: 'ADMIN' },
+        });
+
+        // Sync with Clerk metadata
+        const clerk = await clerkClient();
+        await clerk.users.updateUserMetadata(userId, {
+          publicMetadata: { role: 'ADMIN' }
         });
         
         // Ensure vendor profile for existing user

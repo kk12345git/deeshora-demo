@@ -62,11 +62,20 @@ export async function POST(req: Request) {
 
   if (eventType === 'user.created') {
     const { id, email_addresses, first_name, last_name, image_url } = evt.data;
-    await prisma.user.create({
-      data: {
+    const email = email_addresses[0]?.email_address;
+    const name = `${first_name ?? ''} ${last_name ?? ''}`.trim() || email?.split('@')[0] || 'User';
+
+    await prisma.user.upsert({
+      where: { clerkId: id },
+      create: {
         clerkId: id,
-        email: email_addresses[0].email_address,
-        name: `${first_name} ${last_name}`,
+        email: email,
+        name,
+        avatar: image_url,
+      },
+      update: {
+        email: email,
+        name,
         avatar: image_url,
       },
     });
@@ -76,11 +85,14 @@ export async function POST(req: Request) {
 
   if (eventType === 'user.updated') {
     const { id, email_addresses, first_name, last_name, image_url } = evt.data;
+    const email = email_addresses[0]?.email_address;
+    const name = `${first_name ?? ''} ${last_name ?? ''}`.trim() || email?.split('@')[0] || 'User';
+
     await prisma.user.update({
       where: { clerkId: id },
       data: {
-        email: email_addresses[0].email_address,
-        name: `${first_name} ${last_name}`,
+        email: email,
+        name,
         avatar: image_url,
       },
     });
