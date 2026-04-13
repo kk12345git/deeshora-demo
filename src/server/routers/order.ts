@@ -64,8 +64,8 @@ export const orderRouter = createTRPCRouter({
 
 
       const config = await ctx.prisma.siteConfig.findMany();
-      const deliveryFeeConfig = config.find(c => c.key === 'delivery_fee');
-      const freeDeliveryConfig = config.find(c => c.key === 'free_delivery_above');
+      const deliveryFeeConfig = config.find((c: any) => c.key === 'delivery_fee');
+      const freeDeliveryConfig = config.find((c: any) => c.key === 'free_delivery_above');
       const baseDeliveryFee = deliveryFeeConfig ? parseFloat(deliveryFeeConfig.value) : 40;
       const freeDeliveryThreshold = freeDeliveryConfig ? parseFloat(freeDeliveryConfig.value) : 299;
 

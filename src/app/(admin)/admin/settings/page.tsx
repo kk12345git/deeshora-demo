@@ -37,10 +37,10 @@ export default function AdminSettingsPage() {
   if (isLoading) return <div className="flex justify-center"><Loader2 className="animate-spin" /></div>;
 
 
-  const deliveryFee = config?.find(c => c.key === 'delivery_fee')?.value || '40';
-  const freeDeliveryAbove = config?.find(c => c.key === 'free_delivery_above')?.value || '299';
-  const businessWhatsapp = config?.find(c => c.key === 'business_whatsapp')?.value || '8939318865';
-  const deliveryPartners = config?.find(c => c.key === 'delivery_partners')?.value || '';
+  const deliveryFee = config?.find((c: any) => c.key === 'delivery_fee')?.value || '40';
+  const freeDeliveryAbove = config?.find((c: any) => c.key === 'free_delivery_above')?.value || '299';
+  const businessWhatsapp = config?.find((c: any) => c.key === 'business_whatsapp')?.value || '8939318865';
+  const deliveryPartners = config?.find((c: any) => c.key === 'delivery_partners')?.value || '';
 
 
   return (

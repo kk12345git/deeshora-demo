@@ -257,7 +257,7 @@ export default function VendorOrdersPage() {
                               <div className="flex flex-col gap-2">
                                 <button
                                   onClick={() => {
-                                    const partners = config?.find(c => c.key === 'delivery_partners')?.value?.split(',').map(s => s.trim()).filter(Boolean) || [];
+                                    const partners = config?.find((c: any) => c.key === 'delivery_partners')?.value?.split(',').map((s: string) => s.trim()).filter(Boolean) || [];
                                     const partnerNumber = partners[0] || '918939318865'; 
                                     
                                     const message = `🛵 *NEW DELIVERY ORDER*\n\n*Shop:* ${vendorProfile?.shopName}\n*Order:* #${order.id.slice(-8).toUpperCase()}\n*Customer:* ${order.user.name}\n*Phone:* ${order.user.phone}\n*Address:* ${order.address.line1}, ${order.address.city}\n*Total:* ₹${order.total}\n*Pay Status:* ${order.paymentStatus}\n\n*Delivery Note:* ${order.notes || 'None'}\n\nPlease deliver this order! 🚀`;

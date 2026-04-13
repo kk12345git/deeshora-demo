@@ -20,8 +20,8 @@ export default function CartPage() {
 
   useEffect(() => {
     if (config) {
-      const fee = config.find(c => c.key === 'delivery_fee')?.value;
-      const threshold = config.find(c => c.key === 'free_delivery_above')?.value;
+      const fee = config.find((c: any) => c.key === 'delivery_fee')?.value;
+      const threshold = config.find((c: any) => c.key === 'free_delivery_above')?.value;
       if (fee) setDeliveryFee(parseFloat(fee));
       if (threshold) setFreeDeliveryThreshold(parseFloat(threshold));
     }

@@ -196,7 +196,7 @@ export default function OrderTrackingPage() {
       setIsRedirecting(true);
       
       const handleWhatsAppRedirect = async () => {
-        const businessNumber = config?.find(c => c.key === 'business_whatsapp')?.value || '918939318865';
+        const businessNumber = config?.find((c: any) => c.key === 'business_whatsapp')?.value || '918939318865';
         let locationMsg = "Location not shared.";
 
         try {
