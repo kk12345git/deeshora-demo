@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
+import { uploadImage } from '@/lib/cloudinary';
 
 /** Check DB for serviceability — falls back to false if not found */
 async function checkServiceable(prisma: any, area: string | null | undefined): Promise<boolean> {
@@ -53,15 +54,28 @@ export const userRouter = createTRPCRouter({
         area: z.string().optional(),
         pincode: z.string().regex(/^\d{6}$/, 'Enter a valid 6-digit pincode').optional().or(z.literal('')),
         landmark: z.string().optional(),
+        avatar: z.string().startsWith('data:image/').optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const data = Object.fromEntries(
-        Object.entries(input).filter(([, v]) => v !== undefined)
+      let avatarUrl: string | undefined = undefined;
+      if (input.avatar) {
+        avatarUrl = await uploadImage(input.avatar, 'users/avatars');
+      }
+
+      const data = {
+        ...input,
+        avatar: avatarUrl ?? undefined,
+      };
+
+      // Filter out undefined values to satisfy Prisma
+      const filteredData = Object.fromEntries(
+        Object.entries(data).filter(([, v]) => v !== undefined)
       );
+
       const updated = await ctx.prisma.user.update({
         where: { id: ctx.user.id },
-        data,
+        data: filteredData,
       });
       return updated;
     }),

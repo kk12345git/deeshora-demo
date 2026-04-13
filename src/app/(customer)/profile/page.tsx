@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { trpc } from '@/lib/trpc';
+import toast from 'react-hot-toast';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -47,6 +48,7 @@ export default function MySpacePage() {
   const [editData, setEditData] = useState<Record<string, string>>({});
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
 
   const { data: profile, isLoading, refetch } = trpc.user.me.useQuery(undefined, { retry: false });
   const { data: serviceAreas = [] } = trpc.admin.getServiceAreas.useQuery();
@@ -56,10 +58,31 @@ export default function MySpacePage() {
     onSuccess: () => {
       refetch();
       setEditSection(null);
+      setAvatarBase64(null);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     },
+    onError: (err) => toast.error(err.message),
   });
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image too large! Max 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setAvatarBase64(base64);
+      // Auto-save avatar when selected
+      updateProfile.mutate({ avatar: base64 });
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     if (profile && !profile.isOnboarded) {
@@ -117,6 +140,8 @@ export default function MySpacePage() {
     updateProfile.mutate(editData as Parameters<typeof updateProfile.mutate>[0]);
   };
 
+  const displayAvatar = avatarBase64 || profile.avatar || clerkUser?.imageUrl;
+
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       <OnboardingModal
@@ -134,15 +159,28 @@ export default function MySpacePage() {
         <div className="container mx-auto px-4 pt-10 pb-24 relative z-10">
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6">
             {/* Avatar */}
-            <div className="relative flex-shrink-0">
-              <div className="w-28 h-28 rounded-[2rem] overflow-hidden border-4 border-white/10 shadow-2xl">
-                {clerkUser?.imageUrl ? (
-                  <Image src={clerkUser.imageUrl} alt={profile.name} width={112} height={112} className="w-full h-full object-cover" />
+            <div className="relative flex-shrink-0 group">
+              <div className="w-28 h-28 rounded-[2rem] overflow-hidden border-4 border-white/10 shadow-2xl relative">
+                {displayAvatar ? (
+                  <Image src={displayAvatar} alt={profile.name} width={112} height={112} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center">
                     <span className="text-4xl font-black text-white">{profile.name.charAt(0)}</span>
                   </div>
                 )}
+                
+                {/* Edit overlay */}
+                <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                   {updateProfile.isPending ? (
+                      <Loader2 className="text-white animate-spin" size={24} />
+                   ) : (
+                      <div className="flex flex-col items-center gap-1">
+                         <Camera className="text-white" size={24} />
+                         <span className="text-[10px] text-white font-black tracking-widest uppercase">Edit</span>
+                      </div>
+                   )}
+                   <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} disabled={updateProfile.isPending} />
+                </label>
               </div>
               {/* Loyalty tier badge */}
               <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-gradient-to-r ${tier.color} px-3 py-1 rounded-full shadow-lg`}>
