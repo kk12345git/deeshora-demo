@@ -515,4 +515,22 @@ export const orderRouter = createTRPCRouter({
       }
       return { orders, nextCursor };
     }),
+
+  vendorOrderById: vendorProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const order = await ctx.prisma.order.findFirst({
+        where: { id: input.id, vendorId: ctx.vendor.id },
+        include: {
+          items: true,
+          user: { select: { name: true, email: true, phone: true } },
+          address: true,
+          vendor: true,
+        },
+      });
+      if (!order) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
+      }
+      return order;
+    }),
 });
