@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createTRPCRouter, adminProcedure, publicProcedure } from '@/server/trpc';
+import { createTRPCRouter, adminProcedure, publicProcedure, protectedProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { VendorStatus, UserRole, OrderStatus } from '@prisma/client';
 import { uploadImage } from '@/lib/cloudinary';
