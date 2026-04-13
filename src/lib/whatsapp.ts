@@ -20,4 +20,7 @@ export const WHATSAPP_TEMPLATES = {
 
   LOCATION_REQUEST: (orderId: string, shopName: string) =>
     `Hello! This is ${shopName}. We are preparing your order #${orderId.slice(-8).toUpperCase()}. Could you please share your live location for faster delivery?`,
+
+  GENERAL_INQUIRY: (shopName: string) =>
+    `Hello! I'm interested in shopping from ${shopName}. Could you please help me with some details?`,
 };
