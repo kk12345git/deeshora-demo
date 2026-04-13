@@ -133,9 +133,9 @@ export default function VendorInvoicePrintPage() {
             <p className="text-sm font-black text-gray-800">{user.name}</p>
             {address && (
               <p className="text-sm font-bold text-gray-500 leading-relaxed mt-1">
-                {address.addressLine1}, {address.addressLine2 && <>{address.addressLine2},</>}<br />
-                {address.city}, {address.state} - {address.postalCode}<br />
-                Phone: {address.phone}
+                {address.line1}, {address.line2 && <>{address.line2},</>}<br />
+                {address.city}, {address.state} - {address.pincode}<br />
+                Phone: {user.phone}
               </p>
             )}
           </div>
