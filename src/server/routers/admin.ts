@@ -244,6 +244,14 @@ export const adminRouter = createTRPCRouter({
   }),
 
 
+  getSettings: protectedProcedure.query(async ({ ctx }) => {
+    const keys = ['business_whatsapp', 'delivery_partners', 'delivery_fee', 'free_delivery_above'];
+    return ctx.prisma.siteConfig.findMany({
+      where: { key: { in: keys } },
+    });
+  }),
+
+
   updateConfig: adminProcedure
     .input(
       z.object({
@@ -252,9 +260,10 @@ export const adminRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.prisma.siteConfig.update({
+      return ctx.prisma.siteConfig.upsert({
         where: { key: input.key },
-        data: { value: input.value },
+        create: { key: input.key, value: input.value },
+        update: { value: input.value },
       });
     }),
 

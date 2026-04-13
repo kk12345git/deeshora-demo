@@ -130,7 +130,7 @@ export default function CheckoutPage() {
           if (verificationResult.success) {
             toast.success('Payment successful! Your order is confirmed.');
             clearCart();
-            router.push(`/orders/${verificationResult.orderIds[0]}`);
+            router.push(`/orders/${verificationResult.orderIds[0]}?success=true`);
           } else {
             toast.error('Payment verification failed. Please contact support.');
           }
@@ -284,6 +284,26 @@ export default function CheckoutPage() {
                 <span className="text-xl font-extrabold">₹{Math.max(0, total() - (appliedCoupon?.discount ?? 0)).toFixed(2)}</span>
               </div>
             </div>
+
+            {/* Bank Details */}
+            <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Official Bank Details</h3>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Bank</span>
+                  <span className="font-semibold text-gray-800">BOB (Bank of Baroda)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Account No</span>
+                  <span className="font-mono font-bold text-orange-600">24760200001534</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">IFSC CODE</span>
+                  <span className="font-mono font-bold text-gray-800">BARB0WIMNAG</span>
+                </div>
+              </div>
+            </div>
+
             <button
               onClick={handlePayment}
               disabled={isPlacingOrder || items.length === 0}

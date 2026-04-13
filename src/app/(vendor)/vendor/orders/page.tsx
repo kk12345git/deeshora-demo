@@ -33,6 +33,7 @@ export default function VendorOrdersPage() {
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
 
   const { data: vendorProfile } = trpc.vendor.myProfile.useQuery();
+  const { data: config } = trpc.admin.getSettings.useQuery();
   const queryInput = activeTab === 'ALL' ? { limit: 50 } : { limit: 50, status: activeTab };
   const { data, isLoading, refetch } = trpc.order.vendorOrders.useQuery(queryInput);
 
@@ -247,6 +248,38 @@ export default function VendorOrdersPage() {
                           )}
                           {['DELIVERED', 'CANCELLED'].includes(order.status) && (
                             <p className="text-center text-xs text-gray-400 py-2">Order {order.status.toLowerCase()}</p>
+                          )}
+
+                          {/* WhatsApp Coordination */}
+                          {['CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY'].includes(order.status) && (
+                            <div className="pt-2 border-t border-gray-100 mt-2">
+                              <p className="text-[10px] font-black uppercase text-gray-400 mb-2">WhatsApp Coordination</p>
+                              <div className="flex flex-col gap-2">
+                                <button
+                                  onClick={() => {
+                                    const partners = config?.find(c => c.key === 'delivery_partners')?.value?.split(',').map(s => s.trim()).filter(Boolean) || [];
+                                    const partnerNumber = partners[0] || '918939318865'; 
+                                    
+                                    const message = `🛵 *NEW DELIVERY ORDER*\n\n*Shop:* ${vendorProfile?.shopName}\n*Order:* #${order.id.slice(-8).toUpperCase()}\n*Customer:* ${order.user.name}\n*Phone:* ${order.user.phone}\n*Address:* ${order.address.line1}, ${order.address.city}\n*Total:* ₹${order.total}\n*Pay Status:* ${order.paymentStatus}\n\n*Delivery Note:* ${order.notes || 'None'}\n\nPlease deliver this order! 🚀`;
+                                    
+                                    window.open(`https://wa.me/${partnerNumber}?text=${encodeURIComponent(message)}`, '_blank');
+                                  }}
+                                  className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20"
+                                >
+                                  <Phone size={14} fill="currentColor" /> Send to Partner
+                                </button>
+                                
+                                <button
+                                  onClick={() => {
+                                    const message = `Hi ${order.user.name.split(' ')[0]}! 🌟\n\nThank you for ordering from *${vendorProfile?.shopName}* (via Deeshora)! \n\nYour order #${order.id.slice(-8).toUpperCase()} is currently *${STATUS_CONFIG[order.status].label}*. We are working hard to deliver it to you! \n\nHave a great day! 🙏`;
+                                    window.open(`https://wa.me/${order.user.phone}?text=${encodeURIComponent(message)}`, '_blank');
+                                  }}
+                                  className="w-full py-2 bg-orange-50 text-orange-600 hover:bg-orange-100 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2"
+                                >
+                                  <Bell size={14} /> Send "Thank You"
+                                </button>
+                              </div>
+                            </div>
                           )}
                         </div>
                       </div>

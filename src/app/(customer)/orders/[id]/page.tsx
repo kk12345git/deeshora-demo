@@ -177,11 +177,64 @@ export default function OrderTrackingPage() {
   const [displayStatus, setDisplayStatus] = useState<OrderStatus | null>(null);
   const [reviewingProductId, setReviewingProductId] = useState<string | null>(null);
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
+  
+  // WhatsApp Automation State
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const { data: config } = trpc.admin.getConfig.useQuery();
 
   useEffect(() => {
     if (liveStatus) setDisplayStatus(liveStatus);
     else if (order) setDisplayStatus(order.status);
   }, [liveStatus, order]);
+
+  // Handle WhatsApp Auto-Redirect
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const isSuccess = searchParams.get('success') === 'true';
+
+    if (isSuccess && order && !isRedirecting) {
+      setIsRedirecting(true);
+      
+      const handleWhatsAppRedirect = async () => {
+        const businessNumber = config?.find(c => c.key === 'business_whatsapp')?.value || '918939318865';
+        let locationMsg = "Location not shared.";
+
+        try {
+          // Request location
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+          });
+          const { latitude, longitude } = position.coords;
+          locationMsg = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        } catch (err) {
+          console.warn("Location access denied or timed out");
+        }
+
+        const message = `Hi Deeshora! 🌟\n\nI just placed an order!\nOrder ID: #${order.id.slice(-8).toUpperCase()}\nTotal: ₹${order.total.toFixed(0)}\n\nMy Delivery Location:\n${locationMsg}\n\nPlease confirm my order! Thank you! 🙏`;
+        
+        window.location.href = `https://wa.me/${businessNumber}?text=${encodeURIComponent(message)}`;
+      };
+
+      toast((t) => (
+        <div className="flex flex-col gap-2">
+          <p className="font-bold text-sm">Order Confirmed! 🎉</p>
+          <p className="text-xs">Redirecting to WhatsApp to share your location for faster delivery...</p>
+          <button 
+            onClick={() => {
+              toast.dismiss(t.id);
+              handleWhatsAppRedirect();
+            }}
+            className="bg-orange-500 text-white text-xs font-bold py-1.5 rounded-lg mt-1"
+          >
+            Redirect Now
+          </button>
+        </div>
+      ), { duration: 6000 });
+
+      // Auto-trigger after a short delay to allow toast to show
+      setTimeout(handleWhatsAppRedirect, 2000);
+    }
+  }, [order, config, isRedirecting]);
 
   if (isLoading) return (
     <div className="container mx-auto px-4 py-16 flex flex-col items-center gap-4">

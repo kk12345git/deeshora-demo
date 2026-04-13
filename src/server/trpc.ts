@@ -27,20 +27,69 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
           const firstName = clerkUser.firstName ?? '';
           const lastName = clerkUser.lastName ?? '';
           const name = `${firstName} ${lastName}`.trim() || email.split('@')[0];
+          
+          const isAdmin = email.toLowerCase() === 'deeshorasupport@gmail.com';
+          
           user = await prisma.user.upsert({
             where: { clerkId: userId },
             create: {
               clerkId: userId,
-              email,
+              email: email.toLowerCase(),
               name,
               avatar: clerkUser.imageUrl,
+              role: isAdmin ? 'ADMIN' : 'CUSTOMER',
             },
-            update: {}, // Don't overwrite existing data on race conditions
+            update: {
+              role: isAdmin ? 'ADMIN' : undefined,
+            },
           });
+
+          // If admin, ensure they have a vendor profile to upload products
+          if (isAdmin) {
+            await prisma.vendor.upsert({
+              where: { userId: user.id },
+              create: {
+                userId: user.id,
+                shopName: 'Deeshora Official',
+                email: email.toLowerCase(),
+                phone: '8939318865',
+                city: 'Chennai',
+                address: 'Deeshora HQ',
+                category: 'Official',
+                status: 'APPROVED',
+              },
+              update: {},
+            });
+          }
         }
       } catch (e) {
         // Non-fatal — protected routes will throw UNAUTHORIZED if user is null
         console.error('[tRPC] Failed to auto-create user:', e);
+      }
+    } else {
+      // Logic for existing users who might have just been designated as admin
+      const isAdmin = user.email.toLowerCase() === 'deeshorasupport@gmail.com';
+      if (isAdmin && user.role !== 'ADMIN') {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { role: 'ADMIN' },
+        });
+        
+        // Ensure vendor profile for existing user
+        await prisma.vendor.upsert({
+          where: { userId: user.id },
+          create: {
+            userId: user.id,
+            shopName: 'Deeshora Official',
+            email: user.email,
+            phone: '8939318865',
+            city: 'Chennai',
+            address: 'Deeshora HQ',
+            category: 'Official',
+            status: 'APPROVED',
+          },
+          update: {},
+        });
       }
     }
   }
