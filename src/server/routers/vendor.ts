@@ -80,8 +80,15 @@ export const vendorRouter = createTRPCRouter({
         city: z.string().optional(),
         address: z.string().optional(),
         category: z.string().optional(),
+        // Bank details
         bankAccount: z.string().optional(),
+        bankAccountName: z.string().optional(),
+        bankName: z.string().optional(),
         ifscCode: z.string().optional(),
+        upiId: z.string().optional(),
+        // GST
+        gstNumber: z.string().optional(),
+        // Images
         logo: z.string().startsWith('data:image/').optional(),
         coverImage: z.string().startsWith('data:image/').optional(),
       })
@@ -95,7 +102,6 @@ export const vendorRouter = createTRPCRouter({
       if (input.coverImage) {
         coverImageUrl = await uploadImage(input.coverImage, 'vendors/covers');
       }
-
 
       return ctx.prisma.vendor.update({
         where: { id: ctx.vendor.id },

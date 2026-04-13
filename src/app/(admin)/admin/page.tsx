@@ -38,7 +38,7 @@ export default async function AdminDashboardPage() {
       )}
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {[
           {
             title: "Total Users",
@@ -52,27 +52,43 @@ export default async function AdminDashboardPage() {
             title: "Active Vendors",
             value: stats.totalVendors,
             icon: <Store size={20} />,
-            sub: `${stats.pendingVendors} pending approval`,
+            sub: `${stats.pendingVendors} pending review`,
             colorBg: stats.pendingVendors > 0 ? "bg-amber-100" : "bg-emerald-100",
             colorText: stats.pendingVendors > 0 ? "text-amber-600" : "text-emerald-600",
             colorBorder: stats.pendingVendors > 0 ? "border-amber-100" : "border-emerald-100",
             link: "/admin/vendors",
           },
           {
-            title: "Total Orders",
-            value: stats.totalOrders,
+            title: "Orders Today",
+            value: stats.todayOrders,
             icon: <ShoppingCart size={20} />,
-            sub: "all-time",
+            sub: "since midnight",
             colorBg: "bg-purple-100", colorText: "text-purple-600", colorBorder: "border-purple-100",
             link: "/admin/orders",
           },
           {
-            title: "Platform Revenue",
-            value: `₹${stats.platformRevenue.toFixed(0)}`,
+            title: "Platform Rev",
+            value: `₹${stats.platformRevenue.toLocaleString('en-IN')}`,
             icon: <IndianRupee size={20} />,
-            sub: "commission earned",
+            sub: "total commission",
             colorBg: "bg-orange-100", colorText: "text-orange-600", colorBorder: "border-orange-100",
-            link: "#",
+            link: "/admin/analytics",
+          },
+          {
+            title: "Total Orders",
+            value: stats.totalOrders,
+            icon: <ShoppingCart size={20} />,
+            sub: "all-time volume",
+            colorBg: "bg-gray-100", colorText: "text-gray-600", colorBorder: "border-gray-100",
+            link: "/admin/orders",
+          },
+          {
+            title: "Pending Payout",
+            value: `₹${stats.pendingPayouts.toLocaleString('en-IN')}`,
+            icon: <ArrowRight size={20} />,
+            sub: "owed to vendors",
+            colorBg: "bg-rose-100", colorText: "text-rose-600", colorBorder: "border-rose-100",
+            link: "/admin/payouts",
           },
         ].map(card => (
           <Link

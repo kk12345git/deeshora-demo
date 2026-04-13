@@ -12,6 +12,7 @@ const navItems = [
   { name: "Summary", href: "/vendor/dashboard", icon: LayoutDashboard },
   { name: "Inventory", href: "/vendor/products", icon: Package },
   { name: "Live Orders", href: "/vendor/orders", icon: ShoppingCart },
+  { name: "Invoices", href: "/vendor/invoices", icon: FileText },
   { name: "Preferences", href: "/vendor/settings", icon: Settings },
 ];
 

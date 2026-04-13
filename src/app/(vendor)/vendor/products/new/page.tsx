@@ -16,9 +16,9 @@ export default function NewProductPage() {
 
   const [images, setImages] = useState<{ file: File; preview: string; base64: string }[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [form, setForm] = useState({
     name: '', description: '', price: '', mrp: '',
     stock: '', unit: 'kg', categoryId: '', isFeatured: false,
+    gstRate: '0',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -88,6 +88,7 @@ export default function NewProductPage() {
       categoryId: form.categoryId,
       images: images.map(img => img.base64),
       isFeatured: form.isFeatured,
+      gstRate: parseFloat(form.gstRate),
     });
   };
 
@@ -203,6 +204,21 @@ export default function NewProductPage() {
               </div>
             </FormField>
           </div>
+
+          <FormField label="GST Rate (%)" hint="Applied to create GST invoices">
+            <select
+              value={form.gstRate}
+              onChange={e => setForm(p => ({ ...p, gstRate: e.target.value }))}
+              className="input-style"
+            >
+              <option value="0">Exempt (0%)</option>
+              <option value="0.05">GST 5%</option>
+              <option value="0.12">GST 12%</option>
+              <option value="0.18">GST 18%</option>
+              <option value="0.28">GST 28%</option>
+            </select>
+          </FormField>
+
           {discount > 0 && (
             <p className="text-xs text-emerald-600 font-black">✅ You're offering a {discount}% discount!</p>
           )}
@@ -256,10 +272,13 @@ export default function NewProductPage() {
   );
 }
 
-function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function FormField({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-black uppercase tracking-widest text-gray-500">{label}</label>
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-black uppercase tracking-widest text-gray-500">{label}</label>
+        {hint && <span className="text-[10px] text-gray-400 font-bold uppercase">{hint}</span>}
+      </div>
       {children}
       {error && <p className="text-xs text-red-500 font-bold">{error}</p>}
     </div>

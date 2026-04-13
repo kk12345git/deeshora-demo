@@ -104,6 +104,8 @@ export const orderRouter = createTRPCRouter({
               mrp: item.product.mrp,
               quantity: item.quantity,
               total: item.product.price * item.quantity,
+              gstRate: item.product.gstRate ?? 0,
+              gstAmount: (item.product.price * item.quantity) * (item.product.gstRate ?? 0),
             })),
           },
           timeline: {
@@ -341,7 +343,7 @@ export const orderRouter = createTRPCRouter({
         DELIVERED: [],
         CANCELLED: [],
         REFUNDED: [],
-      };
+        };
 
 
       if (!validTransitions[order.status].includes(status)) {
@@ -472,7 +474,7 @@ export const orderRouter = createTRPCRouter({
           ],
         },
         include: {
-          vendor: { select: { shopName: true, phone: true, email: true, address: true, city: true, logo: true } },
+          vendor: { select: { shopName: true, phone: true, email: true, address: true, city: true, logo: true, gstNumber: true, bankAccount: true, bankName: true, ifscCode: true } },
           address: true,
           user: { select: { name: true, phone: true, email: true } },
           items: true,
@@ -481,5 +483,36 @@ export const orderRouter = createTRPCRouter({
       });
       if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
       return order;
+    }),
+
+
+  /** Vendor side: get orders for invoicing/records */
+  vendorOrdersList: vendorProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).nullish(),
+        cursor: z.string().nullish(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const limit = input.limit ?? 10;
+      const { cursor } = input;
+      const orders = await ctx.prisma.order.findMany({
+        take: limit + 1,
+        where: { vendorId: ctx.vendor.id, paymentStatus: 'PAID' },
+        include: {
+          items: true,
+          user: { select: { name: true, email: true } },
+        },
+        cursor: cursor ? { id: cursor } : undefined,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      let nextCursor: typeof cursor | undefined = undefined;
+      if (orders.length > limit) {
+        const nextItem = orders.pop();
+        nextCursor = nextItem!.id;
+      }
+      return { orders, nextCursor };
     }),
 });

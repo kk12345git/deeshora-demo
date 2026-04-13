@@ -138,6 +138,7 @@ export const productRouter = createTRPCRouter({
         categoryId: z.string(),
         images: z.array(z.string().startsWith('data:image/')).min(1),
         isFeatured: z.boolean().optional(),
+        gstRate: z.number().min(0).max(0.28).default(0),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -166,6 +167,7 @@ export const productRouter = createTRPCRouter({
           categoryId: input.categoryId,
           images: imageUrls,
           isFeatured: input.isFeatured ?? false,
+          gstRate: input.gstRate,
           vendorId: ctx.vendor.id,
         },
       });
@@ -186,6 +188,7 @@ export const productRouter = createTRPCRouter({
         categoryId: z.string().optional(),
         isActive: z.boolean().optional(),
         isFeatured: z.boolean().optional(),
+        gstRate: z.number().min(0).max(0.28).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

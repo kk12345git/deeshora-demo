@@ -109,8 +109,14 @@ model Vendor {
   category        String // e.g., "Groceries", "Electronics"
   status          VendorStatus @default(PENDING)
   commissionRate  Float        @default(0.15)
+  // Bank & Financial Details
   bankAccount     String?
+  bankAccountName String?      // Account holder name
+  bankName        String?      // e.g., "HDFC Bank"
   ifscCode        String?
+  upiId           String?      // UPI ID for quick payouts
+  // GST Details
+  gstNumber       String?      // GST registration number
   totalEarnings   Float        @default(0)
   pendingPayout   Float        @default(0)
   createdAt       DateTime     @default(now())
@@ -151,6 +157,7 @@ model Product {
   mrp          Float
   stock        Int      @default(0)
   unit         String   @default("piece") // e.g., "kg", "litre", "piece"
+  gstRate      Float    @default(0)       // e.g., 0, 0.05, 0.12, 0.18, 0.28
   images       String[]
   isActive     Boolean  @default(true)
   isFeatured   Boolean  @default(false)
@@ -246,6 +253,8 @@ model OrderItem {
   mrp       Float
   quantity  Int
   total     Float
+  gstRate   Float   @default(0)   // snapshot of product's GST rate at order time
+  gstAmount Float   @default(0)   // computed: price * quantity * gstRate
 
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)

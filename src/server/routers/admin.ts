@@ -54,6 +54,150 @@ export const adminRouter = createTRPCRouter({
   }),
 
 
+  /**
+   * Per-vendor analytics broken down by period
+   * period: 'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'ANNUAL'
+   */
+  vendorAnalytics: adminProcedure
+    .input(
+      z.object({
+        period: z.enum(['MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'ANNUAL']).default('MONTHLY'),
+        vendorId: z.string().optional(), // if omitted, return all vendors
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+      let since: Date;
+      let intervals: number;
+      let intervalLabel: string;
+
+      switch (input.period) {
+        case 'QUARTERLY':   since = new Date(now.getFullYear(), now.getMonth() - 2, 1); intervals = 3;  intervalLabel = 'month'; break;
+        case 'HALF_YEARLY': since = new Date(now.getFullYear(), now.getMonth() - 5, 1); intervals = 6;  intervalLabel = 'month'; break;
+        case 'ANNUAL':      since = new Date(now.getFullYear() - 1, now.getMonth(), 1); intervals = 12; intervalLabel = 'month'; break;
+        default:            since = new Date(now.getFullYear(), now.getMonth(), 1);      intervals = 1;  intervalLabel = 'month';
+      }
+
+      const where: any = {
+        paymentStatus: 'PAID',
+        createdAt: { gte: since },
+        ...(input.vendorId ? { vendorId: input.vendorId } : {}),
+      };
+
+      // Get all approved vendors
+      const vendors = await ctx.prisma.vendor.findMany({
+        where: input.vendorId ? { id: input.vendorId } : { status: 'APPROVED' },
+        select: { id: true, shopName: true, logo: true, commissionRate: true },
+      });
+
+      // Per-vendor aggregated stats in period
+      const vendorStats = await Promise.all(vendors.map(async (vendor) => {
+        const agg = await ctx.prisma.order.aggregate({
+          where: { ...where, vendorId: vendor.id },
+          _sum: { vendorAmount: true, total: true, commission: true },
+          _count: { id: true },
+        });
+
+        // Top 3 products by revenue in period
+        const topItems = await ctx.prisma.orderItem.groupBy({
+          by: ['name'],
+          where: {
+            order: {
+              vendorId: vendor.id,
+              paymentStatus: 'PAID',
+              createdAt: { gte: since },
+            },
+          },
+          _sum: { total: true, quantity: true },
+          orderBy: { _sum: { total: 'desc' } },
+          take: 3,
+        });
+
+        return {
+          vendorId: vendor.id,
+          shopName: vendor.shopName,
+          logo: vendor.logo,
+          orders: agg._count.id,
+          revenue: agg._sum.total ?? 0,
+          vendorEarnings: agg._sum.vendorAmount ?? 0,
+          commission: agg._sum.commission ?? 0,
+          topProducts: topItems.map(i => ({ name: i.name, revenue: i._sum.total ?? 0, qty: i._sum.quantity ?? 0 })),
+        };
+      }));
+
+      // Monthly breakdown for chart (all vendors or single vendor)
+      const monthlyBreakdown = await ctx.prisma.$queryRaw<Array<{ month: string; revenue: number; orders: number }>>`
+        SELECT
+          to_char(date_trunc('month', "createdAt"), 'YYYY-MM') as month,
+          SUM("total") as revenue,
+          COUNT(*) as orders
+        FROM "Order"
+        WHERE "paymentStatus" = 'PAID'
+          AND "createdAt" >= ${since}
+          ${input.vendorId ? ctx.prisma.$queryRaw`AND "vendorId" = ${input.vendorId}` : ctx.prisma.$queryRaw``}
+        GROUP BY 1
+        ORDER BY 1;
+      `;
+
+      return {
+        period: input.period,
+        since: since.toISOString(),
+        vendorStats: vendorStats.sort((a, b) => b.revenue - a.revenue),
+        monthlyBreakdown,
+      };
+    }),
+
+  /** Platform-wide analytics summary */
+  platformAnalytics: adminProcedure
+    .input(z.object({ period: z.enum(['MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'ANNUAL']).default('ANNUAL') }))
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+      let since: Date;
+      switch (input.period) {
+        case 'QUARTERLY':   since = new Date(now.getFullYear(), now.getMonth() - 2, 1); break;
+        case 'HALF_YEARLY': since = new Date(now.getFullYear(), now.getMonth() - 5, 1); break;
+        case 'ANNUAL':      since = new Date(now.getFullYear() - 1, now.getMonth(), 1); break;
+        default:            since = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+
+      const [orderAgg, newUsers, newVendors, topVendors] = await Promise.all([
+        ctx.prisma.order.aggregate({
+          where: { paymentStatus: 'PAID', createdAt: { gte: since } },
+          _sum: { total: true, commission: true },
+          _count: { id: true },
+        }),
+        ctx.prisma.user.count({ where: { createdAt: { gte: since }, role: 'CUSTOMER' } }),
+        ctx.prisma.vendor.count({ where: { createdAt: { gte: since } } }),
+        ctx.prisma.order.groupBy({
+          by: ['vendorId'],
+          where: { paymentStatus: 'PAID', createdAt: { gte: since } },
+          _sum: { total: true },
+          orderBy: { _sum: { total: 'desc' } },
+          take: 5,
+        }),
+      ]);
+
+      const topVendorDetails = await ctx.prisma.vendor.findMany({
+        where: { id: { in: topVendors.map(v => v.vendorId) } },
+        select: { id: true, shopName: true, logo: true },
+      });
+
+      return {
+        period: input.period,
+        totalRevenue: orderAgg._sum.total ?? 0,
+        platformCommission: orderAgg._sum.commission ?? 0,
+        totalOrders: orderAgg._count.id,
+        newUsers,
+        newVendors,
+        topVendors: topVendors.map(v => ({
+          ...v,
+          shopName: topVendorDetails.find(d => d.id === v.vendorId)?.shopName ?? '',
+          logo: topVendorDetails.find(d => d.id === v.vendorId)?.logo ?? null,
+        })),
+      };
+    }),
+
+
   vendors: adminProcedure
     .input(
       z.object({
