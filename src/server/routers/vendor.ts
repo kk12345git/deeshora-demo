@@ -17,6 +17,14 @@ export const vendorRouter = createTRPCRouter({
         address: z.string(),
         category: z.string(),
         logo: z.string().startsWith('data:image/').optional(),
+        // Bank Details
+        bankAccount: z.string().optional(),
+        bankAccountName: z.string().optional(),
+        bankName: z.string().optional(),
+        ifscCode: z.string().optional(),
+        upiId: z.string().optional(),
+        // GST
+        gstNumber: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -27,12 +35,10 @@ export const vendorRouter = createTRPCRouter({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'You have already registered as a vendor.' });
       }
 
-
       let logoUrl: string | undefined = undefined;
       if (input.logo) {
         logoUrl = await uploadImage(input.logo, 'vendors/logos');
       }
-
 
       const [vendor] = await ctx.prisma.$transaction([
         ctx.prisma.vendor.create({
@@ -46,6 +52,13 @@ export const vendorRouter = createTRPCRouter({
             address: input.address,
             category: input.category,
             logo: logoUrl,
+            // Bank Details
+            bankAccount: input.bankAccount,
+            bankAccountName: input.bankAccountName,
+            bankName: input.bankName,
+            ifscCode: input.ifscCode,
+            upiId: input.upiId,
+            gstNumber: input.gstNumber,
           },
         }),
         ctx.prisma.user.update({
@@ -94,19 +107,21 @@ export const vendorRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const { logo, coverImage, ...updateData } = input;
+
       let logoUrl: string | undefined = undefined;
-      if (input.logo) {
-        logoUrl = await uploadImage(input.logo, 'vendors/logos');
+      if (logo) {
+        logoUrl = await uploadImage(logo, 'vendors/logos');
       }
       let coverImageUrl: string | undefined = undefined;
-      if (input.coverImage) {
-        coverImageUrl = await uploadImage(input.coverImage, 'vendors/covers');
+      if (coverImage) {
+        coverImageUrl = await uploadImage(coverImage, 'vendors/covers');
       }
 
       return ctx.prisma.vendor.update({
         where: { id: ctx.vendor.id },
         data: {
-          ...input,
+          ...updateData,
           logo: logoUrl ?? ctx.vendor.logo,
           coverImage: coverImageUrl ?? ctx.vendor.coverImage,
         },

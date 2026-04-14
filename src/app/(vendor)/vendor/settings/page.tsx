@@ -68,9 +68,14 @@ export default function VendorSettingsPage() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const rawData = Object.fromEntries(
-      Array.from(formData.entries()).filter(([, v]) => v !== '' && typeof v === 'string')
-    );
+    const rawData: Record<string, any> = {};
+    
+    // Capture all non-file fields, even if empty (to allow clearing)
+    formData.forEach((value, key) => {
+      if (typeof value === 'string') {
+        rawData[key] = value;
+      }
+    });
 
     const payload = {
       ...rawData,
@@ -78,8 +83,7 @@ export default function VendorSettingsPage() {
       coverImage: coverBase64 || undefined,
     };
 
-    // @ts-ignore - dynamic type matching for trpc
-    updateMutation.mutate(payload);
+    updateMutation.mutate(payload as any);
   };
 
   if (isLoading) return (
@@ -190,9 +194,26 @@ export default function VendorSettingsPage() {
                  </div>
 
                  <div className="flex-1 space-y-5">
-                    <FieldGroup label="Display Name" hint="This name will appear on the storefront">
-                       <Input name="shopName" defaultValue={profile?.shopName} placeholder="Your Cheerful Shop Name" />
-                    </FieldGroup>
+                    <div className="grid md:grid-cols-2 gap-6">
+                       <FieldGroup label="Display Name" hint="This name will appear on the storefront">
+                          <Input name="shopName" defaultValue={profile?.shopName} placeholder="Your Cheerful Shop Name" />
+                       </FieldGroup>
+                       <FieldGroup label="Business Category">
+                          <select 
+                            name="category" 
+                            defaultValue={profile?.category || ''}
+                            className="w-full h-12 px-4 bg-gray-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-orange-400 outline-none font-bold transition-all appearance-none cursor-pointer"
+                          >
+                             <option value="">Select Category</option>
+                             <option value="Groceries">Groceries</option>
+                             <option value="Electronics">Electronics</option>
+                             <option value="Gift Shop">Gift Shop</option>
+                             <option value="Restaurant">Restaurant</option>
+                             <option value="Pharmacy">Pharmacy</option>
+                             <option value="Other">Other</option>
+                          </select>
+                       </FieldGroup>
+                    </div>
                     <FieldGroup label="Signature Tagline" hint="Keep it cheerful and welcoming">
                        <Input name="description" defaultValue={profile?.description || ''} placeholder="Fresh. Local. Fast." />
                     </FieldGroup>
@@ -232,36 +253,74 @@ export default function VendorSettingsPage() {
         </div>
 
         {/* ─── Financial & Compliance ─── */}
-        <div className="grid md:grid-cols-2 gap-8">
-           {/* Bank */}
+        <div className="grid lg:grid-cols-2 gap-8">
+           {/* Payout Wallet */}
            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/20 p-8">
-              <div className="flex items-center gap-4 mb-6">
-                 <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white">
-                    <CreditCard size={20} />
+              <div className="flex items-center gap-4 mb-8">
+                 <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                    <CreditCard size={24} />
                  </div>
-                 <h3 className="font-black text-gray-900 uppercase tracking-tight">Payout Wallet</h3>
+                 <div>
+                    <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight">Payout Wallet</h2>
+                    <p className="text-xs text-gray-400 font-bold">Manage where you receive earnings</p>
+                 </div>
               </div>
-              <div className="space-y-4">
-                 <FieldGroup label="Bank Account">
-                    <Input name="bankAccount" defaultValue={profile?.bankAccount || ''} placeholder="Account Number" />
-                 </FieldGroup>
-                 <FieldGroup label="IFSC Code">
-                    <Input name="ifscCode" defaultValue={profile?.ifscCode || ''} placeholder="HDFC0001234" />
-                 </FieldGroup>
+              
+              <div className="space-y-6">
+                 <div className="grid md:grid-cols-2 gap-6">
+                    <FieldGroup label="Bank Name">
+                       <Input name="bankName" defaultValue={profile?.bankName || ''} placeholder="e.g. HDFC Bank" />
+                    </FieldGroup>
+                    <FieldGroup label="Account Holder">
+                       <Input name="bankAccountName" defaultValue={profile?.bankAccountName || ''} placeholder="Name as per bank" />
+                    </FieldGroup>
+                 </div>
+                 <div className="grid md:grid-cols-2 gap-6">
+                    <FieldGroup label="Account Number">
+                       <Input name="bankAccount" defaultValue={profile?.bankAccount || ''} placeholder="Account Number" />
+                    </FieldGroup>
+                    <FieldGroup label="IFSC Code">
+                       <Input name="ifscCode" defaultValue={profile?.ifscCode || ''} placeholder="HDFC0001234" />
+                    </FieldGroup>
+                 </div>
+                 
+                 <div className="pt-6 border-t border-gray-50">
+                    <FieldGroup label="UPI ID for Instant Settlement" hint="Required for lightning-fast payouts">
+                       <div className="relative">
+                          <Smartphone size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-400" />
+                          <Input name="upiId" defaultValue={profile?.upiId || ''} className="pl-12 border-orange-50 focus:border-orange-500" placeholder="yourname@okaxis" />
+                       </div>
+                    </FieldGroup>
+                 </div>
               </div>
            </div>
 
-           {/* GST */}
-           <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/20 p-8">
-              <div className="flex items-center gap-4 mb-6">
-                 <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center text-white">
-                    <Fingerprint size={20} />
+           {/* Tax & Compliance */}
+           <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/20 p-8 flex flex-col">
+              <div className="flex items-center gap-4 mb-8">
+                 <div className="w-12 h-12 bg-gray-900 rounded-2xl flex items-center justify-center text-white">
+                    <Fingerprint size={24} />
                  </div>
-                 <h3 className="font-black text-gray-900 uppercase tracking-tight">Tax Identity</h3>
+                 <div>
+                    <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight">Tax Identity</h2>
+                    <p className="text-xs text-gray-400 font-bold">Business compliance details</p>
+                 </div>
               </div>
-              <FieldGroup label="GSTIN" hint="Leave blank if not registered">
-                 <Input name="gstNumber" defaultValue={profile?.gstNumber || ''} placeholder="15-character GSTIN" />
-              </FieldGroup>
+
+              <div className="flex-1 space-y-6">
+                 <FieldGroup label="GSTIN Number" hint="Professional identity for business customers">
+                    <Input name="gstNumber" defaultValue={profile?.gstNumber || ''} placeholder="15-character GSTIN" />
+                 </FieldGroup>
+
+                 <div className="mt-auto bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                    <div className="flex items-start gap-3">
+                       <CheckCircle size={18} className="text-emerald-500 shrink-0 mt-0.5" />
+                       <p className="text-[10px] text-gray-500 font-bold leading-relaxed uppercase">
+                          Your financial data is encrypted and used only for automated settlements. Keep these details updated to ensure no delay in your weekly payouts.
+                       </p>
+                    </div>
+                 </div>
+              </div>
            </div>
         </div>
 
