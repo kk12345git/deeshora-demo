@@ -7,19 +7,47 @@ import { trpc } from "@/lib/trpc";
 import { UserRole } from "@prisma/client";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 
 const roleTabs: (UserRole | 'ALL')[] = ['ALL', 'CUSTOMER', 'VENDOR', 'ADMIN', 'DELIVERY'];
 
 
-const RoleBadge = ({ role }: { role: UserRole }) => {
-  const colors = {
-    CUSTOMER: 'bg-blue-100 text-blue-800',
-    VENDOR: 'bg-purple-100 text-purple-800',
-    ADMIN: 'bg-gray-800 text-white',
-    DELIVERY: 'bg-green-100 text-green-800',
-  };
-  return <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${colors[role]}`}>{role}</span>;
+const RoleSelect = ({ userId, currentRole, refetch }: { userId: string, currentRole: UserRole, refetch: () => void }) => {
+  const [role, setRole] = useState(currentRole);
+  const mutation = trpc.admin.updateUserRole.useMutation({
+    onSuccess: () => {
+      toast.success('User role updated successfully');
+      refetch();
+    },
+    onError: (err) => {
+      toast.error(`Failed to update role: ${err.message}`);
+      setRole(currentRole);
+    }
+  });
+
+  return (
+    <select
+      value={role}
+      onChange={(e) => {
+        const newRole = e.target.value as UserRole;
+        setRole(newRole);
+        mutation.mutate({ userId, role: newRole });
+      }}
+      disabled={mutation.isLoading}
+      className={`px-2 py-1 rounded-md text-xs font-bold border cursor-pointer outline-none focus:ring-2 focus:ring-orange-500 ${mutation.isLoading ? 'opacity-50' : ''}`}
+      style={{
+        backgroundColor: role === 'CUSTOMER' ? '#dbeafe' : role === 'VENDOR' ? '#f3e8ff' : role === 'ADMIN' ? '#1f2937' : '#dcfce7',
+        color: role === 'ADMIN' ? 'white' : role === 'CUSTOMER' ? '#1e40af' : role === 'VENDOR' ? '#6b21a8' : '#166534',
+        borderColor: role === 'ADMIN' ? '#111827' : 'transparent'
+      }}
+    >
+      <option value="CUSTOMER">CUSTOMER</option>
+      <option value="VENDOR">VENDOR</option>
+      <option value="ADMIN">ADMIN</option>
+      <option value="DELIVERY">DELIVERY</option>
+    </select>
+  );
 };
 
 
@@ -32,7 +60,7 @@ export default function AdminUsersPage() {
     role: activeTab === 'ALL' ? undefined : activeTab,
     search: search || undefined,
   };
-  const { data, isLoading } = trpc.admin.users.useQuery(queryInput);
+  const { data, isLoading, refetch } = trpc.admin.users.useQuery(queryInput);
 
 
   return (
@@ -69,7 +97,7 @@ export default function AdminUsersPage() {
                     {user.name}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{user.email}</td>
-                  <td className="px-4 py-3"><RoleBadge role={user.role} /></td>
+                  <td className="px-4 py-3"><RoleSelect userId={user.id} currentRole={user.role} refetch={refetch} /></td>
                   <td className="px-4 py-3">{user._count.orders}</td>
                   <td className="px-4 py-3 text-gray-600">{new Date(user.createdAt).toLocaleDateString()}</td>
                 </tr>
