@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react";
 import Image from "next/image";
 
 
-const roleTabs: (UserRole | 'ALL')[] = ['ALL', 'CUSTOMER', 'VENDOR', 'ADMIN'];
+const roleTabs: (UserRole | 'ALL')[] = ['ALL', 'CUSTOMER', 'VENDOR', 'ADMIN', 'DELIVERY'];
 
 
 const RoleBadge = ({ role }: { role: UserRole }) => {
@@ -17,8 +17,9 @@ const RoleBadge = ({ role }: { role: UserRole }) => {
     CUSTOMER: 'bg-blue-100 text-blue-800',
     VENDOR: 'bg-purple-100 text-purple-800',
     ADMIN: 'bg-gray-800 text-white',
+    DELIVERY: 'bg-green-100 text-green-800',
   };
-  return <span className={`badge ${colors[role]}`}>{role}</span>;
+  return <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${colors[role]}`}>{role}</span>;
 };
 
 

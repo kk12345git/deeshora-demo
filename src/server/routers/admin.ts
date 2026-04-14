@@ -284,6 +284,36 @@ export const adminRouter = createTRPCRouter({
     }),
 
 
+  updateUserRole: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        role: z.nativeEnum(UserRole),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { userId, role } = input;
+      
+      const user = await ctx.prisma.user.update({
+        where: { id: userId },
+        data: { role },
+      });
+
+      // Sync with Clerk metadata
+      try {
+        const { clerkClient } = await import('@clerk/nextjs/server');
+        const clerk = await clerkClient();
+        await clerk.users.updateUserMetadata(user.clerkId, {
+          publicMetadata: { role }
+        });
+      } catch (err) {
+        console.error('[Admin] Failed to sync Clerk metadata:', err);
+      }
+
+      return user;
+    }),
+
+
   orders: adminProcedure
     .input(
       z.object({
