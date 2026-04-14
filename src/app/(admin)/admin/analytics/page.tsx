@@ -255,7 +255,7 @@ export default function AdminAnalyticsPage() {
                         <p className="text-xs text-gray-400">No product data</p>
                       ) : (
                         <div className="flex flex-wrap gap-2">
-                          {vendor.topProducts.map((p, pi) => (
+                          {vendor.topProducts.map((p: any, pi: number) => (
                             <div key={pi} className="flex items-center gap-2 bg-white border border-gray-100 rounded-xl px-3 py-2 shadow-sm">
                               <Package size={13} className="text-orange-400 flex-shrink-0" />
                               <div>
