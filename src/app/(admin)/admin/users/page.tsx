@@ -34,8 +34,8 @@ const RoleSelect = ({ userId, currentRole, refetch }: { userId: string, currentR
         setRole(newRole);
         mutation.mutate({ userId, role: newRole });
       }}
-      disabled={mutation.isLoading}
-      className={`px-2 py-1 rounded-md text-xs font-bold border cursor-pointer outline-none focus:ring-2 focus:ring-orange-500 ${mutation.isLoading ? 'opacity-50' : ''}`}
+      disabled={mutation.isPending}
+      className={`px-2 py-1 rounded-md text-xs font-bold border cursor-pointer outline-none focus:ring-2 focus:ring-orange-500 ${mutation.isPending ? 'opacity-50' : ''}`}
       style={{
         backgroundColor: role === 'CUSTOMER' ? '#dbeafe' : role === 'VENDOR' ? '#f3e8ff' : role === 'ADMIN' ? '#1f2937' : '#dcfce7',
         color: role === 'ADMIN' ? 'white' : role === 'CUSTOMER' ? '#1e40af' : role === 'VENDOR' ? '#6b21a8' : '#166534',
