@@ -6,6 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCProvider } from "@/components/providers";
 import { Toaster } from "react-hot-toast";
 import JsonLd from "@/components/JsonLd";
+import NextTopLoader from 'nextjs-toploader';
 
 const outfit = Outfit({ 
     subsets: ["latin"],
@@ -74,6 +75,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className="scroll-smooth">
         <body className={`${outfit.variable} ${inter.variable} font-outfit antialiased bg-gray-50 text-gray-900`}>
+          <NextTopLoader color="#f97316" showSpinner={false} height={3} />
           <TRPCProvider>
             <JsonLd />
             {children}

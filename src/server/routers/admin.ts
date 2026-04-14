@@ -62,20 +62,18 @@ export const adminRouter = createTRPCRouter({
     .input(
       z.object({
         period: z.enum(['MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'ANNUAL']).default('MONTHLY'),
-        vendorId: z.string().optional(), // if omitted, return all vendors
+        vendorId: z.string().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const now = new Date();
       let since: Date;
-      let intervals: number;
-      let intervalLabel: string;
 
       switch (input.period) {
-        case 'QUARTERLY':   since = new Date(now.getFullYear(), now.getMonth() - 2, 1); intervals = 3;  intervalLabel = 'month'; break;
-        case 'HALF_YEARLY': since = new Date(now.getFullYear(), now.getMonth() - 5, 1); intervals = 6;  intervalLabel = 'month'; break;
-        case 'ANNUAL':      since = new Date(now.getFullYear() - 1, now.getMonth(), 1); intervals = 12; intervalLabel = 'month'; break;
-        default:            since = new Date(now.getFullYear(), now.getMonth(), 1);      intervals = 1;  intervalLabel = 'month';
+        case 'QUARTERLY':   since = new Date(now.getFullYear(), now.getMonth() - 2, 1); break;
+        case 'HALF_YEARLY': since = new Date(now.getFullYear(), now.getMonth() - 5, 1); break;
+        case 'ANNUAL':      since = new Date(now.getFullYear() - 1, now.getMonth(), 1); break;
+        default:            since = new Date(now.getFullYear(), now.getMonth(), 1);
       }
 
       const where: any = {
@@ -84,48 +82,35 @@ export const adminRouter = createTRPCRouter({
         ...(input.vendorId ? { vendorId: input.vendorId } : {}),
       };
 
-      // Get all approved vendors
-      const vendors = await ctx.prisma.vendor.findMany({
-        where: input.vendorId ? { id: input.vendorId } : { status: 'APPROVED' },
-        select: { id: true, shopName: true, logo: true, commissionRate: true },
+      // Get aggregated stats for all relevant vendors in one query
+      const stats = await ctx.prisma.order.groupBy({
+        by: ['vendorId'],
+        where,
+        _sum: { vendorAmount: true, total: true, commission: true },
+        _count: { id: true },
       });
 
-      // Per-vendor aggregated stats in period
-      const vendorStats = await Promise.all(vendors.map(async (vendor) => {
-        const agg = await ctx.prisma.order.aggregate({
-          where: { ...where, vendorId: vendor.id },
-          _sum: { vendorAmount: true, total: true, commission: true },
-          _count: { id: true },
-        });
+      // Get vendor details for the stats we found
+      const vendors = await ctx.prisma.vendor.findMany({
+        where: { id: { in: stats.map(s => s.vendorId) } },
+        select: { id: true, shopName: true, logo: true },
+      });
 
-        // Top 3 products by revenue in period
-        const topItems = await ctx.prisma.orderItem.groupBy({
-          by: ['name'],
-          where: {
-            order: {
-              vendorId: vendor.id,
-              paymentStatus: 'PAID',
-              createdAt: { gte: since },
-            },
-          },
-          _sum: { total: true, quantity: true },
-          orderBy: { _sum: { total: 'desc' } },
-          take: 3,
-        });
-
+      const vendorStats = stats.map(s => {
+        const vendor = vendors.find(v => v.id === s.vendorId);
         return {
-          vendorId: vendor.id,
-          shopName: vendor.shopName,
-          logo: vendor.logo,
-          orders: agg._count.id,
-          revenue: agg._sum.total ?? 0,
-          vendorEarnings: agg._sum.vendorAmount ?? 0,
-          commission: agg._sum.commission ?? 0,
-          topProducts: topItems.map(i => ({ name: i.name, revenue: i._sum.total ?? 0, qty: i._sum.quantity ?? 0 })),
+          vendorId: s.vendorId,
+          shopName: vendor?.shopName || 'Unknown',
+          logo: vendor?.logo || null,
+          orders: s._count.id,
+          revenue: s._sum.total ?? 0,
+          vendorEarnings: s._sum.vendorAmount ?? 0,
+          commission: s._sum.commission ?? 0,
+          topProducts: [], // Top products would still require separate queries or a complex raw query
         };
-      }));
+      });
 
-      // Monthly breakdown for chart (all vendors or single vendor)
+      // Monthly breakdown for chart
       const monthlyBreakdown = await ctx.prisma.$queryRaw<Array<{ month: string; revenue: number; orders: number }>>`
         SELECT
           to_char(date_trunc('month', "createdAt"), 'YYYY-MM') as month,

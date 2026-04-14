@@ -192,8 +192,9 @@ export const productRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const { id, ...updateData } = input;
       const product = await ctx.prisma.product.findFirst({
-        where: { id: input.id, vendorId: ctx.vendor.id },
+        where: { id, vendorId: ctx.vendor.id },
       });
       if (!product) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found or you do not own it.' });
@@ -201,8 +202,8 @@ export const productRouter = createTRPCRouter({
 
 
       return ctx.prisma.product.update({
-        where: { id: input.id },
-        data: { ...input },
+        where: { id },
+        data: updateData,
       });
     }),
 

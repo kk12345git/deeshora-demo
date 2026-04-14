@@ -35,6 +35,81 @@ async function main() {
     });
   }
   console.log(`✅ Seeded ${serviceAreas.length} service areas.`);
+
+  // ── Seed a Sample Vendor ─────────────────────────────────────────────
+  console.log('🏪 Seeding sample vendor...');
+  const sampleVendorEmail = 'karthik@example.com'; 
+  const user = await prisma.user.upsert({
+    where: { email: sampleVendorEmail },
+    create: {
+      clerkId: 'user_seed_v1',
+      email: sampleVendorEmail,
+      name: 'Karthik S',
+      role: 'VENDOR',
+    },
+    update: { role: 'VENDOR' },
+  });
+
+  const vendor = await prisma.vendor.upsert({
+    where: { userId: user.id },
+    create: {
+      userId: user.id,
+      shopName: 'Fresh Mart & More',
+      logo: 'https://res.cloudinary.com/dqr6idm0v/image/upload/v1712800000/logos/fresh-mart.png',
+      phone: '9840012345',
+      email: sampleVendorEmail,
+      category: 'Groceries',
+      address: '123 Market St, Thiruvottriyur',
+      city: 'Chennai',
+      status: 'APPROVED',
+      commissionRate: 0.1,
+    },
+    update: { status: 'APPROVED' },
+  });
+
+  // ── Seed Sample Products ─────────────────────────────────────────────
+  console.log('🍎 Seeding sample products...');
+  const category = await prisma.category.upsert({
+    where: { slug: 'groceries' },
+    create: { name: 'Groceries', slug: 'groceries', image: 'https://res.cloudinary.com/dqr6idm0v/image/upload/v1712800000/categories/groceries.jpg' },
+    update: {},
+  });
+
+  const products = [
+    {
+      name: 'Organic Farm Fresh Milk',
+      slug: 'organic-milk-1l',
+      description: '<p>Pure, organic farm-fresh milk delivered daily. No preservatives added.</p>',
+      price: 65,
+      mrp: 75,
+      stock: 50,
+      unit: '1L',
+      images: ['/seed/milk.png'],
+      categoryId: category.id,
+      vendorId: vendor.id,
+    },
+    {
+      name: 'Premium Basmati Rice',
+      slug: 'basmati-rice-5kg',
+      description: '<p>Long-grain, aromatic premium basmati rice for your perfect biryanis.</p>',
+      price: 549,
+      mrp: 699,
+      stock: 20,
+      unit: '5kg',
+      images: ['https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=800'],
+      categoryId: category.id,
+      vendorId: vendor.id,
+    }
+  ];
+
+  for (const p of products) {
+    await prisma.product.upsert({
+      where: { slug: p.slug },
+      create: p,
+      update: { price: p.price, stock: p.stock },
+    });
+  }
+  console.log(`✅ Seeded ${products.length} products.`);
 }
 
 main()
