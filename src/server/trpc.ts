@@ -82,7 +82,11 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
         console.error('[tRPC] Failed to auto-create user:', e);
       }
     } else {
-      // Logic for existing users who might have just been designated as admin
+      // Logic for existing users who might have just been designated as admin or delivery
+      const clerkUser = await currentUser();
+      const metadataRole = clerkUser?.publicMetadata?.role as string | undefined;
+
+      // Sync ADMIN if necessary
       const isAdmin = ADMIN_EMAILS.includes(user.email.toLowerCase());
       if (isAdmin && user.role !== 'ADMIN') {
         user = await prisma.user.update({
@@ -111,6 +115,23 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
           },
           update: {},
         });
+      } 
+      // Sync DELIVERY if necessary
+      else if (metadataRole === 'DELIVERY' && user.role !== 'DELIVERY') {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { role: 'DELIVERY' },
+        });
+      }
+      // Reverse sync: if DB says DELIVERY but Clerk doesn't (rare), we trust Clerk metadata
+      else if (metadataRole !== 'DELIVERY' && user.role === 'DELIVERY') {
+        // Only demote if it's explicitly something else or missing
+        if (metadataRole !== 'ADMIN') {
+           user = await prisma.user.update({
+            where: { id: user.id },
+            data: { role: 'CUSTOMER' },
+          });
+        }
       }
     }
   }

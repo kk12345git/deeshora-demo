@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { UserRole } from '@prisma/client';
 
 
 export async function POST(req: Request) {
@@ -61,9 +62,10 @@ export async function POST(req: Request) {
 
 
   if (eventType === 'user.created') {
-    const { id, email_addresses, first_name, last_name, image_url } = evt.data;
+    const { id, email_addresses, first_name, last_name, image_url, public_metadata } = evt.data;
     const email = email_addresses[0]?.email_address;
     const name = `${first_name ?? ''} ${last_name ?? ''}`.trim() || email?.split('@')[0] || 'User';
+    const role = (public_metadata?.role as UserRole) || 'CUSTOMER';
 
     await prisma.user.upsert({
       where: { clerkId: id },
@@ -72,11 +74,13 @@ export async function POST(req: Request) {
         email: email,
         name,
         avatar: image_url,
+        role: role,
       },
       update: {
         email: email,
         name,
         avatar: image_url,
+        role: role,
       },
     });
     return NextResponse.json({ message: 'User created' }, { status: 201 });
@@ -84,9 +88,10 @@ export async function POST(req: Request) {
 
 
   if (eventType === 'user.updated') {
-    const { id, email_addresses, first_name, last_name, image_url } = evt.data;
+    const { id, email_addresses, first_name, last_name, image_url, public_metadata } = evt.data;
     const email = email_addresses[0]?.email_address;
     const name = `${first_name ?? ''} ${last_name ?? ''}`.trim() || email?.split('@')[0] || 'User';
+    const role = public_metadata?.role as UserRole | undefined;
 
     await prisma.user.update({
       where: { clerkId: id },
@@ -94,6 +99,7 @@ export async function POST(req: Request) {
         email: email,
         name,
         avatar: image_url,
+        ...(role && { role }),
       },
     });
     return NextResponse.json({ message: 'User updated' }, { status: 200 });
