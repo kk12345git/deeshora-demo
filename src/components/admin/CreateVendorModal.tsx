@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { 
   X, Store, User, Phone, Mail, 
-  MapPin, Tag, Loader2, Check 
+  MapPin, Tag, Loader2, Check, Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
