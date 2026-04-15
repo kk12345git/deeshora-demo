@@ -1,11 +1,11 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2, Package, ClipboardList, User, IndianRupee } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function DeliveryLayout({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -15,12 +15,12 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push("/sign-in");
-    } else if (isLoaded && user?.publicMetadata?.role !== "DELIVERY") {
+    } else if (isLoaded && user?.publicMetadata?.role !== "DELIVERY" && user?.publicMetadata?.role !== "ADMIN") {
       router.push("/");
     }
   }, [isLoaded, isSignedIn, user, router]);
 
-  if (!isLoaded || !isSignedIn || user?.publicMetadata?.role !== "DELIVERY") {
+  if (!isLoaded || !isSignedIn || (user?.publicMetadata?.role !== "DELIVERY" && user?.publicMetadata?.role !== "ADMIN")) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <Loader2 className="animate-spin text-blue-500 w-12 h-12" />
@@ -53,7 +53,17 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
       </header>
 
       <main className="flex-1 max-w-lg mx-auto w-full p-4">
-        {children}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Bottom Navigation */}

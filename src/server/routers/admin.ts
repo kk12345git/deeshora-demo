@@ -685,4 +685,67 @@ export const adminRouter = createTRPCRouter({
         vendors: Object.values(vendorMap).sort((a, b) => b.gstAmount - a.gstAmount)
       };
     }),
+
+  createVendor: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        shopName: z.string().min(3),
+        description: z.string().optional(),
+        phone: z.string(),
+        email: z.string().email(),
+        city: z.string(),
+        address: z.string(),
+        category: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        include: { vendor: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found.' });
+      }
+
+      const existingVendor = await ctx.prisma.vendor.findUnique({
+        where: { userId: input.userId },
+      });
+
+      if (existingVendor) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'This user is already a vendor.' });
+      }
+
+      // 1. Update User Role in DB and Clerk
+      await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: { role: 'VENDOR' },
+      });
+
+      try {
+        const { clerkClient } = await import('@clerk/nextjs/server');
+        const clerk = await clerkClient();
+        await clerk.users.updateUserMetadata(user.clerkId, {
+          publicMetadata: { role: 'VENDOR' }
+        });
+      } catch (err) {
+        console.error('[Admin] Failed to sync Clerk metadata for new vendor:', err);
+      }
+
+      // 2. Create Vendor Profile
+      return ctx.prisma.vendor.create({
+        data: {
+          userId: input.userId,
+          shopName: input.shopName,
+          description: input.description,
+          phone: input.phone,
+          email: input.email.toLowerCase(),
+          city: input.city,
+          address: input.address,
+          category: input.category,
+          status: 'APPROVED',
+        },
+      });
+    }),
 });

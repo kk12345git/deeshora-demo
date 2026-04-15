@@ -67,6 +67,7 @@ export const metadata: Metadata = {
 };
 
 import { CartSync } from "@/components/cart/CartSync";
+import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
 
 export default function RootLayout({
   children,
@@ -80,6 +81,7 @@ export default function RootLayout({
           <NextTopLoader color="#f97316" showSpinner={false} height={3} />
           <TRPCProvider>
             <CartSync />
+            <RoleSwitcher />
             <JsonLd />
             {children}
             <Toaster 

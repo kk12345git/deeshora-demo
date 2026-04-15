@@ -10,6 +10,7 @@ import {
   Search, RotateCcw, AlertTriangle, Building2, CreditCard,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { CreateVendorModal } from '@/components/admin/CreateVendorModal';
 
 const TAB_ALL = 'ALL' as const;
 type Tab = VendorStatus | typeof TAB_ALL;
@@ -37,6 +38,7 @@ export default function AdminVendorsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [commissionInputs, setCommissionInputs] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const queryInput = activeTab === TAB_ALL ? {} : { status: activeTab };
   const { data, isLoading, refetch } = trpc.admin.vendors.useQuery(queryInput);
@@ -85,6 +87,15 @@ export default function AdminVendorsPage() {
             className="w-full pl-9 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 font-medium"
           />
         </div>
+
+        {/* Add Vendor Button */}
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl shadow-gray-900/10 active:scale-95"
+        >
+          <Store size={14} />
+          Add Vendor
+        </button>
       </div>
 
       {/* Pending alert */}
@@ -269,6 +280,13 @@ export default function AdminVendorsPage() {
         </div>
       )}
     </div>
+
+      <CreateVendorModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => refetch()}
+      />
+    </>
   );
 }
 

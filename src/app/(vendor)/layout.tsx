@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Package, ShoppingCart, Settings, Loader2, Menu, X, Store, FileText } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
   { name: "Summary", href: "/vendor/dashboard", icon: LayoutDashboard },
@@ -145,7 +146,18 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
            </Link>
         </header>
         <main className="flex-grow p-4 md:p-8 lg:p-12 overflow-x-hidden">
-            <div className="max-w-7xl mx-auto">{children}</div>
+            <div className="max-w-7xl mx-auto">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={pathname}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                >
+                  {children}
+                </motion.div>
+              </AnimatePresence>
+            </div>
         </main>
       </div>
     </div>
