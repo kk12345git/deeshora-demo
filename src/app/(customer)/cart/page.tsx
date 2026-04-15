@@ -7,9 +7,49 @@ import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, IndianRupee, ShieldCheck 
 import { trpc } from '@/lib/trpc';
 import { useEffect, useState } from 'react';
 
+import { useUser } from '@clerk/nextjs';
+
 export default function CartPage() {
+  const { isSignedIn } = useUser();
   const { items, updateQuantity, removeItem, total, clearCart } = useCart();
   const { data: config } = trpc.admin.getConfig.useQuery(undefined, { staleTime: Infinity });
+
+  const updateQuantityMutation = trpc.cart.updateQuantity.useMutation();
+  const removeItemMutation = trpc.cart.removeItem.useMutation();
+  const clearCartMutation = trpc.cart.clear.useMutation();
+
+  const handleUpdateQuantity = async (productId: string, quantity: number) => {
+    updateQuantity(productId, quantity);
+    if (isSignedIn) {
+      try {
+        await updateQuantityMutation.mutateAsync({ productId, quantity });
+      } catch (error) {
+        console.error('Failed to sync quantity:', error);
+      }
+    }
+  };
+
+  const handleRemoveItem = async (productId: string) => {
+    removeItem(productId);
+    if (isSignedIn) {
+      try {
+        await removeItemMutation.mutateAsync({ productId });
+      } catch (error) {
+        console.error('Failed to sync remove item:', error);
+      }
+    }
+  };
+
+  const handleClearCart = async () => {
+    clearCart();
+    if (isSignedIn) {
+      try {
+        await clearCartMutation.mutateAsync();
+      } catch (error) {
+        console.error('Failed to sync clear cart:', error);
+      }
+    }
+  };
   
   const [deliveryFee, setDeliveryFee] = useState(40);
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(299);
@@ -51,7 +91,7 @@ export default function CartPage() {
             <h1 className="text-4xl font-black text-gray-900 tracking-tight italic">My Bag</h1>
             <p className="text-gray-400 text-sm font-bold uppercase tracking-widest mt-1">{items.length} Items Selected</p>
          </div>
-         <button onClick={clearCart} className="text-xs font-black text-red-500 uppercase tracking-widest hover:bg-red-50 px-4 py-2 rounded-full transition-colors">
+         <button onClick={handleClearCart} className="text-xs font-black text-red-500 uppercase tracking-widest hover:bg-red-50 px-4 py-2 rounded-full transition-colors">
             Clear all
          </button>
       </div>
@@ -75,20 +115,20 @@ export default function CartPage() {
               <div className="flex flex-col items-end gap-4">
                  <div className="flex items-center bg-gray-50 border border-gray-100 rounded-2xl p-1 shadow-inner">
                    <button 
-                     onClick={() => updateQuantity(item.productId, item.quantity - 1)} 
+                     onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)} 
                      className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-white hover:text-orange-500 rounded-xl transition-all shadow-sm"
                    >
                      <Minus size={14} />
                    </button>
                    <span className="w-10 text-center text-sm font-black text-gray-800">{item.quantity}</span>
                    <button 
-                     onClick={() => updateQuantity(item.productId, item.quantity + 1)} 
+                     onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)} 
                      className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-white hover:text-orange-500 rounded-xl transition-all shadow-sm"
                    >
                      <Plus size={14} />
                    </button>
                  </div>
-                 <button onClick={() => removeItem(item.productId)} className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                 <button onClick={() => handleRemoveItem(item.productId)} className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
                    <Trash2 size={18} />
                  </button>
               </div>

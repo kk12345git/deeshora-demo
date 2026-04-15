@@ -15,13 +15,18 @@ interface ProductDetailsClientProps {
   product: any; // Using the serializable product from the server
 }
 
+import { useUser } from '@clerk/nextjs';
+
 export default function ProductDetailsClient({ product: initialProduct }: ProductDetailsClientProps) {
   const router = useRouter();
+  const { isSignedIn } = useUser();
   const [selectedImage, setSelectedImage] = useState(0);
   const { items, addItem, updateQuantity } = useCart();
+
+  const addItemMutation = trpc.cart.addItem.useMutation();
+  const updateQuantityMutation = trpc.cart.updateQuantity.useMutation();
   
   // Re-fetch client-side for real-time stock/reviews if needed, 
-  // but use initialProduct for immediate SEO-friendly render
   const { data: product } = trpc.product.bySlug.useQuery(
     { slug: initialProduct.slug }, 
     { initialData: initialProduct }
@@ -32,7 +37,8 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
   const cartItem = items.find((item) => item.productId === product.id);
   const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    // 1. Update Local State (Immediate feedback)
     const item: Omit<CartItem, 'quantity'> = {
       productId: product.id,
       name: product.name,
@@ -41,6 +47,35 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
       stock: product.stock,
     };
     addItem(item);
+
+    // 2. Update Server State (if logged in)
+    if (isSignedIn) {
+      try {
+        await addItemMutation.mutateAsync({
+          productId: product.id,
+          quantity: 1,
+        });
+      } catch (error) {
+        console.error('Failed to sync add to cart:', error);
+      }
+    }
+  };
+
+  const handleUpdateQuantity = async (id: string, qty: number) => {
+    // 1. Update Local State
+    updateQuantity(id, qty);
+
+    // 2. Update Server State
+    if (isSignedIn) {
+      try {
+        await updateQuantityMutation.mutateAsync({
+          productId: id,
+          quantity: qty,
+        });
+      } catch (error) {
+        console.error('Failed to sync quantity update:', error);
+      }
+    }
   };
 
   const productSchema = {
@@ -237,7 +272,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                       <div className="flex items-center bg-gray-950 text-white rounded-[2.5rem] p-1.5 w-fit shadow-2xl shadow-orange-500/20">
                         <motion.button 
                           whileTap={{ scale: 0.9 }} 
-                          onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} 
+                          onClick={() => handleUpdateQuantity(product.id, cartItem.quantity - 1)} 
                           className="w-14 h-14 flex items-center justify-center hover:bg-white/10 rounded-[2rem] transition-all"
                         >
                           <Minus size={22} strokeWidth={3} />
@@ -245,7 +280,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                         <span className="w-20 text-center text-2xl font-black italic">{cartItem.quantity}</span>
                         <motion.button 
                           whileTap={{ scale: 0.9 }} 
-                          onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} 
+                          onClick={() => handleUpdateQuantity(product.id, cartItem.quantity + 1)} 
                           className="w-14 h-14 flex items-center justify-center hover:bg-white/10 rounded-[2rem] transition-all"
                         >
                           <Plus size={22} strokeWidth={3} />
@@ -333,11 +368,11 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                {product.stock > 0 ? (
                   cartItem ? (
                     <div className="flex items-center bg-gray-900 text-white rounded-[1.5rem] p-1 shadow-xl">
-                        <button onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} className="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-xl transition-all">
+                        <button onClick={() => handleUpdateQuantity(product.id, cartItem.quantity - 1)} className="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-xl transition-all">
                             <Minus size={18} strokeWidth={3} />
                         </button>
                         <span className="w-8 text-center font-black">{cartItem.quantity}</span>
-                        <button onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} className="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-xl transition-all">
+                        <button onClick={() => handleUpdateQuantity(product.id, cartItem.quantity + 1)} className="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-xl transition-all">
                             <Plus size={18} strokeWidth={3} />
                         </button>
                     </div>

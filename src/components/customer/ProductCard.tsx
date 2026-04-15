@@ -12,14 +12,22 @@ interface ProductCardProps {
   product: any; // Using any temporarily to avoid strict Prisma types during major refactor
 }
 
+import { useUser } from '@clerk/nextjs';
+import { trpc } from '@/lib/trpc';
+
 export default function ProductCard({ product }: ProductCardProps) {
+  const { isSignedIn } = useUser();
   const { items, addItem, updateQuantity } = useCart();
   const { requireOnboarding, isModalOpen, closeModal, handleOnboardingSuccess } = useOnboarding();
   const cartItem = items.find((item) => item.productId === product.id);
 
+  const addItemMutation = trpc.cart.addItem.useMutation();
+  const updateQuantityMutation = trpc.cart.updateQuantity.useMutation();
+
   const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100);
 
-  const addToCart = () => {
+  const addToCart = async () => {
+    // 1. Local Update
     const item: Omit<CartItem, 'quantity'> = {
       productId: product.id,
       name: product.name,
@@ -28,6 +36,35 @@ export default function ProductCard({ product }: ProductCardProps) {
       stock: product.stock,
     };
     addItem(item);
+
+    // 2. Server Update
+    if (isSignedIn) {
+      try {
+        await addItemMutation.mutateAsync({
+          productId: product.id,
+          quantity: 1,
+        });
+      } catch (err) {
+        console.error('Cart sync error:', err);
+      }
+    }
+  };
+
+  const handleUpdateQuantity = async (id: string, qty: number) => {
+    // 1. Local Update
+    updateQuantity(id, qty);
+
+    // 2. Server Update
+    if (isSignedIn) {
+      try {
+        await updateQuantityMutation.mutateAsync({
+          productId: id,
+          quantity: qty,
+        });
+      } catch (err) {
+        console.error('Cart quantity sync error:', err);
+      }
+    }
   };
 
   const handleAddToCart = () => {
@@ -111,14 +148,14 @@ export default function ProductCard({ product }: ProductCardProps) {
                 cartItem ? (
                     <div className="flex items-center bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
                         <button
-                            onClick={() => updateQuantity(product.id, cartItem.quantity - 1)}
+                            onClick={() => handleUpdateQuantity(product.id, cartItem.quantity - 1)}
                             className="p-2.5 text-orange-600 hover:bg-orange-50 transition-colors"
                         >
                             <Minus size={16} strokeWidth={3} />
                         </button>
                         <span className="px-1 text-sm font-black w-6 text-center">{cartItem.quantity}</span>
                         <button
-                            onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
+                            onClick={() => handleUpdateQuantity(product.id, cartItem.quantity + 1)}
                             className="p-2.5 text-orange-600 hover:bg-orange-50 transition-colors"
                         >
                             <Plus size={16} strokeWidth={3} />

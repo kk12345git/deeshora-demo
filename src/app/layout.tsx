@@ -66,6 +66,8 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
+import { CartSync } from "@/components/cart/CartSync";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -77,6 +79,7 @@ export default function RootLayout({
         <body className={`${outfit.variable} ${inter.variable} font-outfit antialiased bg-gray-50 text-gray-900`}>
           <NextTopLoader color="#f97316" showSpinner={false} height={3} />
           <TRPCProvider>
+            <CartSync />
             <JsonLd />
             {children}
             <Toaster 
