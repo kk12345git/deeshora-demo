@@ -32,6 +32,7 @@ export const productRouter = createTRPCRouter({
           vendor: {
             city: city ? { equals: city, mode: 'insensitive' } : undefined,
             id: vendorId,
+            status: 'APPROVED',
           },
           isFeatured: featured,
           OR: search
@@ -67,8 +68,8 @@ export const productRouter = createTRPCRouter({
   byId: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const product = await ctx.prisma.product.findUnique({
-        where: { id: input.id, isActive: true },
+      const product = await ctx.prisma.product.findFirst({
+        where: { id: input.id, isActive: true, vendor: { status: 'APPROVED' } },
         include: {
           vendor: true,
           category: true,
@@ -89,8 +90,8 @@ export const productRouter = createTRPCRouter({
   bySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ ctx, input }) => {
-      const product = await ctx.prisma.product.findUnique({
-        where: { slug: input.slug, isActive: true },
+      const product = await ctx.prisma.product.findFirst({
+        where: { slug: input.slug, isActive: true, vendor: { status: 'APPROVED' } },
         include: {
           vendor: true,
           category: true,
@@ -142,8 +143,8 @@ export const productRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.vendor.status !== 'APPROVED') {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'Your vendor account is not approved.' });
+      if (ctx.vendor.status === 'SUSPENDED') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Your vendor account is suspended.' });
       }
 
 

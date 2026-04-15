@@ -142,15 +142,6 @@ export default function VendorDashboardPage() {
     </div>
   );
 
-  if (vendorProfile?.status === 'PENDING') return (
-    <div className="flex flex-col items-center justify-center py-24 text-center bg-amber-50 rounded-3xl border border-amber-100">
-      <div className="w-20 h-20 bg-amber-100 rounded-3xl flex items-center justify-center mb-4">
-        <Clock size={36} className="text-amber-400" />
-      </div>
-      <p className="text-xl font-black text-amber-800">Application Under Review</p>
-      <p className="text-amber-600 text-sm mt-2 max-w-sm">Your vendor application is being reviewed. Usually within 24 hours.</p>
-    </div>
-  );
 
   if (vendorProfile?.status === 'SUSPENDED') return (
     <div className="flex flex-col items-center justify-center py-24 text-center bg-red-50 rounded-3xl border border-red-100">
@@ -193,6 +184,27 @@ export default function VendorDashboardPage() {
           {newBell && <span className="absolute top-4 right-4 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white animate-bounce" />}
         </button>
       </div>
+
+      {/* Pending Approval Banner */}
+      {vendorProfile?.status === 'PENDING' && (
+        <div className="flex flex-col md:flex-row items-center gap-6 p-8 bg-amber-50 border border-amber-100 rounded-[2.5rem] shadow-sm">
+          <div className="w-16 h-16 bg-amber-100 rounded-3xl flex items-center justify-center shrink-0">
+            <Clock size={32} className="text-amber-500 animate-pulse" />
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <h3 className="text-xl font-black text-amber-900 uppercase tracking-tight">Shop Under Review</h3>
+            <p className="text-sm text-amber-700 font-medium mt-1 leading-relaxed">
+              Your vendor application is currently being verified. You can already start adding products and setting up your catalog, 
+              but they will only go live on the storefront once your shop is approved (usually within 24h).
+            </p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+             <Link href="/vendor/products/new" className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-amber-500/20 active:scale-95">
+                Add Items
+             </Link>
+          </div>
+        </div>
+      )}
 
       {/* Action Banners */}
       <div className="grid lg:grid-cols-2 gap-4">
