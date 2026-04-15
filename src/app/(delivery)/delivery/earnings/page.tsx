@@ -53,7 +53,7 @@ export default function EarningsPage() {
                <Calendar size={16} />
             </div>
             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Today</span>
-            <span className="text-xl font-black text-gray-200">₹{stats?.completedToday ? stats.completedToday * 40 : 0}</span>
+            <span className="text-xl font-black text-gray-200">₹{stats?.todayEarnings.toLocaleString()}</span>
          </div>
          <div className="bg-gray-900 border border-gray-800 p-5 rounded-3xl">
             <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 mb-3">

@@ -24,7 +24,7 @@ export const deliveryRouter = createTRPCRouter({
   getMyTasks: deliveryProcedure.query(async ({ ctx }) => {
     return ctx.prisma.order.findMany({
       where: {
-        deliveryPartnerId: ctx.userId,
+        deliveryPartnerId: ctx.user.id,
         status: 'OUT_FOR_DELIVERY',
       },
       include: {
@@ -51,7 +51,7 @@ export const deliveryRouter = createTRPCRouter({
       return ctx.prisma.order.update({
         where: { id: input.orderId },
         data: {
-          deliveryPartnerId: ctx.userId,
+          deliveryPartnerId: ctx.user.id,
           status: 'OUT_FOR_DELIVERY',
           assignedAt: new Date(),
           timeline: {
@@ -74,7 +74,7 @@ export const deliveryRouter = createTRPCRouter({
       });
 
       if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
-      if (order.deliveryPartnerId !== ctx.userId) throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not the assigned partner.' });
+      if (order.deliveryPartnerId !== ctx.user.id) throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not the assigned partner.' });
 
       const updated = await ctx.prisma.order.update({
         where: { id: input.orderId },
@@ -110,7 +110,7 @@ export const deliveryRouter = createTRPCRouter({
 
     const completedToday = await ctx.prisma.order.count({
       where: {
-        deliveryPartnerId: ctx.userId,
+        deliveryPartnerId: ctx.user.id,
         status: 'DELIVERED',
         deliveredAt: { gte: today },
       },
@@ -118,22 +118,33 @@ export const deliveryRouter = createTRPCRouter({
 
     const activeTasksCount = await ctx.prisma.order.count({
       where: {
-        deliveryPartnerId: ctx.userId,
+        deliveryPartnerId: ctx.user.id,
         status: 'OUT_FOR_DELIVERY',
       },
     });
 
     const lifetimeDeliveries = await ctx.prisma.order.count({
       where: {
-        deliveryPartnerId: ctx.userId,
+        deliveryPartnerId: ctx.user.id,
         status: 'DELIVERED',
       },
     });
 
     const earningsData = await ctx.prisma.order.aggregate({
       where: {
-        deliveryPartnerId: ctx.userId,
+        deliveryPartnerId: ctx.user.id,
         status: 'DELIVERED',
+      },
+      _sum: {
+        deliveryFee: true,
+      },
+    });
+
+    const todayEarningsData = await ctx.prisma.order.aggregate({
+      where: {
+        deliveryPartnerId: ctx.user.id,
+        status: 'DELIVERED',
+        deliveredAt: { gte: today },
       },
       _sum: {
         deliveryFee: true,
@@ -142,7 +153,7 @@ export const deliveryRouter = createTRPCRouter({
 
     const weeklyEarningsData = await ctx.prisma.order.aggregate({
       where: {
-        deliveryPartnerId: ctx.userId,
+        deliveryPartnerId: ctx.user.id,
         status: 'DELIVERED',
         deliveredAt: { gte: weekStart },
       },
@@ -157,6 +168,7 @@ export const deliveryRouter = createTRPCRouter({
       lifetimeDeliveries,
       totalEarnings: earningsData._sum.deliveryFee || 0,
       weeklyEarnings: weeklyEarningsData._sum.deliveryFee || 0,
+      todayEarnings: todayEarningsData._sum.deliveryFee || 0,
     };
   }),
 
@@ -164,7 +176,7 @@ export const deliveryRouter = createTRPCRouter({
   getEarningsHistory: deliveryProcedure.query(async ({ ctx }) => {
     return ctx.prisma.order.findMany({
       where: {
-        deliveryPartnerId: ctx.userId,
+        deliveryPartnerId: ctx.user.id,
         status: 'DELIVERED',
       },
       select: {
@@ -202,7 +214,7 @@ export const deliveryRouter = createTRPCRouter({
       
       // Allow access if it's in the pool (no partner) OR if assigned to current user
       const isAvailable = order.status === 'READY' && !order.deliveryPartnerId;
-      const isAssignedToMe = order.deliveryPartnerId === ctx.userId;
+      const isAssignedToMe = order.deliveryPartnerId === ctx.user.id;
 
       if (!isAvailable && !isAssignedToMe) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not assigned to this order.' });

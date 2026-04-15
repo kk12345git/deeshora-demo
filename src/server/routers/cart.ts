@@ -145,4 +145,41 @@ export const cartRouter = createTRPCRouter({
     }
     return { success: true };
   }),
+
+
+  sync: protectedProcedure
+    .input(
+      z.array(
+        z.object({
+          productId: z.string(),
+          quantity: z.number().int().min(1),
+        })
+      )
+    )
+    .mutation(async ({ ctx, input }) => {
+      const cart = await ctx.prisma.cart.upsert({
+        where: { userId: ctx.user.id },
+        create: { userId: ctx.user.id },
+        update: {},
+      });
+
+
+      // Simple merge strategy: for each input item, upsert it in DB
+      for (const item of input) {
+        await ctx.prisma.cartItem.upsert({
+          where: { cartId_productId: { cartId: cart.id, productId: item.productId } },
+          create: {
+            cartId: cart.id,
+            productId: item.productId,
+            quantity: item.quantity,
+          },
+          update: {
+            quantity: item.quantity,
+          },
+        });
+      }
+
+
+      return { success: true };
+    }),
 });
