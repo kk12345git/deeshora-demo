@@ -423,6 +423,10 @@ export default function OrderTrackingPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Payment</p>
             <div className="flex items-center justify-between">
+              <span className="text-sm font-bold text-gray-600">Method</span>
+              <span className="text-xs font-black text-gray-900">{order.paymentMethod}</span>
+            </div>
+            <div className="flex items-center justify-between mt-2">
               <span className="text-sm font-bold text-gray-600">Status</span>
               <span className={`text-xs font-black px-2.5 py-1 rounded-full ${
                 order.paymentStatus === 'PAID' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
@@ -434,6 +438,27 @@ export default function OrderTrackingPage() {
               <span className="text-sm font-bold text-gray-600">Amount</span>
               <span className="font-black text-gray-900">₹{order.total.toFixed(2)}</span>
             </div>
+
+            {/* UPI QR Nudge for COD */}
+            {order.paymentMethod === 'COD' && order.paymentStatus === 'PENDING' && (
+              <div className="mt-6 pt-6 border-t border-dashed border-gray-100">
+                <div className="bg-gray-50 rounded-2xl p-4 text-center">
+                  <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-3">Scan to Pay via UPI</p>
+                  <div className="bg-white p-3 rounded-xl inline-block shadow-sm mb-3">
+                    <Image 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=${order.vendor.upiId || 'deeshware15@okicici'}&pn=${encodeURIComponent(order.vendor.shopName)}&am=${order.total.toFixed(2)}&cu=INR&tn=Order_${order.id.slice(-8).toUpperCase()}`)}`}
+                      alt="UPI QR Code"
+                      width={120}
+                      height={120}
+                      className="mx-auto"
+                    />
+                  </div>
+                  <p className="text-[10px] font-bold text-gray-400 leading-tight">
+                    Pay digitally during delivery using any UPI app
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Call store */}

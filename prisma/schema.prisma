@@ -49,6 +49,13 @@ enum PaymentStatus {
 }
 
 
+enum PaymentMethod {
+  COD
+  RAZORPAY
+  ONLINE
+}
+
+
 // MODELS
 model User {
   id          String   @id @default(cuid())
@@ -216,6 +223,7 @@ model Order {
   addressId       String
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   PaymentMethod @default(COD)
   paymentId       String?
   razorpayOrderId String?
   subtotal        Float

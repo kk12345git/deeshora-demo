@@ -2,23 +2,22 @@
 import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure, vendorProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
-import { createRazorpayOrder, verifyRazorpaySignature } from '@/lib/razorpay';
 import { pusherServer, CHANNELS, EVENTS } from '@/lib/pusher';
 import { OrderStatus } from '@prisma/client';
 
 
 export const orderRouter = createTRPCRouter({
-  createPaymentOrder: protectedProcedure
+  placeOrder: protectedProcedure
     .input(
       z.object({
         addressId: z.string(),
         notes: z.string().optional(),
+        paymentMethod: z.enum(['COD', 'ONLINE']).default('COD'),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { addressId, notes } = input;
-
+      const { addressId, notes, paymentMethod } = input;
 
       const address = await ctx.prisma.address.findFirst({
         where: { id: addressId, userId: user.id },
@@ -26,7 +25,6 @@ export const orderRouter = createTRPCRouter({
       if (!address) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Address not found.' });
       }
-
 
       const cart = await ctx.prisma.cart.findUnique({
         where: { userId: user.id },
@@ -41,11 +39,9 @@ export const orderRouter = createTRPCRouter({
         },
       });
 
-
       if (!cart || cart.items.length === 0) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Your cart is empty.' });
       }
-
 
       // Group items by vendor
       const itemsByVendor = cart.items.reduce((acc, item) => {
@@ -62,173 +58,92 @@ export const orderRouter = createTRPCRouter({
         return acc;
       }, {} as Record<string, { vendor: any; items: any[]; subtotal: number }>);
 
-
       const config = await ctx.prisma.siteConfig.findMany();
       const deliveryFeeConfig = config.find((c: any) => c.key === 'delivery_fee');
       const freeDeliveryConfig = config.find((c: any) => c.key === 'free_delivery_above');
       const baseDeliveryFee = deliveryFeeConfig ? parseFloat(deliveryFeeConfig.value) : 40;
       const freeDeliveryThreshold = freeDeliveryConfig ? parseFloat(freeDeliveryConfig.value) : 299;
 
+      const finalOrders = await ctx.prisma.$transaction(async (tx) => {
+        const createdOrders = [];
 
-      let grandTotal = 0;
-      const createdOrders = [];
+        for (const vendorId in itemsByVendor) {
+          const { vendor, items, subtotal } = itemsByVendor[vendorId];
+          const deliveryFee = subtotal >= freeDeliveryThreshold ? 0 : baseDeliveryFee;
+          const total = subtotal + deliveryFee;
 
+          const commission = subtotal * vendor.commissionRate;
+          const vendorAmount = subtotal - commission;
 
-      for (const vendorId in itemsByVendor) {
-        const { vendor, items, subtotal } = itemsByVendor[vendorId];
-        const deliveryFee = subtotal >= freeDeliveryThreshold ? 0 : baseDeliveryFee;
-        const total = subtotal + deliveryFee;
-        grandTotal += total;
-
-
-        const commission = subtotal * vendor.commissionRate;
-        const vendorAmount = subtotal - commission;
-
-
-        const order = {
-          userId: user.id,
-          vendorId: vendor.id,
-          addressId: address.id,
-          subtotal,
-          deliveryFee,
-          total,
-          commission,
-          vendorAmount,
-          notes,
-          items: {
-            create: items.map((item: any) => ({
-              productId: item.productId,
-              name: item.product.name,
-              image: item.product.images[0],
-              price: item.product.price,
-              mrp: item.product.mrp,
-              quantity: item.quantity,
-              total: item.product.price * item.quantity,
-              gstRate: item.product.gstRate ?? 0,
-              gstAmount: (item.product.price * item.quantity) * (item.product.gstRate ?? 0),
-            })),
-          },
-          timeline: {
-            create: {
+          const order = await tx.order.create({
+            data: {
+              userId: user.id,
+              vendorId: vendor.id,
+              addressId: address.id,
+              subtotal,
+              deliveryFee,
+              total,
+              commission,
+              vendorAmount,
+              notes,
+              paymentMethod: paymentMethod === 'COD' ? 'COD' : 'ONLINE',
+              paymentStatus: 'PENDING',
               status: OrderStatus.PENDING,
-              message: 'Order placed by customer.',
+              items: {
+                create: items.map((item: any) => ({
+                  productId: item.productId,
+                  name: item.product.name,
+                  image: item.product.images[0],
+                  price: item.product.price,
+                  mrp: item.product.mrp,
+                  quantity: item.quantity,
+                  total: item.product.price * item.quantity,
+                  gstRate: item.product.gstRate ?? 0,
+                  gstAmount: (item.product.price * item.quantity) * (item.product.gstRate ?? 0),
+                })),
+              },
+              timeline: {
+                create: {
+                  status: OrderStatus.PENDING,
+                  message: paymentMethod === 'COD' ? 'Order placed via Cash on Delivery.' : 'Order placed, awaiting payment.',
+                },
+              },
             },
-          },
-        };
-        createdOrders.push(order);
-      }
+          });
 
+          // Update stock for COD immediately to reserve items
+          if (paymentMethod === 'COD') {
+            for (const item of items) {
+              await tx.product.update({
+                where: { id: item.productId },
+                data: { stock: { decrement: item.quantity } },
+              });
+            }
 
-      const razorpayOrder = await createRazorpayOrder(grandTotal, `cart_${cart.id}`);
+            // Trigger Pusher event
+            await pusherServer.trigger(
+              CHANNELS.VENDOR(vendor.id),
+              EVENTS.NEW_ORDER,
+              { orderId: order.id, customerName: user.name }
+            );
+          }
 
+          createdOrders.push(order);
+        }
 
-      const finalOrders = await ctx.prisma.$transaction(
-        createdOrders.map(orderData =>
-          ctx.prisma.order.create({
-            data: { ...orderData, razorpayOrderId: razorpayOrder.id },
-          })
-        )
-      );
+        // Clear cart
+        await tx.cartItem.deleteMany({ where: { cart: { userId: user.id } } });
 
+        return createdOrders;
+      });
 
       return {
-        razorpayOrderId: razorpayOrder.id,
-        amount: razorpayOrder.amount,
+        success: true,
         orderIds: finalOrders.map(o => o.id),
-        keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
       };
     }),
 
 
-  verifyPayment: protectedProcedure
-    .input(
-      z.object({
-        razorpay_order_id: z.string(),
-        razorpay_payment_id: z.string(),
-        razorpay_signature: z.string(),
-        orderIds: z.array(z.string()),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderIds } = input;
-
-
-      const isValid = verifyRazorpaySignature(
-        razorpay_order_id,
-        razorpay_payment_id,
-        razorpay_signature
-      );
-
-
-      if (!isValid) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid Razorpay signature.' });
-      }
-
-
-      const orders = await ctx.prisma.order.findMany({
-        where: { id: { in: orderIds }, userId: ctx.user.id },
-        include: { items: true, vendor: true },
-      });
-
-
-      if (orders.length !== orderIds.length) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Some orders were not found.' });
-      }
-
-
-      await ctx.prisma.$transaction(async (tx) => {
-        // 1. Update orders
-        await tx.order.updateMany({
-          where: { id: { in: orderIds } },
-          data: {
-            paymentStatus: 'PAID',
-            status: 'CONFIRMED',
-            paymentId: razorpay_payment_id,
-          },
-        });
-
-
-        // 2. Add timeline entries
-        await tx.orderTimeline.createMany({
-          data: orderIds.map(id => ({
-            orderId: id,
-            status: OrderStatus.CONFIRMED,
-            message: 'Payment successful. Order confirmed.',
-          })),
-        });
-
-
-        // 3. Update vendor payouts and product stock
-        for (const order of orders) {
-          await tx.vendor.update({
-            where: { id: order.vendorId },
-            data: { pendingPayout: { increment: order.vendorAmount } },
-          });
-
-
-          for (const item of order.items) {
-            await tx.product.update({
-              where: { id: item.productId },
-              data: { stock: { decrement: item.quantity } },
-            });
-          }
-          
-          // 4. Trigger Pusher event
-          await pusherServer.trigger(
-            CHANNELS.VENDOR(order.vendorId),
-            EVENTS.NEW_ORDER,
-            { orderId: order.id, customerName: ctx.user.name }
-          );
-        }
-
-
-        // 5. Clear cart
-        await tx.cartItem.deleteMany({ where: { cart: { userId: ctx.user.id } } });
-      });
-
-
-      return { success: true, orderIds };
-    }),
 
 
   myOrders: protectedProcedure
@@ -368,6 +283,7 @@ export const orderRouter = createTRPCRouter({
         data: {
           status,
           deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
+          paymentStatus: status === 'DELIVERED' && order.paymentMethod === 'COD' ? 'PAID' : order.paymentStatus,
           timeline: {
             create: {
               status,

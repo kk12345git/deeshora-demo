@@ -10,11 +10,6 @@ import toast from 'react-hot-toast';
 import { Home, Plus, Loader2, Tag, X, CheckCircle, ShieldCheck } from 'lucide-react';
 
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
 
 
 export default function CheckoutPage() {
@@ -42,8 +37,7 @@ export default function CheckoutPage() {
   });
 
 
-  const createOrderMutation = trpc.order.createPaymentOrder.useMutation();
-  const verifyPaymentMutation = trpc.order.verifyPayment.useMutation();
+  const placeOrderMutation = trpc.order.placeOrder.useMutation();
   const validateCoupon = trpc.coupon.validate.useMutation({
     onSuccess: (data) => {
       setAppliedCoupon(data);
@@ -77,84 +71,27 @@ export default function CheckoutPage() {
   };
 
 
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
-
-  const handlePayment = async () => {
+  const handlePlaceOrder = async (method: 'COD' | 'ONLINE') => {
     if (!selectedAddressId) {
       toast.error('Please select a delivery address.');
       return;
     }
     setIsPlacingOrder(true);
 
-
-    const res = await loadRazorpayScript();
-    if (!res) {
-      toast.error('Razorpay SDK failed to load. Are you online?');
-      setIsPlacingOrder(false);
-      return;
-    }
-
-
     try {
-      const paymentOrder = await createOrderMutation.mutateAsync({
+      const result = await placeOrderMutation.mutateAsync({
         addressId: selectedAddressId,
         notes,
+        paymentMethod: method,
       });
 
-
-      const options = {
-        key: paymentOrder.keyId,
-        amount: paymentOrder.amount,
-        currency: 'INR',
-        name: 'Deeshora',
-        description: 'Order Payment',
-        order_id: paymentOrder.razorpayOrderId,
-        handler: async function (response: any) {
-          const verificationResult = await verifyPaymentMutation.mutateAsync({
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
-            orderIds: paymentOrder.orderIds,
-          });
-
-
-          if (verificationResult.success) {
-            toast.success('Payment successful! Your order is confirmed.');
-            clearCart();
-            router.push(`/orders/${verificationResult.orderIds[0]}?success=true`);
-          } else {
-            toast.error('Payment verification failed. Please contact support.');
-          }
-        },
-        prefill: {
-          // You can prefill user details here
-        },
-        notes: {
-          address: 'Deeshora Corporate Office',
-        },
-        theme: {
-          color: '#f97316',
-        },
-      };
-
-
-      const paymentObject = new window.Razorpay(options);
-      paymentObject.open();
-      paymentObject.on('payment.failed', function (response: any) {
-        toast.error('Payment failed. Please try again.');
-        console.error(response.error);
-      });
+      if (result.success) {
+        toast.success(method === 'COD' ? 'Order placed! Pay on delivery.' : 'Order placed successfully!');
+        clearCart();
+        router.push(`/orders/${result.orderIds[0]}?success=true`);
+      }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create order.');
+      toast.error(error.message || 'Failed to place order.');
     } finally {
       setIsPlacingOrder(false);
     }
@@ -331,25 +268,25 @@ export default function CheckoutPage() {
                 <div className="absolute top-2 right-2 opacity-10">
                    <ShieldCheck size={40} className="text-orange-500" />
                 </div>
-                <h3 className="text-[10px] font-black text-orange-600 uppercase tracking-[0.3em] mb-3">Official Escrow Partner</h3>
+                <h3 className="text-[10px] font-black text-orange-600 uppercase tracking-[0.3em] mb-3">Escrow ID / UPI</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between text-[11px]">
-                    <span className="font-bold text-gray-400 uppercase">Bank</span>
-                    <span className="font-black text-gray-900 uppercase italic">BOB (India)</span>
+                    <span className="font-bold text-gray-400 uppercase">PAY VIA</span>
+                    <span className="font-black text-gray-900 uppercase italic">UPI / COD</span>
                   </div>
                   <div className="flex justify-between text-[11px]">
-                    <span className="font-bold text-gray-400 uppercase">A/C No</span>
-                    <span className="font-black text-orange-600 tabular-nums">**** **** 1534</span>
+                    <span className="font-bold text-gray-400 uppercase">ID</span>
+                    <span className="font-black text-orange-600 tabular-nums lowercase">deeshware15@okicici</span>
                   </div>
                 </div>
               </div>
 
               <button
-                onClick={handlePayment}
+                onClick={() => handlePlaceOrder('COD')}
                 disabled={isPlacingOrder || items.length === 0}
                 className="btn-primary w-full h-16 rounded-3xl mt-10 text-sm font-black uppercase tracking-[0.2em] shadow-xl shadow-orange-500/20 active:scale-95"
               >
-                {isPlacingOrder ? <Loader2 className="animate-spin mx-auto" /> : `INITIATE PAYMENT`}
+                {isPlacingOrder ? <Loader2 className="animate-spin mx-auto" /> : `CONFIRM ORDER (COD)`}
               </button>
 
               <p className="mt-6 text-center text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em] flex items-center justify-center gap-2">

@@ -200,9 +200,13 @@ export const protectedProcedure = t.procedure.use(isAuthed);
  * Vendor procedure
  */
 export const vendorProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  if (ctx.user.role !== 'VENDOR' && ctx.user.role !== 'ADMIN') {
+  // Check either Clerk metadata (fast) or Database role (sure)
+  const isVendor = ctx.user.role === 'VENDOR' || ctx.user.role === 'ADMIN';
+  
+  if (!isVendor) {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not a vendor.' });
   }
+  
   const vendor = await prisma.vendor.findUnique({ where: { userId: ctx.user.id } });
   if (!vendor) {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'Vendor profile not found.' });
