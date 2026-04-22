@@ -4,7 +4,7 @@ import { trpc } from '@/lib/trpc';
 import Image from 'next/image';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Minus, Plus, AlertTriangle, CheckCircle, ChevronLeft, ShoppingCart, Share2, Heart, MapPin, Loader2, Info } from 'lucide-react';
+import { Star, Minus, Plus, AlertTriangle, CheckCircle, ChevronLeft, ShoppingCart, Share2, Heart, MapPin, Loader2, Info, Zap } from 'lucide-react';
 import { useCart, CartItem } from '@/hooks/useCart';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -25,6 +25,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
 
   const addItemMutation = trpc.cart.addItem.useMutation();
   const updateQuantityMutation = trpc.cart.updateQuantity.useMutation();
+  const syncCartMutation = trpc.cart.sync.useMutation();
   
   // Re-fetch client-side for real-time stock/reviews if needed, 
   const { data: product } = trpc.product.bySlug.useQuery(
@@ -59,6 +60,30 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
         console.error('Failed to sync add to cart:', error);
       }
     }
+  };
+
+  // ── Buy Now: add just this item to server cart → go straight to checkout ──
+  const handleBuyNow = async () => {
+    if (!isSignedIn) {
+      router.push('/sign-in');
+      return;
+    }
+    const item: Omit<CartItem, 'quantity'> = {
+      productId: product.id,
+      name: product.name,
+      image: product.images[0],
+      price: product.price,
+      stock: product.stock,
+    };
+    // Update local cart (add if not present, keep qty if already there)
+    if (!cartItem) addItem(item);
+    // Sync to server (merge strategy — won't wipe other items)
+    try {
+      await syncCartMutation.mutateAsync([{ productId: product.id, quantity: cartItem ? cartItem.quantity : 1 }]);
+    } catch (error) {
+      console.error('Buy Now sync failed:', error);
+    }
+    router.push('/checkout');
   };
 
   const handleUpdateQuantity = async (id: string, qty: number) => {
@@ -267,36 +292,57 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
               <div className="hidden lg:block pt-8">
                 {product.stock > 0 ? (
                   cartItem ? (
+                    /* ── Already in cart: show quantity stepper + Buy Now ── */
                     <div className="flex flex-col gap-4">
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Modify Selection</p>
-                      <div className="flex items-center bg-gray-950 text-white rounded-[2.5rem] p-1.5 w-fit shadow-2xl shadow-orange-500/20">
-                        <motion.button 
-                          whileTap={{ scale: 0.9 }} 
-                          onClick={() => handleUpdateQuantity(product.id, cartItem.quantity - 1)} 
-                          className="w-14 h-14 flex items-center justify-center hover:bg-white/10 rounded-[2rem] transition-all"
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center bg-gray-950 text-white rounded-[2.5rem] p-1.5 shadow-2xl shadow-orange-500/20">
+                          <motion.button 
+                            whileTap={{ scale: 0.9 }} 
+                            onClick={() => handleUpdateQuantity(product.id, cartItem.quantity - 1)} 
+                            className="w-14 h-14 flex items-center justify-center hover:bg-white/10 rounded-[2rem] transition-all"
+                          >
+                            <Minus size={22} strokeWidth={3} />
+                          </motion.button>
+                          <span className="w-20 text-center text-2xl font-black italic">{cartItem.quantity}</span>
+                          <motion.button 
+                            whileTap={{ scale: 0.9 }} 
+                            onClick={() => handleUpdateQuantity(product.id, cartItem.quantity + 1)} 
+                            className="w-14 h-14 flex items-center justify-center hover:bg-white/10 rounded-[2rem] transition-all"
+                          >
+                            <Plus size={22} strokeWidth={3} />
+                          </motion.button>
+                        </div>
+                        <motion.button
+                          whileHover={{ scale: 1.05, y: -3 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={handleBuyNow}
+                          className="flex-1 h-[72px] bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-base rounded-[2rem] shadow-2xl shadow-orange-500/30 flex items-center justify-center gap-3 tracking-wide uppercase italic transition-all"
                         >
-                          <Minus size={22} strokeWidth={3} />
-                        </motion.button>
-                        <span className="w-20 text-center text-2xl font-black italic">{cartItem.quantity}</span>
-                        <motion.button 
-                          whileTap={{ scale: 0.9 }} 
-                          onClick={() => handleUpdateQuantity(product.id, cartItem.quantity + 1)} 
-                          className="w-14 h-14 flex items-center justify-center hover:bg-white/10 rounded-[2rem] transition-all"
-                        >
-                          <Plus size={22} strokeWidth={3} />
+                          <Zap size={20} className="fill-white" /> Buy Now
                         </motion.button>
                       </div>
                     </div>
                   ) : (
-                    <motion.button 
-                      whileHover={{ scale: 1.05, y: -4 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={handleAddToCart} 
-                      className="btn-primary w-full max-w-sm h-20 text-xl rounded-[2.5rem] font-black italic tracking-wide group shadow-2xl shadow-orange-500/30"
-                    >
-                      ADD TO BASKET
-                      <ShoppingCart className="ml-3 group-hover:translate-x-1 transition-transform" />
-                    </motion.button>
+                    /* ── Not in cart: two buttons side by side ── */
+                    <div className="flex flex-col gap-3 max-w-sm">
+                      <motion.button 
+                        whileHover={{ scale: 1.03, y: -3 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleBuyNow}
+                        className="w-full h-20 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-xl rounded-[2.5rem] shadow-2xl shadow-orange-500/30 flex items-center justify-center gap-3 tracking-wide uppercase italic transition-all"
+                      >
+                        <Zap size={24} className="fill-white" /> Buy Now
+                      </motion.button>
+                      <motion.button 
+                        whileHover={{ scale: 1.03, y: -2 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleAddToCart} 
+                        className="w-full h-14 border-2 border-gray-900 text-gray-900 bg-white font-black text-sm rounded-[2rem] flex items-center justify-center gap-3 tracking-widest uppercase hover:bg-gray-50 transition-all"
+                      >
+                        <ShoppingCart size={18} /> Add to Cart
+                      </motion.button>
+                    </div>
                   )
                 ) : (
                   <div className="h-20 w-full max-w-sm bg-gray-100 rounded-[2.5rem] flex items-center justify-center text-gray-400 font-black uppercase tracking-[0.2em] cursor-not-allowed">
@@ -359,30 +405,52 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
 
       {/* Fixed Sticky Action Bar for Mobile */}
       <div className="md:hidden fixed bottom-16 left-0 right-0 z-40 px-4 pb-4 animate-in slide-in-from-bottom-5 duration-500">
-          <div className="p-4 bg-white/80 backdrop-blur-2xl rounded-[2.5rem] border border-white shadow-2xl flex items-center justify-between gap-4">
-               <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Price</p>
-                  <p className="text-2xl font-black text-gray-950 tracking-tighter">₹{product.price}</p>
+          <div className="p-3 bg-white/80 backdrop-blur-2xl rounded-[2.5rem] border border-white shadow-2xl flex items-center gap-3">
+               {/* Price */}
+               <div className="pl-2 shrink-0">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Price</p>
+                  <p className="text-xl font-black text-gray-950 tracking-tighter">₹{product.price}</p>
                </div>
-               
+
                {product.stock > 0 ? (
                   cartItem ? (
-                    <div className="flex items-center bg-gray-900 text-white rounded-[1.5rem] p-1 shadow-xl">
-                        <button onClick={() => handleUpdateQuantity(product.id, cartItem.quantity - 1)} className="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-xl transition-all">
-                            <Minus size={18} strokeWidth={3} />
-                        </button>
-                        <span className="w-8 text-center font-black">{cartItem.quantity}</span>
-                        <button onClick={() => handleUpdateQuantity(product.id, cartItem.quantity + 1)} className="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-xl transition-all">
-                            <Plus size={18} strokeWidth={3} />
-                        </button>
-                    </div>
+                    /* Stepper + Buy Now */
+                    <>
+                      <div className="flex items-center bg-gray-900 text-white rounded-[1.5rem] p-1 shadow-xl">
+                          <button onClick={() => handleUpdateQuantity(product.id, cartItem.quantity - 1)} className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-xl transition-all">
+                              <Minus size={16} strokeWidth={3} />
+                          </button>
+                          <span className="w-7 text-center font-black text-sm">{cartItem.quantity}</span>
+                          <button onClick={() => handleUpdateQuantity(product.id, cartItem.quantity + 1)} className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-xl transition-all">
+                              <Plus size={16} strokeWidth={3} />
+                          </button>
+                      </div>
+                      <button
+                        onClick={handleBuyNow}
+                        className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2 uppercase tracking-widest"
+                      >
+                        <Zap size={15} className="fill-white" /> Buy Now
+                      </button>
+                    </>
                   ) : (
-                    <button onClick={handleAddToCart} className="btn-primary flex-grow h-14 rounded-2xl font-black text-sm tracking-widest uppercase">
-                        ADD TO CART
-                    </button>
+                    /* Add to Cart + Buy Now */
+                    <>
+                      <button
+                        onClick={handleAddToCart}
+                        className="h-12 px-4 border-2 border-gray-900 text-gray-900 bg-white rounded-2xl font-black text-xs tracking-widest uppercase flex items-center gap-2 shrink-0"
+                      >
+                        <ShoppingCart size={15} />
+                      </button>
+                      <button
+                        onClick={handleBuyNow}
+                        className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2 uppercase tracking-widest"
+                      >
+                        <Zap size={15} className="fill-white" /> Buy Now
+                      </button>
+                    </>
                   )
                ) : (
-                   <button disabled className="btn-secondary flex-grow h-14 rounded-2xl opacity-50 cursor-not-allowed font-black uppercase tracking-widest text-xs">
+                   <button disabled className="flex-1 h-12 rounded-2xl opacity-50 cursor-not-allowed font-black uppercase tracking-widest text-xs bg-gray-100 text-gray-400">
                         Out of Stock
                    </button>
                )}

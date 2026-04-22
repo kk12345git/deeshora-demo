@@ -1,37 +1,58 @@
 // src/app/(customer)/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from '@/lib/trpc';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingBag, CheckCircle, Truck, ArrowRight, Star, MapPin, Loader2, X } from 'lucide-react';
+import { ShoppingBag, CheckCircle, Truck, ArrowRight, Star, MapPin, Loader2, X, Search, Sparkles, TrendingUp } from 'lucide-react';
 import ProductCard from '@/components/customer/ProductCard';
 import CitySelector from '@/components/customer/CitySelector';
-import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+
+// ─── Debounce hook ─────────────────────────────────────────────────────────────
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
 
 export default function HomePage() {
   const [selectedCity, setSelectedCity] = useState<string | undefined>(undefined);
   const [isLoaded, setIsLoaded] = useState(false);
-  const { user, isLoaded: isUserLoaded } = useUser();
+  const [searchInput, setSearchInput] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // Auto-redirect vendors to their dashboards (admins can browse storefront)
-  useEffect(() => {
-    if (!isUserLoaded) return;
-    const role = user?.publicMetadata?.role as string | undefined;
-    if (role === 'VENDOR') {
-      router.replace('/vendor/dashboard');
-    }
-  }, [user, isUserLoaded, router]);
-
+  const debouncedSearch = useDebounce(searchInput, 250);
 
   useEffect(() => {
     const savedCity = localStorage.getItem("deeshora_city");
     if (savedCity) setSelectedCity(savedCity);
     setIsLoaded(true);
   }, []);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // ─── tRPC queries ────────────────────────────────────────────────────────
+  const { data: suggestions, isLoading: isSuggesting } = trpc.product.suggest.useQuery(
+    { query: debouncedSearch, city: selectedCity },
+    { enabled: debouncedSearch.trim().length >= 2 }
+  );
 
   const { data: categories, isLoading: isLoadingCats } = trpc.product.categories.useQuery();
   const { data: featuredProducts, isLoading: isLoadingFeatured } = trpc.product.list.useQuery({ 
@@ -41,28 +62,39 @@ export default function HomePage() {
   });
   const { data: allProducts, isLoading: isLoadingAll } = trpc.product.list.useQuery({ 
     limit: 12,
-    city: selectedCity 
+    city: selectedCity,
+    sortBy: 'newest',
+  });
+  const { data: popularProducts } = trpc.product.list.useQuery({ 
+    limit: 4,
+    city: selectedCity,
+    sortBy: 'popular',
   });
 
-  // Show spinner while checking role to prevent flash of customer page
-  if (!isLoaded || !isUserLoaded) return null;
-  const role = user?.publicMetadata?.role as string | undefined;
-  if (role === 'VENDOR') {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
-      </div>
-    );
-  }
+  const handleSearchSubmit = useCallback((e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (searchInput.trim()) {
+      setShowSuggestions(false);
+      router.push(`/search?q=${encodeURIComponent(searchInput.trim())}`);
+    }
+  }, [searchInput, router]);
 
+  const handleSuggestionClick = useCallback((productSlug: string) => {
+    setShowSuggestions(false);
+    setSearchInput('');
+    router.push(`/product/${productSlug}`);
+  }, [router]);
+
+  if (!isLoaded) return null;
 
   return (
     <div className="space-y-0">
-      {/* Hero Section - Cinematic Glassmorphism */}
-      <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-gray-950">
+      {/* ─── Hero Section ─────────────────────────────────────────────────── */}
+      <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-gray-950">
         {/* Background Decorative Elements */}
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-orange-500/20 to-transparent blur-3xl opacity-30" />
         <div className="absolute bottom-0 left-0 w-1/3 h-full bg-gradient-to-r from-emerald-500/10 to-transparent blur-3xl opacity-20" />
+        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl" />
         
         <div className="container mx-auto px-4 relative z-10 py-20">
           <div className="max-w-4xl mx-auto text-center space-y-8">
@@ -78,16 +110,128 @@ export default function HomePage() {
             
             <p className="max-w-2xl mx-auto text-xl text-white/60 font-medium leading-relaxed">
               Deeshora connects you directly with local shops in your neighborhood. 
-              Get fresh groceries, daily essentials, and premium electronics delivered instantly.
+              Get fresh groceries, daily essentials, and more delivered instantly.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-4">
+            {/* ─── AI Search Bar ─────────────────────────────────────────── */}
+            <div className="max-w-2xl mx-auto" ref={searchRef}>
+              <form onSubmit={handleSearchSubmit} className="relative">
+                <div className={`flex items-center bg-white rounded-[1.75rem] shadow-2xl shadow-black/40 overflow-hidden border-2 transition-all duration-300 ${showSuggestions && (suggestions?.length ?? 0) > 0 ? 'border-orange-400 rounded-b-none border-b-0' : 'border-transparent'}`}>
+                  {/* AI badge */}
+                  <div className="flex items-center gap-1.5 pl-5 pr-3 border-r border-gray-100 py-4 flex-shrink-0">
+                    <Sparkles size={16} className="text-orange-500" />
+                    <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest hidden sm:block">AI</span>
+                  </div>
+                  
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={searchInput}
+                    onChange={(e) => {
+                      setSearchInput(e.target.value);
+                      setShowSuggestions(e.target.value.length >= 2);
+                    }}
+                    onFocus={() => searchInput.length >= 2 && setShowSuggestions(true)}
+                    placeholder="Search tomatoes, milk, electronics..."
+                    className="flex-1 px-4 py-4 text-gray-900 font-medium placeholder:text-gray-400 outline-none bg-transparent text-base"
+                  />
+
+                  {searchInput && (
+                    <button
+                      type="button"
+                      onClick={() => { setSearchInput(''); setShowSuggestions(false); }}
+                      className="px-2 text-gray-300 hover:text-gray-500 transition-colors"
+                    >
+                      <X size={18} />
+                    </button>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="m-1.5 flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-black px-6 py-3 rounded-[1.25rem] transition-all shadow-lg shadow-orange-500/30 hover:scale-[1.02] flex-shrink-0"
+                  >
+                    <Search size={18} />
+                    <span className="hidden sm:block">Search</span>
+                  </button>
+                </div>
+
+                {/* ─── Typeahead Dropdown ──────────────────────────────── */}
+                {showSuggestions && debouncedSearch.length >= 2 && (
+                  <div className="absolute top-full left-0 right-0 bg-white border-2 border-orange-400 border-t-0 rounded-b-[1.75rem] shadow-2xl shadow-black/20 overflow-hidden z-50">
+                    {isSuggesting ? (
+                      <div className="flex items-center gap-3 px-5 py-4 text-gray-400">
+                        <Loader2 size={16} className="animate-spin text-orange-400" />
+                        <span className="text-sm font-medium">Searching...</span>
+                      </div>
+                    ) : (suggestions?.length ?? 0) > 0 ? (
+                      <>
+                        <div className="px-5 pt-3 pb-1">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Quick Results</span>
+                        </div>
+                        {suggestions?.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handleSuggestionClick(item.slug)}
+                            className="w-full flex items-center gap-4 px-5 py-3 hover:bg-orange-50 transition-colors text-left group"
+                          >
+                            <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                              {item.images[0] ? (
+                                <Image src={item.images[0]} alt={item.name} width={40} height={40} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-orange-100 flex items-center justify-center">
+                                  <ShoppingBag size={16} className="text-orange-400" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-gray-900 text-sm truncate group-hover:text-orange-600 transition-colors">{item.name}</p>
+                              <p className="text-xs text-gray-400">{item.category.name}</p>
+                            </div>
+                            <span className="font-black text-gray-800 text-sm flex-shrink-0">₹{item.price}</span>
+                          </button>
+                        ))}
+                        <button
+                          type="submit"
+                          className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-gray-50 hover:bg-orange-50 border-t border-gray-100 text-sm font-bold text-orange-600 transition-colors"
+                        >
+                          <Search size={14} />
+                          See all results for "{debouncedSearch}"
+                        </button>
+                      </>
+                    ) : (
+                      <div className="flex items-center gap-3 px-5 py-4 text-gray-400">
+                        <Search size={16} />
+                        <span className="text-sm font-medium">No quick matches — press Enter to search</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </form>
+
+              {/* Popular searches */}
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+                <span className="text-white/30 text-xs font-bold uppercase tracking-widest">Trending:</span>
+                {['Fresh Vegetables', 'Milk', 'Rice', 'Bread', 'Eggs'].map((term) => (
+                  <button
+                    key={term}
+                    onClick={() => router.push(`/search?q=${encodeURIComponent(term)}`)}
+                    className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80 text-xs font-bold transition-all"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* City selector + Browse CTA */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
               <CitySelector 
                 currentCity={selectedCity} 
                 onCityChange={setSelectedCity} 
               />
-              <Link href="#all-products" className="btn-primary px-10 py-4 text-lg rounded-2xl shadow-orange-500/20 shadow-2xl hover:scale-105 transition-transform">
-                Browse Products <ArrowRight size={20} className="ml-2" />
+              <Link href="#all-products" className="btn-primary px-8 py-3.5 rounded-2xl shadow-orange-500/20 shadow-xl hover:scale-105 transition-transform">
+                Browse Products <ArrowRight size={18} className="ml-1.5 inline" />
               </Link>
             </div>
 
@@ -117,7 +261,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Trust Pills - Floating Card Design */}
+      {/* Trust Pills */}
       <section className="container mx-auto px-4 -mt-12 relative z-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {[
@@ -136,7 +280,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories Section - Minimalist Icons */}
+      {/* Categories */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-end mb-12">
@@ -168,7 +312,25 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Products - High End Grid */}
+      {/* Popular right now */}
+      {(popularProducts?.products.length ?? 0) > 0 && (
+        <section className="py-16 bg-gradient-to-b from-orange-50 to-white">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-3">
+              <TrendingUp size={22} className="text-orange-500" />
+              Popular Right Now
+              <span className="h-px bg-gray-200 flex-grow hidden md:block" />
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {popularProducts?.products.map((product) => (
+                <ProductCard key={product.id} product={product as any} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Featured Products */}
       {(featuredProducts?.products.length || 0) > 0 && (
         <section className="bg-gray-50 py-24 border-y border-gray-100">
           <div className="container mx-auto px-4">

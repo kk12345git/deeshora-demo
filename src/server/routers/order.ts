@@ -12,7 +12,7 @@ export const orderRouter = createTRPCRouter({
       z.object({
         addressId: z.string(),
         notes: z.string().optional(),
-        paymentMethod: z.enum(['COD', 'ONLINE']).default('COD'),
+        paymentMethod: z.enum(['COD', 'UPI']).default('COD'),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -87,7 +87,7 @@ export const orderRouter = createTRPCRouter({
               vendorAmount,
               notes,
               paymentMethod: paymentMethod === 'COD' ? 'COD' : 'ONLINE',
-              paymentStatus: 'PENDING',
+              paymentStatus: paymentMethod === 'UPI' ? 'PENDING' : 'PENDING',
               status: OrderStatus.PENDING,
               items: {
                 create: items.map((item: any) => ({
@@ -105,22 +105,24 @@ export const orderRouter = createTRPCRouter({
               timeline: {
                 create: {
                   status: OrderStatus.PENDING,
-                  message: paymentMethod === 'COD' ? 'Order placed via Cash on Delivery.' : 'Order placed, awaiting payment.',
+                  message: paymentMethod === 'COD'
+                    ? 'Order placed via Cash on Delivery.'
+                    : 'Order placed. Awaiting UPI payment confirmation.',
                 },
               },
             },
           });
 
-          // Update stock for COD immediately to reserve items
-          if (paymentMethod === 'COD') {
-            for (const item of items) {
-              await tx.product.update({
-                where: { id: item.productId },
-                data: { stock: { decrement: item.quantity } },
-              });
-            }
+          // Immediately reserve stock for any payment method
+          for (const item of items) {
+            await tx.product.update({
+              where: { id: item.productId },
+              data: { stock: { decrement: item.quantity } },
+            });
+          }
 
-            // Trigger Pusher event
+          // Trigger Pusher event for COD immediately; UPI triggers after verification
+          if (paymentMethod === 'COD') {
             await pusherServer.trigger(
               CHANNELS.VENDOR(vendor.id),
               EVENTS.NEW_ORDER,
@@ -140,11 +142,50 @@ export const orderRouter = createTRPCRouter({
       return {
         success: true,
         orderIds: finalOrders.map(o => o.id),
+        paymentMethod,
       };
     }),
 
+  /** Customer confirms they paid via UPI — marks PAID and alerts vendor */
+  confirmUpiPayment: protectedProcedure
+    .input(z.object({
+      orderId: z.string(),
+      utrNumber: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { orderId, utrNumber } = input;
 
+      const order = await ctx.prisma.order.findFirst({
+        where: { id: orderId, userId: ctx.user.id },
+        include: { vendor: true },
+      });
+      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+      if (order.paymentStatus === 'PAID') {
+        return { success: true, message: 'Already marked as paid.' };
+      }
 
+      await ctx.prisma.order.update({
+        where: { id: orderId },
+        data: {
+          paymentStatus: 'PAID',
+          timeline: {
+            create: {
+              status: order.status,
+              message: `UPI payment confirmed${utrNumber ? ` (UTR: ${utrNumber})` : ''}.`,
+            },
+          },
+        },
+      });
+
+      // Alert vendor now that payment is confirmed
+      await pusherServer.trigger(
+        CHANNELS.VENDOR(order.vendorId),
+        EVENTS.NEW_ORDER,
+        { orderId: order.id, customerName: ctx.user.name }
+      );
+
+      return { success: true };
+    }),
 
   myOrders: protectedProcedure
     .input(

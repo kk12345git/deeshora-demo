@@ -168,10 +168,12 @@ model Product {
   unit         String   @default("piece") // e.g., "kg", "litre", "piece"
   gstRate      Float    @default(0)       // e.g., 0, 0.05, 0.12, 0.18, 0.28
   images       String[]
+  tags         String[] @default([])      // e.g., ["organic", "fresh", "local"] for search
   isActive     Boolean  @default(true)
   isFeatured   Boolean  @default(false)
   rating       Float    @default(0)
   reviewCount  Int      @default(0)
+  viewCount    Int      @default(0)       // used for trending / popularity ranking
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -185,6 +187,10 @@ model Product {
 
   @@index([vendorId])
   @@index([categoryId])
+  @@index([name])
+  @@index([isActive, categoryId])
+  @@index([isActive, isFeatured])
+  @@index([rating])
 }
 
 
@@ -379,4 +385,20 @@ model Coupon {
 
   @@index([code])
   @@index([isActive])
+}
+
+
+// Search analytics — track what customers are searching for
+model SearchLog {
+  id        String   @id @default(cuid())
+  query     String
+  userId    String?  // nullable — guest searches are also tracked
+  results   Int      @default(0) // number of results returned
+  clicked   String?  // product ID that was clicked (if any)
+  city      String?  // city filter active during search
+  createdAt DateTime @default(now())
+
+  @@index([query])
+  @@index([createdAt])
+  @@index([userId])
 }

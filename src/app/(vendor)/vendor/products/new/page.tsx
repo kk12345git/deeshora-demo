@@ -1,18 +1,29 @@
 // src/app/(vendor)/vendor/products/new/page.tsx
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
 import Image from 'next/image';
-import { Upload, X, ChevronLeft, Loader2, Package, IndianRupee, Box, Tag, FileText, Sparkles } from 'lucide-react';
+import { Upload, X, ChevronLeft, Loader2, Package, IndianRupee, Box, Sparkles, AlertTriangle, CheckCircle2, Lightbulb, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+// ─── Debounce hook ─────────────────────────────────────────────────────────────
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
 
 export default function NewProductPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: categories } = trpc.product.categories.useQuery();
+  const { data: vendorStatus, isLoading: isStatusLoading } = trpc.product.myVendorStatus.useQuery();
 
   const [images, setImages] = useState<{ file: File; preview: string; base64: string }[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -22,16 +33,41 @@ export default function NewProductPage() {
     gstRate: '0',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [autoFillApplied, setAutoFillApplied] = useState(false);
+
+  const debouncedName = useDebounce(form.name, 600);
+
+  // ─── Auto-analyze product name when it changes ────────────────────────────
+  const { data: analysis, isFetching: isAnalyzing } = trpc.product.autoAnalyze.useQuery(
+    { name: debouncedName, description: form.description },
+    { enabled: debouncedName.trim().length >= 3 }
+  );
 
   const createMutation = trpc.product.create.useMutation({
     onSuccess: () => {
-      toast.success('Product added successfully!');
+      toast.success('🎉 Product added successfully!');
       router.push('/vendor/products');
     },
     onError: (err) => {
       toast.error(err.message);
     },
   });
+
+  // ─── Auto-apply category suggestion ──────────────────────────────────────
+  const applyAutoCategory = useCallback(() => {
+    if (analysis?.suggestedCategoryId) {
+      setForm(p => ({ ...p, categoryId: analysis.suggestedCategoryId! }));
+      setAutoFillApplied(true);
+      toast.success(`Category set to "${analysis.suggestedCategoryName}"`, { icon: '🤖' });
+    }
+  }, [analysis]);
+
+  // Auto-apply if form.categoryId is empty and we have a suggestion
+  useEffect(() => {
+    if (!form.categoryId && analysis?.suggestedCategoryId && !autoFillApplied) {
+      setForm(p => ({ ...p, categoryId: analysis.suggestedCategoryId! }));
+    }
+  }, [analysis, form.categoryId, autoFillApplied]);
 
   // ─── Image handling ───────────────────────────────────────────────────────
   const processFile = useCallback((file: File) => {
@@ -97,6 +133,17 @@ export default function NewProductPage() {
     ? Math.round((1 - +form.price / +form.mrp) * 100)
     : 0;
 
+  // ─── Vendor status banner helper ──────────────────────────────────────────
+  const isBlocked = vendorStatus?.status === 'PENDING' || vendorStatus?.status === 'SUSPENDED';
+
+  if (isStatusLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="animate-spin text-orange-500 w-10 h-10" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
@@ -109,6 +156,43 @@ export default function NewProductPage() {
           <p className="text-gray-400 text-sm">Fill in the details to list your product on Deeshora</p>
         </div>
       </div>
+
+      {/* ─── Vendor Status Banner ────────────────────────────────────────────── */}
+      {vendorStatus?.status === 'PENDING' && (
+        <div className="flex items-start gap-4 p-5 bg-amber-50 border border-amber-200 rounded-2xl">
+          <AlertTriangle size={22} className="text-amber-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-black text-amber-800">Account Pending Approval</p>
+            <p className="text-sm text-amber-700 mt-1 leading-relaxed">
+              Your vendor account is under review. You can fill in the product details now and save them, 
+              but products will only go live once an admin approves your account. 
+              <strong className="text-amber-800"> This usually takes 24-48 hours.</strong>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {vendorStatus?.status === 'SUSPENDED' && (
+        <div className="flex items-start gap-4 p-5 bg-red-50 border border-red-200 rounded-2xl">
+          <AlertTriangle size={22} className="text-red-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-black text-red-800">Account Suspended</p>
+            <p className="text-sm text-red-600 mt-1">
+              Your vendor account has been suspended. You cannot add new products at this time. 
+              Please contact <a href="mailto:deeshorasupport@gmail.com" className="underline font-bold">support</a> for assistance.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {vendorStatus?.status === 'APPROVED' && (
+        <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl">
+          <CheckCircle2 size={18} className="text-emerald-500 flex-shrink-0" />
+          <p className="text-sm font-bold text-emerald-800">
+            {vendorStatus.shopName} — Your account is approved. Products will go live immediately.
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* ── Photos ─────────────────────────────────────────────────── */}
@@ -152,7 +236,7 @@ export default function NewProductPage() {
               {images.length < 4 && (
                 <button type="button" onClick={() => fileRef.current?.click()}
                   className="aspect-square rounded-xl border-2 border-dashed border-gray-200 hover:border-orange-300 flex items-center justify-center text-gray-400 hover:text-orange-500 transition-all">
-                  <Plus size={20} />
+                  <PlusIcon size={20} />
                 </button>
               )}
             </div>
@@ -165,10 +249,73 @@ export default function NewProductPage() {
           <h2 className="font-black text-gray-800 flex items-center gap-2"><Package size={16} className="text-orange-500" /> Basic Info</h2>
           
           <FormField label="Product Name *" error={errors.name}>
-            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-              placeholder="e.g. Fresh Organic Tomatoes"
-              className={`input-style ${errors.name ? 'border-red-400 bg-red-50' : ''}`} />
+            <div className="relative">
+              <input
+                value={form.name}
+                onChange={e => { setForm(p => ({ ...p, name: e.target.value })); setAutoFillApplied(false); }}
+                placeholder="e.g. Fresh Organic Tomatoes"
+                className={`input-style pr-10 ${errors.name ? 'border-red-400 bg-red-50' : ''}`}
+              />
+              {isAnalyzing && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader2 size={14} className="animate-spin text-orange-400" />
+                </div>
+              )}
+            </div>
           </FormField>
+
+          {/* ── AI Analysis Result ─────────────────────────────────── */}
+          {analysis && !isAnalyzing && debouncedName.length >= 3 && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={14} className="text-emerald-600" />
+                  <span className="text-xs font-black text-emerald-800 uppercase tracking-widest">AI Analysis</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    analysis.confidence === 'high' ? 'bg-emerald-200 text-emerald-800' : 'bg-amber-100 text-amber-700'
+                  }`}>
+                    {analysis.confidence} confidence
+                  </span>
+                </div>
+                {analysis.suggestedCategoryId && form.categoryId !== analysis.suggestedCategoryId && (
+                  <button
+                    type="button"
+                    onClick={applyAutoCategory}
+                    className="text-xs font-black text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-3 py-1 rounded-lg transition-colors"
+                  >
+                    Apply
+                  </button>
+                )}
+                {analysis.suggestedCategoryId && form.categoryId === analysis.suggestedCategoryId && (
+                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 size={12} /> Applied
+                  </span>
+                )}
+              </div>
+
+              {analysis.suggestedCategoryName && (
+                <div className="flex items-center gap-2">
+                  <Tag size={13} className="text-emerald-600 flex-shrink-0" />
+                  <p className="text-sm text-emerald-800">
+                    Detected category: <strong className="font-black">{analysis.suggestedCategoryName}</strong>
+                  </p>
+                </div>
+              )}
+
+              {analysis.hints.length > 0 && (
+                <div className="space-y-1.5 pt-1 border-t border-emerald-200">
+                  <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 uppercase tracking-widest">
+                    <Lightbulb size={11} /> Description Tips
+                  </div>
+                  {analysis.hints.map((hint, i) => (
+                    <p key={i} className="text-xs text-emerald-700 flex items-start gap-2">
+                      <span className="text-emerald-400 mt-0.5">→</span> {hint}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <FormField label="Description *" error={errors.description}>
             <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
@@ -178,11 +325,26 @@ export default function NewProductPage() {
           </FormField>
 
           <FormField label="Category *" error={errors.categoryId}>
-            <select value={form.categoryId} onChange={e => setForm(p => ({ ...p, categoryId: e.target.value }))}
-              className={`input-style ${errors.categoryId ? 'border-red-400 bg-red-50' : ''}`}>
-              <option value="">Select category...</option>
-              {categories?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <div className="relative">
+              <select value={form.categoryId} onChange={e => { setForm(p => ({ ...p, categoryId: e.target.value })); setAutoFillApplied(true); }}
+                className={`input-style ${errors.categoryId ? 'border-red-400 bg-red-50' : ''} ${
+                  analysis?.suggestedCategoryId === form.categoryId && form.categoryId ? 'border-emerald-400 bg-emerald-50' : ''
+                }`}>
+                <option value="">Select category...</option>
+                {categories?.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} {analysis?.suggestedCategoryId === c.id ? '← AI Suggestion' : ''}
+                  </option>
+                ))}
+              </select>
+              {analysis?.suggestedCategoryId === form.categoryId && form.categoryId && (
+                <div className="absolute right-8 top-1/2 -translate-y-1/2">
+                  <span className="text-[10px] font-black text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Sparkles size={9} /> AI
+                  </span>
+                </div>
+              )}
+            </div>
           </FormField>
         </div>
 
@@ -259,15 +421,23 @@ export default function NewProductPage() {
         {/* Submit */}
         <button
           type="submit"
-          disabled={createMutation.isPending}
-          className="w-full h-14 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-sm tracking-widest uppercase rounded-2xl shadow-xl shadow-orange-500/25 flex items-center justify-center gap-3 disabled:opacity-60 transition-all hover:-translate-y-0.5 hover:shadow-orange-500/40"
+          disabled={createMutation.isPending || vendorStatus?.status === 'SUSPENDED'}
+          className="w-full h-14 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-sm tracking-widest uppercase rounded-2xl shadow-xl shadow-orange-500/25 flex items-center justify-center gap-3 disabled:opacity-60 transition-all hover:-translate-y-0.5 hover:shadow-orange-500/40 disabled:hover:translate-y-0"
         >
           {createMutation.isPending ? (
             <><Loader2 size={20} className="animate-spin" /> Uploading Product...</>
+          ) : isBlocked && vendorStatus?.status !== 'PENDING' ? (
+            <><AlertTriangle size={20} /> Account Suspended</>
           ) : (
             <><Package size={20} /> Add to Deeshora</>
           )}
         </button>
+
+        {vendorStatus?.status === 'PENDING' && (
+          <p className="text-center text-xs text-amber-600 font-bold">
+            ⏳ Product will be saved but won't be visible to customers until your account is approved.
+          </p>
+        )}
       </form>
     </div>
   );
@@ -286,7 +456,7 @@ function FormField({ label, hint, error, children }: { label: string; hint?: str
   );
 }
 
-function Plus({ size, className }: { size: number; className?: string }) {
+function PlusIcon({ size, className }: { size: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
