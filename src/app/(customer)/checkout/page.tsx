@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import Image from 'next/image';
 import {
   Home, Plus, Loader2, Tag, X, CheckCircle, ShieldCheck,
-  Banknote, ChevronRight,
+  Banknote, ChevronRight, Check,
   ArrowRight, CreditCard, Star,
   AlertCircle,
 } from 'lucide-react';
