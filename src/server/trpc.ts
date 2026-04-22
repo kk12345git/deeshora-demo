@@ -105,46 +105,10 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
           data: { role: 'ADMIN' },
         });
       }
-
-      // Sync Clerk metadata only when it's actually wrong (lazy — read from Clerk only when needed)
-      // We skip reading Clerk metadata on every call; only sync on role mismatch detected elsewhere
-      // (AdminLayout reads publicMetadata and can trigger a one-time sync if it notices a gap)
-
-      // Ensure vendor profile for admin (upsert is cheap — idempotent, no-op if exists)
-      await prisma.vendor.upsert({
-        where: { userId: user.id },
-        create: {
-          userId: user.id,
-          shopName: 'Deeshora Official',
-          email: user.email,
-          phone: process.env.ADMIN_PHONE ?? '0000000000',
-          city: 'Chennai',
-          address: 'Deeshora HQ',
-          category: 'Official',
-          status: 'APPROVED',
-        },
-        update: {},
-      });
-    }
-    // ─── H5: DELIVERY role — trust DB, only sync upward (CUSTOMER→DELIVERY) from Clerk ──
-    // We no longer demote DELIVERY users automatically based on missing Clerk metadata.
-    // Demotion must be done explicitly by admin via the updateUserRole endpoint.
-    else if (user.role === 'CUSTOMER') {
-      // Only check Clerk metadata if user is a plain CUSTOMER — may have been promoted
-      try {
-        const clerkUser = await currentUser();
-        const metadataRole = clerkUser?.publicMetadata?.role as string | undefined;
-        if (metadataRole === 'DELIVERY') {
-          user = await prisma.user.update({
-            where: { id: user.id },
-            data: { role: 'DELIVERY' },
-          });
-        }
-      } catch (e) {
-        console.error('[tRPC] Failed to check Clerk metadata for DELIVERY sync:', e);
-      }
     }
     // VENDOR and DELIVERY roles in DB are trusted as-is — no automatic changes
+    // Promotion logic should be handled by webhooks or explicit sync buttons, 
+    // not by checking Clerk on every request.
   }
 
   return {

@@ -136,6 +136,10 @@ model Vendor {
   products Product[]
   orders   Order[]
   payouts  Payout[]
+
+
+  @@index([city])
+  @@index([status])
 }
 
 
@@ -191,6 +195,9 @@ model Product {
   @@index([isActive, categoryId])
   @@index([isActive, isFeatured])
   @@index([rating])
+  @@index([viewCount])
+  @@index([price])
+  @@index([createdAt])
 }
 
 
@@ -258,6 +265,8 @@ model Order {
 
   @@index([userId])
   @@index([vendorId])
+  @@index([status])
+  @@index([createdAt])
   @@index([razorpayOrderId])
 }
 

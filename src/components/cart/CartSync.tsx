@@ -13,7 +13,7 @@ import toast from 'react-hot-toast';
 export function CartSync() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { items, clearCart } = useCart();
-  const syncMutation = trpc.cart.addItem.useMutation();
+  const syncMutation = trpc.cart.sync.useMutation();
   const hasSyncedThisSession = useRef(false);
 
   useEffect(() => {
@@ -28,17 +28,16 @@ export function CartSync() {
 
       const sync = async () => {
         try {
-          // Note: This is a basic merge. In a full production app, 
-          // you might want to fetch the server cart first to compare.
-          for (const item of items) {
-            await syncMutation.mutateAsync({
+          await syncMutation.mutateAsync(
+            items.map(item => ({
               productId: item.productId,
-              quantity: item.quantity,
-            });
-          }
+              quantity: item.quantity
+            }))
+          );
+          
           hasSyncedThisSession.current = true;
           localStorage.setItem(syncKey, 'true');
-          console.log('Cart synchronized with server.');
+          console.log('Cart synchronized with server (Batch).');
         } catch (error) {
           console.error('Failed to sync cart:', error);
         }
