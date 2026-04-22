@@ -38,6 +38,10 @@ export default function VendorRegisterPage() {
   const router = useRouter();
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
   
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  
+  const { data: categories = [] } = trpc.product.categories.useQuery();
+
   const registerMutation = trpc.vendor.register.useMutation({
     onSuccess: () => {
       toast.success("Identity Created! 🎉 Welcome to the partner network.");
@@ -63,7 +67,12 @@ export default function VendorRegisterPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
-    
+
+    if (selectedCategories.length === 0) {
+      toast.error("Please select at least one category.");
+      return;
+    }
+
     registerMutation.mutate({
       shopName: data.shopName as string,
       description: data.description as string,
@@ -71,7 +80,7 @@ export default function VendorRegisterPage() {
       email: data.email as string,
       city: data.city as string,
       address: data.address as string,
-      category: data.category as string,
+      categories: selectedCategories,
       logo: logoBase64 || undefined,
       bankAccount: data.bankAccount as string,
       bankAccountName: data.bankAccountName as string,
@@ -143,17 +152,31 @@ export default function VendorRegisterPage() {
                          <FieldGroup label="Shop Name">
                             <Input name="shopName" placeholder="e.g. Thiruvottriyur Fresh" required />
                          </FieldGroup>
-                         <FieldGroup label="Business Category">
-                            <select name="category" required className="w-full h-12 px-4 bg-gray-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-orange-400 outline-none font-bold transition-all appearance-none cursor-pointer">
-                               <option value="">Select Category</option>
-                               <option value="Groceries">Groceries</option>
-                               <option value="Electronics">Electronics</option>
-                               <option value="Gift Shop">Gift Shop</option>
-                               <option value="Restaurant">Restaurant</option>
-                               <option value="Pharmacy">Pharmacy</option>
-                               <option value="Other">Other</option>
-                            </select>
-                         </FieldGroup>
+                          <FieldGroup label="Business Categories (Select all that apply)">
+                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {categories.map((cat: any) => (
+                                   <button
+                                      key={cat.id}
+                                      type="button"
+                                      onClick={() => {
+                                         setSelectedCategories(prev => 
+                                            prev.includes(cat.name) 
+                                               ? prev.filter(c => c !== cat.name)
+                                               : [...prev, cat.name]
+                                         );
+                                      }}
+                                      className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center justify-between gap-2 ${
+                                         selectedCategories.includes(cat.name)
+                                            ? "bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20"
+                                            : "bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100"
+                                      }`}
+                                   >
+                                      {cat.name}
+                                      {selectedCategories.includes(cat.name) && <CheckCircle size={12} />}
+                                   </button>
+                                ))}
+                             </div>
+                          </FieldGroup>
                       </div>
                       <FieldGroup label="Shop Bio (Search Friendly)" hint="Describe what makes your shop special for your neighbors.">
                          <textarea name="description" rows={3} placeholder="Fresh local produce delivered in 10 minutes..." className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-orange-400 outline-none font-bold transition-all resize-none" required />

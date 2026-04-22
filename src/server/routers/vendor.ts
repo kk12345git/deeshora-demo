@@ -15,7 +15,7 @@ export const vendorRouter = createTRPCRouter({
         email: z.string().email(),
         city: z.string(),
         address: z.string(),
-        category: z.string(),
+        categories: z.array(z.string()),
         logo: z.string().startsWith('data:image/').optional(),
         // Bank Details
         bankAccount: z.string().optional(),
@@ -50,7 +50,7 @@ export const vendorRouter = createTRPCRouter({
             email: input.email,
             city: input.city,
             address: input.address,
-            category: input.category,
+            categories: input.categories,
             logo: logoUrl,
             // Bank Details
             bankAccount: input.bankAccount,
@@ -92,7 +92,7 @@ export const vendorRouter = createTRPCRouter({
         phone: z.string().min(10).optional(),
         city: z.string().optional(),
         address: z.string().optional(),
-        category: z.string().optional(),
+        categories: z.array(z.string()).optional(),
         // Bank details
         bankAccount: z.string().optional(),
         bankAccountName: z.string().optional(),

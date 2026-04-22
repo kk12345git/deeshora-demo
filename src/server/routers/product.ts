@@ -12,18 +12,17 @@ const MAX_IMAGE_BASE64_BYTES = 2.7 * 1024 * 1024;
 // ─── Category keyword map for auto-analysis ──────────────────────────────────
 // Maps keywords in a product name to a category name (case-insensitive)
 const CATEGORY_KEYWORD_MAP: Record<string, string[]> = {
-  'Groceries':    ['rice', 'dal', 'flour', 'atta', 'oil', 'salt', 'sugar', 'turmeric', 'spice', 'masala', 'pulses', 'lentil', 'wheat', 'cereal', 'grain', 'maida'],
-  'Vegetables':   ['tomato', 'potato', 'onion', 'carrot', 'spinach', 'cabbage', 'brinjal', 'capsicum', 'peas', 'beans', 'cucumber', 'gourd', 'bitter', 'drumstick', 'ladies finger', 'okra', 'garlic', 'ginger', 'coriander', 'mint', 'vegetable', 'sabzi', 'greens'],
-  'Fruits':       ['apple', 'mango', 'banana', 'orange', 'grape', 'papaya', 'watermelon', 'melon', 'pomegranate', 'guava', 'pineapple', 'strawberry', 'lemon', 'kiwi', 'pear', 'fruit'],
-  'Dairy':        ['milk', 'curd', 'paneer', 'butter', 'ghee', 'cheese', 'cream', 'yogurt', 'lassi', 'buttermilk', 'khoya', 'mawa', 'dairy'],
-  'Bakery':       ['bread', 'cake', 'biscuit', 'cookie', 'muffin', 'croissant', 'rusk', 'toast', 'pastry', 'brownie', 'donut', 'pav', 'bun', 'pizza'],
-  'Beverages':    ['water', 'juice', 'cola', 'soda', 'tea', 'coffee', 'milk shake', 'smoothie', 'energy drink', 'cold drink', 'lemonade', 'nimbu pani', 'chaas', 'tender coconut', 'drink', 'beverage'],
-  'Meat & Seafood': ['chicken', 'mutton', 'fish', 'prawn', 'egg', 'meat', 'seafood', 'crab', 'lobster', 'sardine', 'tuna', 'salmon', 'beef', 'pork', 'sausage', 'keema'],
-  'Snacks':       ['chips', 'namkeen', 'bhujia', 'mixture', 'popcorn', 'biscuit', 'cracker', 'wafer', 'fries', 'snack', 'peanut', 'cashew', 'almond', 'raisin', 'dry fruit'],
-  'Personal Care': ['shampoo', 'soap', 'conditioner', 'face wash', 'moisturizer', 'lotion', 'cream', 'toothpaste', 'toothbrush', 'deodorant', 'perfume', 'body wash', 'sunscreen', 'serum'],
-  'Cleaning':     ['detergent', 'phenyl', 'toilet cleaner', 'floor cleaner', 'dish wash', 'broom', 'mop', 'tissue', 'wipe', 'sanitizer', 'bleach', 'vim', 'harpic', 'surf'],
-  'Electronics':  ['mobile', 'phone', 'charger', 'cable', 'earphone', 'headphone', 'speaker', 'bulb', 'led', 'fan', 'battery', 'adapter', 'usb', 'laptop', 'tablet', 'remote', 'electronic'],
-  'Stationery':   ['pen', 'pencil', 'notebook', 'paper', 'book', 'eraser', 'stapler', 'tape', 'scissors', 'marker', 'highlighter', 'folder', 'stationery'],
+  'Groceries & Essentials':    ['rice', 'dal', 'flour', 'atta', 'oil', 'salt', 'sugar', 'turmeric', 'spice', 'masala', 'pulses', 'lentil', 'wheat', 'cereal', 'grain', 'maida', 'grocery', 'provision'],
+  'Fruits & Vegetables':   ['tomato', 'potato', 'onion', 'carrot', 'spinach', 'cabbage', 'brinjal', 'capsicum', 'peas', 'beans', 'cucumber', 'gourd', 'bitter', 'drumstick', 'ladies finger', 'okra', 'garlic', 'ginger', 'coriander', 'mint', 'vegetable', 'sabzi', 'greens', 'apple', 'mango', 'banana', 'orange', 'grape', 'papaya', 'watermelon', 'melon', 'pomegranate', 'guava', 'pineapple', 'strawberry', 'lemon', 'kiwi', 'pear', 'fruit'],
+  'Meat & Fish': ['chicken', 'mutton', 'fish', 'prawn', 'egg', 'meat', 'seafood', 'crab', 'lobster', 'sardine', 'tuna', 'salmon', 'beef', 'pork', 'sausage', 'keema'],
+  'Bakery & Dairy':        ['milk', 'curd', 'paneer', 'butter', 'ghee', 'cheese', 'cream', 'yogurt', 'lassi', 'buttermilk', 'khoya', 'mawa', 'dairy', 'bread', 'cake', 'biscuit', 'cookie', 'muffin', 'croissant', 'rusk', 'toast', 'pastry', 'brownie', 'donut', 'pav', 'bun', 'pizza'],
+  'Pharmacy & Wellness': ['medicine', 'tablet', 'capsule', 'syrup', 'bandage', 'vitamin', 'supplement', 'wellness', 'ayurvedic', 'homeopathy', 'pharma', 'shampoo', 'soap', 'face wash', 'toothpaste'],
+  'Electronics & Gadgets':  ['mobile', 'phone', 'charger', 'cable', 'earphone', 'headphone', 'speaker', 'bulb', 'led', 'fan', 'battery', 'adapter', 'usb', 'laptop', 'tablet', 'remote', 'electronic', 'gadget'],
+  'Fashion & Lifestyle': ['tshirt', 'shirt', 'pant', 'jeans', 'dress', 'saree', 'kurti', 'shoes', 'fashion', 'watch', 'jewelry', 'bag', 'wallet'],
+  'Home & Kitchen': ['cooker', 'pan', 'tawa', 'knife', 'vessel', 'cleaner', 'detergent', 'mop', 'broom', 'kitchen', 'home', 'decor'],
+  'Stationery & Office':   ['pen', 'pencil', 'notebook', 'paper', 'book', 'eraser', 'stapler', 'tape', 'scissors', 'marker', 'highlighter', 'folder', 'stationery'],
+  'Pet Care': ['dog', 'cat', 'food', 'pet', 'shampoo', 'leash', 'aquarium', 'bird'],
+  'Toys & Baby Care': ['toy', 'diaper', 'baby', 'doll', 'game', 'pampers', 'wipe'],
 };
 
 function autoDetectCategory(name: string, description: string = ''): string | null {
@@ -318,6 +317,47 @@ export const productRouter = createTRPCRouter({
       orderBy: { sortOrder: 'asc' },
     });
   }),
+
+
+  /** Public: get all categories regardless of active status (for admin) */
+  listAllCategories: publicProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.category.findMany({
+      orderBy: { name: 'asc' },
+    });
+  }),
+
+
+  /** ─── ADMIN: Seed standard categories ───────────────── */
+  seedCategories: protectedProcedure.mutation(async ({ ctx }) => {
+    if (ctx.user.role !== 'ADMIN') {
+      throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Admin only' });
+    }
+
+    const categories = [
+      { name: 'Groceries & Essentials', slug: 'groceries', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800', sortOrder: 1 },
+      { name: 'Fruits & Vegetables', slug: 'fruits-veg', image: 'https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800', sortOrder: 2 },
+      { name: 'Meat & Fish', slug: 'meat-fish', image: 'https://images.unsplash.com/photo-1607623273573-7034ed8a9abd?w=800', sortOrder: 3 },
+      { name: 'Bakery & Dairy', slug: 'bakery-dairy', image: 'https://images.unsplash.com/photo-1550583724-125581f77833?w=800', sortOrder: 4 },
+      { name: 'Pharmacy & Wellness', slug: 'pharmacy', image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbbb88?w=800', sortOrder: 5 },
+      { name: 'Electronics & Gadgets', slug: 'electronics', image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800', sortOrder: 6 },
+      { name: 'Fashion & Lifestyle', slug: 'fashion', image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=800', sortOrder: 7 },
+      { name: 'Home & Kitchen', slug: 'home-kitchen', image: 'https://images.unsplash.com/photo-1556911220-e15224bbaf47?w=800', sortOrder: 8 },
+      { name: 'Stationery & Office', slug: 'stationery', image: 'https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=800', sortOrder: 9 },
+      { name: 'Pet Care', slug: 'pet-care', image: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=800', sortOrder: 10 },
+      { name: 'Toys & Baby Care', slug: 'toys-baby', image: 'https://images.unsplash.com/photo-1532330393533-443990a51d10?w=800', sortOrder: 11 },
+    ];
+
+    for (const cat of categories) {
+      await ctx.prisma.category.upsert({
+        where: { slug: cat.slug },
+        update: { name: cat.name, image: cat.image, sortOrder: cat.sortOrder },
+        create: cat,
+      });
+    }
+
+    return { success: true };
+  }),
+
 
 
   getCities: publicProcedure.query(async ({ ctx }) => {

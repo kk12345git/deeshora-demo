@@ -115,7 +115,7 @@ model Vendor {
   email           String
   city            String
   address         String
-  category        String // e.g., "Groceries", "Electronics"
+  categories      String[] // e.g., ["Groceries", "Electronics"]
   status          VendorStatus @default(PENDING)
   commissionRate  Float        @default(0.15)
   // Bank & Financial Details

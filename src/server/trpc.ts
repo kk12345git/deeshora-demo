@@ -79,7 +79,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
               phone: process.env.ADMIN_PHONE ?? '0000000000',
               city: 'Chennai',
               address: 'Deeshora HQ',
-              category: 'Official',
+              categories: ['Official'],
               status: 'APPROVED',
             },
             update: {},

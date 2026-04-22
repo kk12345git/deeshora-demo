@@ -36,6 +36,33 @@ async function main() {
   }
   console.log(`✅ Seeded ${serviceAreas.length} service areas.`);
 
+  // ── Seed Comprehensive Categories ────────────────────────────────────
+  console.log('📂 Seeding all categories...');
+  const categoriesList = [
+    { name: 'Groceries & Essentials', slug: 'groceries', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800', sortOrder: 1 },
+    { name: 'Fruits & Vegetables', slug: 'fruits-veg', image: 'https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800', sortOrder: 2 },
+    { name: 'Meat & Fish', slug: 'meat-fish', image: 'https://images.unsplash.com/photo-1607623273573-7034ed8a9abd?w=800', sortOrder: 3 },
+    { name: 'Bakery & Dairy', slug: 'bakery-dairy', image: 'https://images.unsplash.com/photo-1550583724-125581f77833?w=800', sortOrder: 4 },
+    { name: 'Pharmacy & Wellness', slug: 'pharmacy', image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbbb88?w=800', sortOrder: 5 },
+    { name: 'Electronics & Gadgets', slug: 'electronics', image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800', sortOrder: 6 },
+    { name: 'Fashion & Lifestyle', slug: 'fashion', image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=800', sortOrder: 7 },
+    { name: 'Home & Kitchen', slug: 'home-kitchen', image: 'https://images.unsplash.com/photo-1556911220-e15224bbaf47?w=800', sortOrder: 8 },
+    { name: 'Stationery & Office', slug: 'stationery', image: 'https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=800', sortOrder: 9 },
+    { name: 'Pet Care', slug: 'pet-care', image: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=800', sortOrder: 10 },
+    { name: 'Toys & Baby Care', slug: 'toys-baby', image: 'https://images.unsplash.com/photo-1532330393533-443990a51d10?w=800', sortOrder: 11 },
+  ];
+
+  const categoryMap = new Map();
+  for (const cat of categoriesList) {
+    const upserted = await prisma.category.upsert({
+      where: { slug: cat.slug },
+      update: cat,
+      create: cat,
+    });
+    categoryMap.set(cat.slug, upserted);
+  }
+  console.log(`✅ Seeded ${categoriesList.length} categories.`);
+
   // ── Seed a Sample Vendor ─────────────────────────────────────────────
   console.log('🏪 Seeding sample vendor...');
   const sampleVendorEmail = 'karthik@example.com'; 
@@ -58,22 +85,18 @@ async function main() {
       logo: 'https://res.cloudinary.com/dqr6idm0v/image/upload/v1712800000/logos/fresh-mart.png',
       phone: '9840012345',
       email: sampleVendorEmail,
-      category: 'Groceries',
+      categories: ['Groceries & Essentials', 'Bakery & Dairy'],
       address: '123 Market St, Thiruvottriyur',
       city: 'Chennai',
       status: 'APPROVED',
       commissionRate: 0.1,
     },
-    update: { status: 'APPROVED' },
+    update: { status: 'APPROVED', categories: ['Groceries & Essentials', 'Bakery & Dairy'] },
   });
 
   // ── Seed Sample Products ─────────────────────────────────────────────
   console.log('🍎 Seeding sample products...');
-  const category = await prisma.category.upsert({
-    where: { slug: 'groceries' },
-    create: { name: 'Groceries', slug: 'groceries', image: 'https://res.cloudinary.com/dqr6idm0v/image/upload/v1712800000/categories/groceries.jpg' },
-    update: {},
-  });
+  const groceryCat = categoryMap.get('groceries');
 
   const products = [
     {
@@ -84,8 +107,8 @@ async function main() {
       mrp: 75,
       stock: 50,
       unit: '1L',
-      images: ['/seed/milk.png'],
-      categoryId: category.id,
+      images: ['https://images.unsplash.com/photo-1550583724-125581f77833?w=800'],
+      categoryId: groceryCat.id,
       vendorId: vendor.id,
     },
     {
@@ -97,7 +120,7 @@ async function main() {
       stock: 20,
       unit: '5kg',
       images: ['https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=800'],
-      categoryId: category.id,
+      categoryId: groceryCat.id,
       vendorId: vendor.id,
     }
   ];
