@@ -5,6 +5,9 @@ import { TRPCError } from '@trpc/server';
 import { uploadImage } from '@/lib/cloudinary';
 import slugify from 'slugify';
 
+// M4: Max 2MB per base64 image (base64 has ~33% overhead, so 2MB raw ≈ 2.7MB base64)
+const MAX_IMAGE_BASE64_BYTES = 2.7 * 1024 * 1024;
+
 
 // ─── Category keyword map for auto-analysis ──────────────────────────────────
 // Maps keywords in a product name to a category name (case-insensitive)
@@ -327,8 +330,8 @@ export const productRouter = createTRPCRouter({
   }),
 
 
-  // ─── Auto-analyze product name → suggest category + description hints ─────
-  autoAnalyze: publicProcedure
+  // L3: autoAnalyze moved to protectedProcedure — prevents unauthenticated rate-abuse on this DB endpoint
+  autoAnalyze: protectedProcedure
     .input(
       z.object({
         name: z.string().min(2),
@@ -337,7 +340,7 @@ export const productRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const detectedCategoryName = autoDetectCategory(input.name, input.description);
-      
+
       if (!detectedCategoryName) {
         return { suggestedCategoryId: null, suggestedCategoryName: null, confidence: 'low' as const, hints: [] };
       }
@@ -387,7 +390,12 @@ export const productRouter = createTRPCRouter({
         stock: z.number().int().min(0),
         unit: z.string(),
         categoryId: z.string(),
-        images: z.array(z.string().startsWith('data:image/')).min(1),
+        // M4: Validate image size server-side (max 2MB per image, up to 5 images)
+        images: z.array(
+          z.string()
+            .startsWith('data:image/')
+            .refine((s) => s.length <= MAX_IMAGE_BASE64_BYTES, 'Each image must be under 2MB')
+        ).min(1).max(5),
         isFeatured: z.boolean().optional(),
         gstRate: z.number().min(0).max(0.28).default(0),
         tags: z.array(z.string()).optional(),
@@ -536,6 +544,14 @@ export const productRouter = createTRPCRouter({
       });
       if (!hasPurchased) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only review products you have purchased.' });
+      }
+
+      // M1: Prevent duplicate reviews — one review per user per product
+      const existingReview = await ctx.prisma.review.findUnique({
+        where: { productId_userId: { productId: input.productId, userId: ctx.user.id } },
+      });
+      if (existingReview) {
+        throw new TRPCError({ code: 'CONFLICT', message: 'You have already reviewed this product. Edit your existing review instead.' });
       }
 
       const newReview = await ctx.prisma.review.create({

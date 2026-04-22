@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, adminProcedure, publicProcedure, protectedProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
-import { VendorStatus, UserRole, OrderStatus } from '@prisma/client';
+import { VendorStatus, UserRole, OrderStatus, Prisma } from '@prisma/client';
 import { uploadImage } from '@/lib/cloudinary';
 import slugify from 'slugify';
 
@@ -76,7 +76,8 @@ export const adminRouter = createTRPCRouter({
         default:            since = new Date(now.getFullYear(), now.getMonth(), 1);
       }
 
-      const where: any = {
+      // L2: Properly typed where clause — no `any`
+      const where: Prisma.OrderWhereInput = {
         paymentStatus: 'PAID',
         createdAt: { gte: since },
         ...(input.vendorId ? { vendorId: input.vendorId } : {}),
@@ -92,12 +93,12 @@ export const adminRouter = createTRPCRouter({
 
       // Get vendor details for the stats we found
       const vendors = await ctx.prisma.vendor.findMany({
-        where: { id: { in: stats.map(s => s.vendorId) } },
+        where: { id: { in: stats.map((s) => s.vendorId) } },
         select: { id: true, shopName: true, logo: true },
       });
 
-      const vendorStats = stats.map(s => {
-        const vendor = vendors.find(v => v.id === s.vendorId);
+      const vendorStats = stats.map((s) => {
+        const vendor = vendors.find((v) => v.id === s.vendorId);
         return {
           vendorId: s.vendorId,
           shopName: vendor?.shopName || 'Unknown',
@@ -106,11 +107,16 @@ export const adminRouter = createTRPCRouter({
           revenue: s._sum.total ?? 0,
           vendorEarnings: s._sum.vendorAmount ?? 0,
           commission: s._sum.commission ?? 0,
-          topProducts: [], // Top products would still require separate queries or a complex raw query
+          topProducts: [],
         };
       });
 
-      // Monthly breakdown for chart
+      // H2: Fixed SQL injection — use Prisma.sql conditional fragments properly
+      // The nested $queryRaw inside a $queryRaw template was bypassing parameterization.
+      const vendorFilter = input.vendorId
+        ? Prisma.sql`AND "vendorId" = ${input.vendorId}`
+        : Prisma.empty;
+
       const monthlyBreakdown = await ctx.prisma.$queryRaw<Array<{ month: string; revenue: number; orders: number }>>`
         SELECT
           to_char(date_trunc('month', "createdAt"), 'YYYY-MM') as month,
@@ -119,7 +125,7 @@ export const adminRouter = createTRPCRouter({
         FROM "Order"
         WHERE "paymentStatus" = 'PAID'
           AND "createdAt" >= ${since}
-          ${input.vendorId ? ctx.prisma.$queryRaw`AND "vendorId" = ${input.vendorId}` : ctx.prisma.$queryRaw``}
+          ${vendorFilter}
         GROUP BY 1
         ORDER BY 1;
       `;
@@ -363,6 +369,7 @@ export const adminRouter = createTRPCRouter({
             vendorId: input.vendorId,
             amount: input.amount,
             utrNumber: input.utrNumber,
+            // M2: Use enum value (matches PayoutStatus.COMPLETED)
             status: 'COMPLETED',
             processedAt: new Date(),
           },
@@ -636,11 +643,16 @@ export const adminRouter = createTRPCRouter({
         },
       });
 
-      await pusherServer.trigger(
-        CHANNELS.ORDER(orderId),
-        EVENTS.ORDER_STATUS_UPDATED,
-        { status, message: messages[status] }
-      );
+      // M3: Pusher wrapped in try/catch — admin action is not rolled back if notify fails
+      try {
+        await pusherServer.trigger(
+          CHANNELS.ORDER(orderId),
+          EVENTS.ORDER_STATUS_UPDATED,
+          { status, message: messages[status] }
+        );
+      } catch (pusherErr) {
+        console.error('[Admin] Pusher notify failed for order:', orderId, pusherErr);
+      }
 
       return updated;
     }),

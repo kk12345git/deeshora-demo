@@ -12,7 +12,8 @@ export const orderRouter = createTRPCRouter({
       z.object({
         addressId: z.string(),
         notes: z.string().optional(),
-        paymentMethod: z.enum(['COD', 'UPI']).default('COD'),
+        // C3: Removed UPI — COD only. Add a real payment gateway if online is needed.
+        paymentMethod: z.enum(['COD']).default('COD'),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -43,6 +44,28 @@ export const orderRouter = createTRPCRouter({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Your cart is empty.' });
       }
 
+      // Validate all items are still active and vendor is approved
+      for (const item of cart.items) {
+        if (!item.product.isActive) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `"${item.product.name}" is no longer available.`,
+          });
+        }
+        if (item.product.vendor.status !== 'APPROVED') {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Vendor for "${item.product.name}" is not active.`,
+          });
+        }
+        if (item.product.stock < item.quantity) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `"${item.product.name}" has insufficient stock (only ${item.product.stock} left).`,
+          });
+        }
+      }
+
       // Group items by vendor
       const itemsByVendor = cart.items.reduce((acc, item) => {
         const vendorId = item.product.vendorId;
@@ -56,11 +79,11 @@ export const orderRouter = createTRPCRouter({
         acc[vendorId].items.push(item);
         acc[vendorId].subtotal += item.product.price * item.quantity;
         return acc;
-      }, {} as Record<string, { vendor: any; items: any[]; subtotal: number }>);
+      }, {} as Record<string, { vendor: typeof cart.items[0]['product']['vendor']; items: typeof cart.items; subtotal: number }>);
 
       const config = await ctx.prisma.siteConfig.findMany();
-      const deliveryFeeConfig = config.find((c: any) => c.key === 'delivery_fee');
-      const freeDeliveryConfig = config.find((c: any) => c.key === 'free_delivery_above');
+      const deliveryFeeConfig = config.find((c) => c.key === 'delivery_fee');
+      const freeDeliveryConfig = config.find((c) => c.key === 'free_delivery_above');
       const baseDeliveryFee = deliveryFeeConfig ? parseFloat(deliveryFeeConfig.value) : 40;
       const freeDeliveryThreshold = freeDeliveryConfig ? parseFloat(freeDeliveryConfig.value) : 299;
 
@@ -86,11 +109,12 @@ export const orderRouter = createTRPCRouter({
               commission,
               vendorAmount,
               notes,
-              paymentMethod: paymentMethod === 'COD' ? 'COD' : 'ONLINE',
-              paymentStatus: paymentMethod === 'UPI' ? 'PENDING' : 'PENDING',
+              paymentMethod: 'COD',
+              // L1: Fixed dead ternary — COD orders start PENDING until delivered
+              paymentStatus: 'PENDING',
               status: OrderStatus.PENDING,
               items: {
-                create: items.map((item: any) => ({
+                create: items.map((item) => ({
                   productId: item.productId,
                   name: item.product.name,
                   image: item.product.images[0],
@@ -105,35 +129,45 @@ export const orderRouter = createTRPCRouter({
               timeline: {
                 create: {
                   status: OrderStatus.PENDING,
-                  message: paymentMethod === 'COD'
-                    ? 'Order placed via Cash on Delivery.'
-                    : 'Order placed. Awaiting UPI payment confirmation.',
+                  message: 'Order placed via Cash on Delivery.',
                 },
               },
             },
           });
 
-          // Immediately reserve stock for any payment method
+          // C5: Atomic stock decrement — only decrements if stock >= quantity
+          // Prevents race conditions where two orders consume the same last unit
           for (const item of items) {
-            await tx.product.update({
-              where: { id: item.productId },
+            const updated = await tx.product.updateMany({
+              where: { id: item.productId, stock: { gte: item.quantity } },
               data: { stock: { decrement: item.quantity } },
             });
+
+            if (updated.count === 0) {
+              // Race condition detected — another order grabbed the last stock
+              throw new TRPCError({
+                code: 'CONFLICT',
+                message: `"${item.product.name}" just ran out of stock. Please remove it from your cart and try again.`,
+              });
+            }
           }
 
-          // Trigger Pusher event for COD immediately; UPI triggers after verification
-          if (paymentMethod === 'COD') {
+          // M3: Pusher wrapped in try/catch — order is NOT rolled back if notification fails
+          try {
             await pusherServer.trigger(
               CHANNELS.VENDOR(vendor.id),
               EVENTS.NEW_ORDER,
               { orderId: order.id, customerName: user.name }
             );
+          } catch (pusherErr) {
+            console.error('[Order] Pusher notify failed for vendor:', vendor.id, pusherErr);
+            // Non-fatal — vendor will see order on next refresh
           }
 
           createdOrders.push(order);
         }
 
-        // Clear cart
+        // Clear cart after all orders are created
         await tx.cartItem.deleteMany({ where: { cart: { userId: user.id } } });
 
         return createdOrders;
@@ -141,51 +175,14 @@ export const orderRouter = createTRPCRouter({
 
       return {
         success: true,
-        orderIds: finalOrders.map(o => o.id),
+        orderIds: finalOrders.map((o) => o.id),
         paymentMethod,
       };
     }),
 
-  /** Customer confirms they paid via UPI — marks PAID and alerts vendor */
-  confirmUpiPayment: protectedProcedure
-    .input(z.object({
-      orderId: z.string(),
-      utrNumber: z.string().optional(),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      const { orderId, utrNumber } = input;
-
-      const order = await ctx.prisma.order.findFirst({
-        where: { id: orderId, userId: ctx.user.id },
-        include: { vendor: true },
-      });
-      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
-      if (order.paymentStatus === 'PAID') {
-        return { success: true, message: 'Already marked as paid.' };
-      }
-
-      await ctx.prisma.order.update({
-        where: { id: orderId },
-        data: {
-          paymentStatus: 'PAID',
-          timeline: {
-            create: {
-              status: order.status,
-              message: `UPI payment confirmed${utrNumber ? ` (UTR: ${utrNumber})` : ''}.`,
-            },
-          },
-        },
-      });
-
-      // Alert vendor now that payment is confirmed
-      await pusherServer.trigger(
-        CHANNELS.VENDOR(order.vendorId),
-        EVENTS.NEW_ORDER,
-        { orderId: order.id, customerName: ctx.user.name }
-      );
-
-      return { success: true };
-    }),
+  // C3: UPI self-confirmation endpoint REMOVED.
+  // Reason: there is no server-side verification — customers could mark any order as paid.
+  // Re-add only with a proper payment gateway signature check.
 
   myOrders: protectedProcedure
     .input(
@@ -299,7 +296,7 @@ export const orderRouter = createTRPCRouter({
         DELIVERED: [],
         CANCELLED: [],
         REFUNDED: [],
-        };
+      };
 
 
       if (!validTransitions[order.status].includes(status)) {
@@ -324,6 +321,7 @@ export const orderRouter = createTRPCRouter({
         data: {
           status,
           deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
+          // Mark COD as PAID when delivered
           paymentStatus: status === 'DELIVERED' && order.paymentMethod === 'COD' ? 'PAID' : order.paymentStatus,
           timeline: {
             create: {
@@ -335,12 +333,16 @@ export const orderRouter = createTRPCRouter({
       });
 
 
-      // Trigger Pusher event
-      await pusherServer.trigger(
-        CHANNELS.ORDER(orderId),
-        EVENTS.ORDER_STATUS_UPDATED,
-        { status, message: messages[status] }
-      );
+      // M3: Pusher in try/catch
+      try {
+        await pusherServer.trigger(
+          CHANNELS.ORDER(orderId),
+          EVENTS.ORDER_STATUS_UPDATED,
+          { status, message: messages[status] }
+        );
+      } catch (pusherErr) {
+        console.error('[Order] Pusher status update failed:', orderId, pusherErr);
+      }
 
 
       return updatedOrder;
@@ -360,11 +362,11 @@ export const orderRouter = createTRPCRouter({
     today.setHours(0, 0, 0, 0);
 
     const [
-      stats, 
-      todayOrders, 
-      pendingOrders, 
-      totalRevenue, 
-      last14DaysOrders, 
+      stats,
+      todayOrders,
+      pendingOrders,
+      totalRevenue,
+      last14DaysOrders,
       previous14DaysOrders,
       topItems,
       allTimeOrders
@@ -428,7 +430,7 @@ export const orderRouter = createTRPCRouter({
     const growthRate = previousRevenue === 0 ? 100 : Math.round(((currentRevenue - previousRevenue) / previousRevenue) * 100);
 
     // 2. Calculate average fulfillment speed (minutes)
-    const deliveredOrders = last14DaysOrders.filter(o => o.deliveredAt);
+    const deliveredOrders = last14DaysOrders.filter((o) => o.deliveredAt);
     const avgFulfillmentMinutes = deliveredOrders.length > 0
       ? Math.round(
           deliveredOrders.reduce((acc, current) => {
@@ -439,11 +441,11 @@ export const orderRouter = createTRPCRouter({
 
     // 3. Calculate Retention
     const userOrderCounts: Record<string, number> = {};
-    allTimeOrders.forEach(o => {
+    allTimeOrders.forEach((o) => {
       userOrderCounts[o.userId] = (userOrderCounts[o.userId] || 0) + 1;
     });
     const uniqueUsers = Object.keys(userOrderCounts).length;
-    const repeatUsers = Object.values(userOrderCounts).filter(count => count > 1).length;
+    const repeatUsers = Object.values(userOrderCounts).filter((count) => count > 1).length;
     const retentionRate = uniqueUsers === 0 ? 0 : Math.round((repeatUsers / uniqueUsers) * 100);
 
     // 4. Calculate SEO Readiness Score
@@ -459,7 +461,7 @@ export const orderRouter = createTRPCRouter({
       d.setDate(d.getDate() + i);
       const nextD = new Date(d);
       nextD.setDate(nextD.getDate() + 1);
-      const dayOrders = last14DaysOrders.filter(o => {
+      const dayOrders = last14DaysOrders.filter((o) => {
         const t = new Date(o.createdAt);
         return t >= d && t < nextD;
       });
@@ -477,7 +479,7 @@ export const orderRouter = createTRPCRouter({
       totalRevenue: totalRevenue._sum.vendorAmount ?? 0,
       pendingPayout: ctx.vendor.pendingPayout,
       dailySeries,
-      topProducts: topItems.map(item => ({
+      topProducts: topItems.map((item) => ({
         name: item.name,
         quantity: item._sum.quantity || 0,
         revenue: item._sum.total || 0

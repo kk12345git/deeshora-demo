@@ -7,142 +7,144 @@ import { User } from '@prisma/client';
 import { clerkClient } from '@clerk/nextjs/server';
 
 
-const ADMIN_EMAILS = [
-  'deeshorasupport@gmail.com',
-  'karthigeyanbs44@gmail.com'
-];
+// ─── C1: Admin emails from environment variable, NOT hard-coded ───────────────
+// Set ADMIN_EMAILS="a@b.com,c@d.com" in your .env file
+const ADMIN_EMAILS: string[] = (process.env.ADMIN_EMAILS ?? '')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
 
 
 export const createTRPCContext = async (opts: { headers: Headers }) => {
   const { userId } = await auth();
+
+  // ─── C2: Fast path — skip all DB work for unauthenticated requests ────────
+  if (!userId) {
+    return { prisma, userId: null, user: null, ...opts };
+  }
+
   let user: User | null = null;
 
+  // Try to find existing user
+  user = await prisma.user.findUnique({
+    where: { clerkId: userId },
+  });
 
-  if (userId) {
-    // Try to find existing user
-    user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-    });
-
-    // Auto-create DB record if user signed in via Google OAuth but
-    // the Clerk webhook didn't fire (common in local dev & first deploys)
-    if (!user) {
-      try {
-        const clerkUser = await currentUser();
-        if (clerkUser) {
-          const email = clerkUser.emailAddresses[0]?.emailAddress ?? '';
-          const firstName = clerkUser.firstName ?? '';
-          const lastName = clerkUser.lastName ?? '';
-          const name = `${firstName} ${lastName}`.trim() || email.split('@')[0];
-          
-          const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
-          
-          user = await prisma.user.upsert({
-            where: { clerkId: userId },
-            create: {
-              clerkId: userId,
-              email: email.toLowerCase(),
-              name,
-              avatar: clerkUser.imageUrl,
-              role: isAdmin ? 'ADMIN' : 'CUSTOMER',
-            },
-            update: {
-              role: isAdmin ? 'ADMIN' : undefined,
-            },
-          });
-
-          // Sync with Clerk metadata to prevent redirection in AdminLayout
-          if (isAdmin) {
-            const clerk = await clerkClient();
-            await clerk.users.updateUserMetadata(userId, {
-              publicMetadata: { role: 'ADMIN' }
-            });
-          }
-
-          // If admin, ensure they have a vendor profile to upload products
-          if (isAdmin) {
-            await prisma.vendor.upsert({
-              where: { userId: user.id },
-              create: {
-                userId: user.id,
-                shopName: 'Deeshora Official',
-                email: email.toLowerCase(),
-                phone: '8939318865',
-                city: 'Chennai',
-                address: 'Deeshora HQ',
-                category: 'Official',
-                status: 'APPROVED',
-              },
-              update: {},
-            });
-          }
-        }
-      } catch (e) {
-        // Non-fatal — protected routes will throw UNAUTHORIZED if user is null
-        console.error('[tRPC] Failed to auto-create user:', e);
-      }
-    } else {
-      // Logic for existing users who might have just been designated as admin or delivery
+  // Auto-create DB record if user signed in via Google OAuth but
+  // the Clerk webhook didn't fire (common in local dev & first deploys)
+  if (!user) {
+    try {
       const clerkUser = await currentUser();
-      const metadataRole = clerkUser?.publicMetadata?.role as string | undefined;
+      if (clerkUser) {
+        const email = clerkUser.emailAddresses[0]?.emailAddress ?? '';
+        const firstName = clerkUser.firstName ?? '';
+        const lastName = clerkUser.lastName ?? '';
+        const name = `${firstName} ${lastName}`.trim() || email.split('@')[0];
 
-      // Sync ADMIN if necessary (prioritize database and hardcoded list)
-      const isAdmin = ADMIN_EMAILS.includes(user.email.toLowerCase()) || user.role === 'ADMIN';
-      
-      if (isAdmin) {
-        if (user.role !== 'ADMIN') {
-          user = await prisma.user.update({
-            where: { id: user.id },
-            data: { role: 'ADMIN' },
-          });
-        }
+        const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
 
-        // Sync with Clerk metadata if it's different or missing
-        if (metadataRole !== 'ADMIN') {
+        user = await prisma.user.upsert({
+          where: { clerkId: userId },
+          create: {
+            clerkId: userId,
+            email: email.toLowerCase(),
+            name,
+            avatar: clerkUser.imageUrl,
+            role: isAdmin ? 'ADMIN' : 'CUSTOMER',
+          },
+          update: {
+            // Only force-upgrade to ADMIN if email matches; never downgrade here
+            role: isAdmin ? 'ADMIN' : undefined,
+          },
+        });
+
+        // Sync Clerk metadata once on creation (not on every request)
+        if (isAdmin) {
           try {
             const clerk = await clerkClient();
             await clerk.users.updateUserMetadata(userId, {
-              publicMetadata: { role: 'ADMIN' }
+              publicMetadata: { role: 'ADMIN' },
             });
           } catch (e) {
-            console.error('[tRPC] Failed to sync Admin metadata:', e);
+            console.error('[tRPC] Failed to sync Admin metadata on creation:', e);
           }
-        }
-        
-        // Ensure vendor profile for admin to manage official shop
-        await prisma.vendor.upsert({
-          where: { userId: user.id },
-          create: {
-            userId: user.id,
-            shopName: 'Deeshora Official',
-            email: user.email,
-            phone: '8939318865',
-            city: 'Chennai',
-            address: 'Deeshora HQ',
-            category: 'Official',
-            status: 'APPROVED',
-          },
-          update: {},
-        });
-      } 
-      // Sync DELIVERY if necessary
-      else if (metadataRole === 'DELIVERY' && user.role !== 'DELIVERY') {
-        user = await prisma.user.update({
-          where: { id: user.id },
-          data: { role: 'DELIVERY' },
-        });
-      }
-      // Reverse sync: if DB says DELIVERY but Clerk doesn't (rare), we trust Clerk metadata
-      else if (metadataRole !== 'DELIVERY' && user.role === 'DELIVERY') {
-        // Only demote if it's explicitly something else or missing
-        if (metadataRole !== 'ADMIN') {
-           user = await prisma.user.update({
-            where: { id: user.id },
-            data: { role: 'CUSTOMER' },
+
+          // Ensure vendor profile for admin to manage official shop
+          await prisma.vendor.upsert({
+            where: { userId: user.id },
+            create: {
+              userId: user.id,
+              shopName: 'Deeshora Official',
+              email: email.toLowerCase(),
+              phone: process.env.ADMIN_PHONE ?? '0000000000',
+              city: 'Chennai',
+              address: 'Deeshora HQ',
+              category: 'Official',
+              status: 'APPROVED',
+            },
+            update: {},
           });
         }
       }
+    } catch (e) {
+      // Non-fatal — protected routes will throw UNAUTHORIZED if user is null
+      console.error('[tRPC] Failed to auto-create user:', e);
     }
+  } else {
+    // ─── C2: Existing user — only write to DB/Clerk when role actually needs to change ──
+
+    const isAdminByEmail = ADMIN_EMAILS.includes(user.email.toLowerCase());
+    const isAdminByRole = user.role === 'ADMIN';
+    const isAdmin = isAdminByEmail || isAdminByRole;
+
+    if (isAdmin) {
+      // Upgrade DB role if somehow not ADMIN yet
+      if (user.role !== 'ADMIN') {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { role: 'ADMIN' },
+        });
+      }
+
+      // Sync Clerk metadata only when it's actually wrong (lazy — read from Clerk only when needed)
+      // We skip reading Clerk metadata on every call; only sync on role mismatch detected elsewhere
+      // (AdminLayout reads publicMetadata and can trigger a one-time sync if it notices a gap)
+
+      // Ensure vendor profile for admin (upsert is cheap — idempotent, no-op if exists)
+      await prisma.vendor.upsert({
+        where: { userId: user.id },
+        create: {
+          userId: user.id,
+          shopName: 'Deeshora Official',
+          email: user.email,
+          phone: process.env.ADMIN_PHONE ?? '0000000000',
+          city: 'Chennai',
+          address: 'Deeshora HQ',
+          category: 'Official',
+          status: 'APPROVED',
+        },
+        update: {},
+      });
+    }
+    // ─── H5: DELIVERY role — trust DB, only sync upward (CUSTOMER→DELIVERY) from Clerk ──
+    // We no longer demote DELIVERY users automatically based on missing Clerk metadata.
+    // Demotion must be done explicitly by admin via the updateUserRole endpoint.
+    else if (user.role === 'CUSTOMER') {
+      // Only check Clerk metadata if user is a plain CUSTOMER — may have been promoted
+      try {
+        const clerkUser = await currentUser();
+        const metadataRole = clerkUser?.publicMetadata?.role as string | undefined;
+        if (metadataRole === 'DELIVERY') {
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { role: 'DELIVERY' },
+          });
+        }
+      } catch (e) {
+        console.error('[tRPC] Failed to check Clerk metadata for DELIVERY sync:', e);
+      }
+    }
+    // VENDOR and DELIVERY roles in DB are trusted as-is — no automatic changes
   }
 
   return {
@@ -200,13 +202,12 @@ export const protectedProcedure = t.procedure.use(isAuthed);
  * Vendor procedure
  */
 export const vendorProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  // Check either Clerk metadata (fast) or Database role (sure)
   const isVendor = ctx.user.role === 'VENDOR' || ctx.user.role === 'ADMIN';
-  
+
   if (!isVendor) {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not a vendor.' });
   }
-  
+
   const vendor = await prisma.vendor.findUnique({ where: { userId: ctx.user.id } });
   if (!vendor) {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'Vendor profile not found.' });

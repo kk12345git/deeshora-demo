@@ -313,19 +313,20 @@ model Review {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
 
+  @@unique([productId, userId])
   @@index([productId])
   @@index([userId])
 }
 
 
 model Payout {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   vendorId    String
   amount      Float
-  status      String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  status      PayoutStatus @default(PENDING)
   utrNumber   String?
   processedAt DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime     @default(now())
 
 
   vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
@@ -363,6 +364,13 @@ model ServiceArea {
 enum DiscountType {
   FIXED
   PERCENT
+}
+
+
+enum PayoutStatus {
+  PENDING
+  COMPLETED
+  FAILED
 }
 
 

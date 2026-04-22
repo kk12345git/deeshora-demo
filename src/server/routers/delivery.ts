@@ -81,6 +81,8 @@ export const deliveryRouter = createTRPCRouter({
         data: {
           status: 'DELIVERED',
           deliveredAt: new Date(),
+          // H3: Mark COD as PAID when delivery partner confirms delivery
+          paymentStatus: order.paymentMethod === 'COD' ? 'PAID' : order.paymentStatus,
           timeline: {
             create: {
               status: 'DELIVERED',
@@ -90,7 +92,7 @@ export const deliveryRouter = createTRPCRouter({
         },
       });
 
-      // We return phone and message info so the frontend can trigger the WhatsApp redirect
+      // Return phone and message info so the frontend can trigger the WhatsApp redirect
       return {
         success: true,
         customerPhone: order.user.phone,

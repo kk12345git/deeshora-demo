@@ -49,11 +49,16 @@ export const cartRouter = createTRPCRouter({
 
       const product = await ctx.prisma.product.findUnique({
         where: { id: productId },
+        include: { vendor: { select: { status: true } } },
       });
 
 
-      if (!product || !product.isActive || product.stock < quantity) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Product is not available or out of stock.' });
+      if (!product || !product.isActive || product.vendor.status !== 'APPROVED') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Product is not available.' });
+      }
+
+      if (product.stock < quantity) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: `Only ${product.stock} units available.` });
       }
 
 
@@ -70,8 +75,9 @@ export const cartRouter = createTRPCRouter({
 
 
       if (existingItem) {
-        if (product.stock < existingItem.quantity + quantity) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Not enough stock available.' });
+        const newQty = existingItem.quantity + quantity;
+        if (product.stock < newQty) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: `Only ${product.stock} units available (${existingItem.quantity} already in cart).` });
         }
         return ctx.prisma.cartItem.update({
           where: { id: existingItem.id },
@@ -113,7 +119,7 @@ export const cartRouter = createTRPCRouter({
 
       const product = await ctx.prisma.product.findUnique({ where: { id: productId } });
       if (!product || product.stock < quantity) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Not enough stock available.' });
+        throw new TRPCError({ code: 'BAD_REQUEST', message: `Only ${product?.stock ?? 0} units available.` });
       }
 
 
@@ -147,6 +153,7 @@ export const cartRouter = createTRPCRouter({
   }),
 
 
+  // H1: sync now validates all products before upserting
   sync: protectedProcedure
     .input(
       z.array(
@@ -157,15 +164,48 @@ export const cartRouter = createTRPCRouter({
       )
     )
     .mutation(async ({ ctx, input }) => {
+      if (input.length === 0) return { success: true, skipped: [] };
+
+      // Batch-fetch all products to validate in a single query
+      const productIds = input.map((i) => i.productId);
+      const products = await ctx.prisma.product.findMany({
+        where: { id: { in: productIds } },
+        include: { vendor: { select: { status: true } } },
+      });
+
+      const productMap = new Map(products.map((p) => [p.id, p]));
+      const validItems: typeof input = [];
+      const skipped: string[] = [];
+
+      for (const item of input) {
+        const product = productMap.get(item.productId);
+        if (
+          !product ||
+          !product.isActive ||
+          product.vendor.status !== 'APPROVED' ||
+          product.stock < 1
+        ) {
+          skipped.push(item.productId);
+          continue;
+        }
+        // Cap quantity at available stock
+        validItems.push({
+          productId: item.productId,
+          quantity: Math.min(item.quantity, product.stock),
+        });
+      }
+
+      if (validItems.length === 0) {
+        return { success: true, skipped };
+      }
+
       const cart = await ctx.prisma.cart.upsert({
         where: { userId: ctx.user.id },
         create: { userId: ctx.user.id },
         update: {},
       });
 
-
-      // Simple merge strategy: for each input item, upsert it in DB
-      for (const item of input) {
+      for (const item of validItems) {
         await ctx.prisma.cartItem.upsert({
           where: { cartId_productId: { cartId: cart.id, productId: item.productId } },
           create: {
@@ -179,7 +219,6 @@ export const cartRouter = createTRPCRouter({
         });
       }
 
-
-      return { success: true };
+      return { success: true, skipped };
     }),
 });

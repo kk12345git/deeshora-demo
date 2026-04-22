@@ -15,6 +15,11 @@ export async function POST(req: Request) {
     throw new Error('Please add CLERK_WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local');
   }
 
+  const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
 
   // Get the headers
   const headerPayload = await headers();
@@ -65,7 +70,10 @@ export async function POST(req: Request) {
     const { id, email_addresses, first_name, last_name, image_url, public_metadata } = evt.data;
     const email = email_addresses[0]?.email_address;
     const name = `${first_name ?? ''} ${last_name ?? ''}`.trim() || email?.split('@')[0] || 'User';
-    const role = (public_metadata?.role as UserRole) || 'CUSTOMER';
+    
+    // Check if email is in admin list, otherwise use Clerk metadata or default to CUSTOMER
+    const isAdmin = email && ADMIN_EMAILS.includes(email.toLowerCase());
+    const role = isAdmin ? 'ADMIN' : ((public_metadata?.role as UserRole) || 'CUSTOMER');
 
     await prisma.user.upsert({
       where: { clerkId: id },
