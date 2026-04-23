@@ -26,10 +26,11 @@ export default function CheckoutPage() {
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [notes, setNotes] = useState('');
   const [paymentStep, setPaymentStep] = useState<PaymentStep>('SELECT');
-  const [paymentMethod, setPaymentMethod] = useState<'COD'>('COD');
+  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'UPI'>('COD');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<null | { id: string; code: string; discount: number; description: string }>(null);
+  const [showUpiModal, setShowUpiModal] = useState(false);
   const [placedOrderIds, setPlacedOrderIds] = useState<string[]>([]);
 
   const addAddressMutation = trpc.vendor.addAddress.useMutation({
@@ -94,11 +95,16 @@ export default function CheckoutPage() {
         paymentMethod,
       });
 
-      clearCart();
-      setPlacedOrderIds(result.orderIds);
-
-      toast.success('🎉 Order placed! Pay on delivery.');
-      router.push(`/orders/${result.orderIds[0]}?success=true`);
+      if (paymentMethod === 'UPI') {
+        clearCart();
+        setPlacedOrderIds(result.orderIds);
+        setShowUpiModal(true);
+      } else {
+        clearCart();
+        setPlacedOrderIds(result.orderIds);
+        toast.success('🎉 Order placed! Pay on delivery.');
+        router.push(`/orders/${result.orderIds[0]}?success=true`);
+      }
     } catch (err: any) {
       toast.error(err.message || 'Failed to place order.');
     } finally {
@@ -130,9 +136,84 @@ export default function CheckoutPage() {
             </button>
           </div>
         </div>
+
+      {/* UPI QR Modal */}
+      {showUpiModal && placedOrderIds.length > 0 && (
+        <UpiModal 
+          orderId={placedOrderIds[0]} 
+          onClose={() => setShowUpiModal(false)} 
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── UPI Payment Modal Component ───────────────────────────────────────────
+function UpiModal({ orderId, onClose }: { orderId: string; onClose: () => void }) {
+  const { data: order } = trpc.order.byId.useQuery({ id: orderId });
+  const router = useRouter();
+
+  if (!order) return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
+      <Loader2 className="w-10 h-10 animate-spin text-white" />
+    </div>
+  );
+
+  const upiId = order.vendor.upiId || 'deeshware15@okicici';
+  const amount = order.total.toFixed(2);
+  const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(order.vendor.shopName)}&am=${amount}&cu=INR&tn=Order_${order.id.slice(-8).toUpperCase()}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiUrl)}`;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+        <div className="bg-orange-500 p-8 text-center text-white relative">
+          <button onClick={onClose} className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors">
+            <X size={24} />
+          </button>
+          <div className="w-20 h-20 bg-white/20 rounded-[2rem] flex items-center justify-center mx-auto mb-4 backdrop-blur-md">
+            <CreditCard size={36} />
+          </div>
+          <h3 className="text-2xl font-black mb-1">Pay with UPI</h3>
+          <p className="text-orange-100 font-bold opacity-80">Scan the QR code to complete payment</p>
+        </div>
+
+        <div className="p-8 space-y-6">
+          <div className="bg-gray-50 p-6 rounded-[2rem] flex flex-col items-center">
+            <div className="bg-white p-4 rounded-3xl shadow-sm mb-4 border border-gray-100">
+              <img src={qrUrl} alt="UPI QR" className="w-48 h-48" />
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-center">Paying To</p>
+              <p className="font-black text-gray-900 text-center">{order.vendor.shopName}</p>
+              <p className="text-[10px] font-bold text-orange-500 mt-1 text-center">{upiId}</p>
+            </div>
+          </div>
+
+          <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex items-center justify-between">
+            <span className="text-sm font-bold text-orange-700">Total Amount</span>
+            <span className="text-xl font-black text-orange-900">₹{amount}</span>
+          </div>
+
+          <button
+            onClick={() => {
+              toast.success('Payment confirmation received!');
+              router.push(`/orders/${orderId}?success=true`);
+            }}
+            className="w-full h-16 bg-gray-900 text-white rounded-2xl font-black text-lg shadow-xl shadow-gray-900/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+          >
+            I have paid <CheckCircle size={22} className="text-emerald-400" />
+          </button>
+
+          <p className="text-[10px] text-center text-gray-400 font-bold leading-relaxed px-4">
+            Once you complete the payment in your UPI app, click the button above to confirm.
+          </p>
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
   // ─── Main Checkout Screen ─────────────────────────────────────────────────
   return (
@@ -226,18 +307,27 @@ export default function CheckoutPage() {
                 {/* COD */}
                 <button
                   type="button"
-                  className="relative group flex flex-col p-5 rounded-2xl border-2 text-left transition-all border-gray-900 bg-gray-900/5 shadow-xl shadow-gray-900/5"
+                  onClick={() => setPaymentMethod('COD')}
+                  className={`relative group flex flex-col p-5 rounded-2xl border-2 text-left transition-all ${
+                    paymentMethod === 'COD'
+                      ? 'border-orange-500 bg-orange-50/50 shadow-lg shadow-orange-500/10'
+                      : 'border-gray-100 bg-white hover:border-gray-200'
+                  }`}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-md transition-all bg-gray-900 shadow-gray-900/20">
-                      <Banknote size={20} className="text-white" />
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-md transition-all ${
+                      paymentMethod === 'COD' ? 'bg-orange-500 shadow-orange-500/20' : 'bg-gray-100'
+                    }`}>
+                      <Banknote size={20} className={paymentMethod === 'COD' ? 'text-white' : 'text-gray-400'} />
                     </div>
-                    <div className="w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center border-gray-900 bg-gray-900">
-                      <Check size={11} className="text-white" strokeWidth={3} />
-                    </div>
+                    {paymentMethod === 'COD' && (
+                      <div className="w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center border-orange-500 bg-orange-500">
+                        <Check size={11} className="text-white" strokeWidth={3} />
+                      </div>
+                    )}
                   </div>
 
-                  <p className="font-black text-gray-900 text-base">Cash on Delivery</p>
+                  <p className={`font-black text-base ${paymentMethod === 'COD' ? 'text-orange-900' : 'text-gray-400'}`}>Cash on Delivery</p>
                   <p className="text-xs text-gray-400 font-medium mt-1 leading-relaxed">Pay in cash when your order arrives at your doorstep.</p>
 
                   <div className="mt-3 flex items-center gap-1.5">
@@ -246,17 +336,31 @@ export default function CheckoutPage() {
                   </div>
                 </button>
 
-                {/* UPI - Coming Soon */}
-                <div className="relative group flex flex-col p-5 rounded-2xl border-2 border-dashed border-gray-200 text-left opacity-60">
+                {/* UPI */}
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('UPI')}
+                  className={`relative group flex flex-col p-5 rounded-2xl border-2 text-left transition-all ${
+                    paymentMethod === 'UPI'
+                      ? 'border-orange-500 bg-orange-50/50 shadow-lg shadow-orange-500/10'
+                      : 'border-gray-100 bg-white hover:border-gray-200'
+                  }`}
+                >
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center shadow-sm">
-                      <CreditCard size={20} className="text-gray-400" />
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-md transition-all ${
+                      paymentMethod === 'UPI' ? 'bg-orange-500 shadow-orange-500/20' : 'bg-gray-100'
+                    }`}>
+                      <CreditCard size={20} className={paymentMethod === 'UPI' ? 'text-white' : 'text-gray-400'} />
                     </div>
-                    <span className="text-[9px] font-black bg-gray-100 text-gray-400 px-2 py-1 rounded-full uppercase tracking-widest">Coming Soon</span>
+                    {paymentMethod === 'UPI' && (
+                      <div className="w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center border-orange-500 bg-orange-500">
+                        <Check size={11} className="text-white" strokeWidth={3} />
+                      </div>
+                    )}
                   </div>
-                  <p className="font-black text-gray-400 text-base">Online Payment</p>
-                  <p className="text-xs text-gray-400 font-medium mt-1 leading-relaxed">UPI and card payments are currently undergoing maintenance.</p>
-                </div>
+                  <p className={`font-black text-base ${paymentMethod === 'UPI' ? 'text-orange-900' : 'text-gray-400'}`}>Pay with UPI</p>
+                  <p className="text-xs text-gray-400 font-medium mt-1 leading-relaxed">Scan QR code and pay instantly for faster processing.</p>
+                </button>
               </div>
             </div>
 
@@ -377,7 +481,7 @@ export default function CheckoutPage() {
               >
                 {isPlacingOrder
                   ? <Loader2 className="animate-spin" size={20} />
-                  : <><Banknote size={18} /> Place COD Order <ChevronRight size={16} /></>
+                  : <>{paymentMethod === 'COD' ? <Banknote size={18} /> : <CreditCard size={18} />} {paymentMethod === 'COD' ? 'Place COD Order' : 'Place Order & Pay UPI'} <ChevronRight size={16} /></>
                 }
               </button>
 

@@ -12,8 +12,7 @@ export const orderRouter = createTRPCRouter({
       z.object({
         addressId: z.string(),
         notes: z.string().optional(),
-        // C3: Removed UPI — COD only. Add a real payment gateway if online is needed.
-        paymentMethod: z.enum(['COD']).default('COD'),
+        paymentMethod: z.enum(['COD', 'UPI']).default('COD'),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -109,7 +108,7 @@ export const orderRouter = createTRPCRouter({
               commission,
               vendorAmount,
               notes,
-              paymentMethod: 'COD',
+              paymentMethod,
               // L1: Fixed dead ternary — COD orders start PENDING until delivered
               paymentStatus: 'PENDING',
               status: OrderStatus.PENDING,
@@ -129,7 +128,7 @@ export const orderRouter = createTRPCRouter({
               timeline: {
                 create: {
                   status: OrderStatus.PENDING,
-                  message: 'Order placed via Cash on Delivery.',
+                  message: paymentMethod === 'COD' ? 'Order placed via Cash on Delivery.' : 'Order placed via UPI Payment.',
                 },
               },
             },

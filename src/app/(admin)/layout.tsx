@@ -43,7 +43,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 flex-col lg:flex-row">
+    <div className="flex min-h-screen bg-gray-50 flex-col lg:flex-row theme-admin">
       {/* Mobile Header */}
       <header className="lg:hidden flex items-center justify-between p-4 bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
         <Link href="/admin" className="flex items-center gap-3">

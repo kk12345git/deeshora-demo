@@ -53,6 +53,7 @@ enum PaymentMethod {
   COD
   RAZORPAY
   ONLINE
+  UPI
 }
 
 

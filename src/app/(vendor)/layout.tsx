@@ -37,7 +37,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 flex-col lg:flex-row">
+    <div className="flex min-h-screen bg-gray-50 flex-col lg:flex-row theme-vendor">
       {/* Mobile Header */}
       <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b sticky top-0 z-50">
         <Link href="/vendor/dashboard" className="flex items-center gap-3">

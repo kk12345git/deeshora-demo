@@ -9,7 +9,7 @@ export default function CustomerLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col pb-16 md:pb-0">
+    <div className="min-h-screen flex flex-col pb-16 md:pb-0 theme-customer">
       <Navbar />
       <main className="flex-grow">{children}</main>
       <footer className="bg-gray-100 border-t hidden md:block">
