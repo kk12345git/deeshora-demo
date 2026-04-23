@@ -755,7 +755,7 @@ export const adminRouter = createTRPCRouter({
           email: input.email.toLowerCase(),
           city: input.city,
           address: input.address,
-          category: input.category,
+          categories: [input.category],
           status: 'APPROVED',
         },
       });

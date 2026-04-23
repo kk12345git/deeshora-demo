@@ -27,11 +27,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `${vendor.shopName} | Verified Shop in Thiruvottriyur`,
-    description: `Shop from ${vendor.shopName} in ${vendor.city}, Chennai. Browse their catalog of ${vendor.category} and get instant delivery via Deeshora.`,
-    keywords: [vendor.shopName, vendor.category, "Thiruvottriyur shop", "Chennai local delivery", "Deeshora vendor"],
+    description: `Shop from ${vendor.shopName} in ${vendor.city}, Chennai. Browse their catalog of ${vendor.categories.join(', ')} and get instant delivery via Deeshora.`,
+    keywords: [vendor.shopName, ...vendor.categories, "Thiruvottriyur shop", "Chennai local delivery", "Deeshora vendor"],
     openGraph: {
       title: `${vendor.shopName} - Local Marketplace Chennai`,
-      description: `Support local! Shop from ${vendor.shopName} for ${vendor.category} with 10-minute delivery in Thiruvottriyur.`,
+      description: `Support local! Shop from ${vendor.shopName} for ${vendor.categories.join(', ')} with 10-minute delivery in Thiruvottriyur.`,
       images: [
         {
           url: vendor.logo || vendor.coverImage || '/og-main.jpg',

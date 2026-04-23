@@ -130,7 +130,7 @@ export default function VendorProfileClient({ vendor }: VendorProfileClientProps
                     <MapPin size={14} className="text-orange-500" /> {vendor.city}
                   </div>
                   <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-xl">
-                    <ShoppingBag size={14} className="text-orange-500" /> {vendor.category}
+                    <ShoppingBag size={14} className="text-orange-500" /> {vendor.categories.join(' · ')}
                   </div>
                   <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-xl">
                     <Calendar size={14} className="text-orange-500" /> Since {memberSince}

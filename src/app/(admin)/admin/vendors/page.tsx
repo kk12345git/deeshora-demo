@@ -191,7 +191,7 @@ export default function AdminVendorsPage() {
                       <div className="space-y-3">
                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Shop Details</p>
                         <div className="space-y-2">
-                          <Detail icon={<Store size={13} />} label="Category" value={vendor.category} />
+                          <Detail icon={<Store size={13} />} label="Categories" value={vendor.categories.join(', ')} />
                           <Detail icon={<MapPin size={13} />} label="City" value={vendor.city} />
                           <Detail icon={<Phone size={13} />} label="Phone" value={vendor.phone} />
                           <Detail icon={<Clock size={13} />} label="Joined" value={new Date(vendor.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} />

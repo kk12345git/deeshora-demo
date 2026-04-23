@@ -81,6 +81,7 @@ export default function VendorSettingsPage() {
       ...rawData,
       logo: logoBase64 || undefined,
       coverImage: coverBase64 || undefined,
+      categories: [rawData.category]
     };
 
     updateMutation.mutate(payload as any);
@@ -201,7 +202,7 @@ export default function VendorSettingsPage() {
                        <FieldGroup label="Business Category">
                           <select 
                             name="category" 
-                            defaultValue={profile?.category || ''}
+                            defaultValue={profile?.categories?.[0] || ''}
                             className="w-full h-12 px-4 bg-gray-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-orange-400 outline-none font-bold transition-all appearance-none cursor-pointer"
                           >
                              <option value="">Select Category</option>

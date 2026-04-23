@@ -172,7 +172,7 @@ export default function VendorDashboardPage() {
            <div>
               <p className="text-[10px] font-black text-orange-500 uppercase tracking-[0.3em]">Business Insights</p>
               <h1 className="text-4xl font-black text-gray-900 mt-1 tracking-tighter uppercase leading-none">{vendorProfile?.shopName}</h1>
-              <p className="text-gray-400 font-bold text-sm mt-2">{vendorProfile?.category} · {vendorProfile?.city} hub</p>
+              <p className="text-gray-400 font-bold text-sm mt-2">{vendorProfile?.categories.join(' · ')} · {vendorProfile?.city} hub</p>
            </div>
         </div>
         
