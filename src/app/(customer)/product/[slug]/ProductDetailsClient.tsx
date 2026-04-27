@@ -12,11 +12,12 @@ import Breadcrumbs from '@/components/seo/Breadcrumbs';
 import JsonLd from '@/components/JsonLd';
 import { getProductShareUrl } from '@/lib/whatsapp';
 
-interface ProductDetailsClientProps {
-  product: any; // Using the serializable product from the server
-}
-
 import { useUser } from '@clerk/nextjs';
+import { ProductWithRelations } from '@/types';
+
+interface ProductDetailsClientProps {
+  product: ProductWithRelations;
+}
 
 export default function ProductDetailsClient({ product: initialProduct }: ProductDetailsClientProps) {
   const router = useRouter();

@@ -8,12 +8,13 @@ import { useCart, CartItem } from '@/hooks/useCart';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import OnboardingModal from './OnboardingModal';
 
-interface ProductCardProps {
-  product: any; // Using any temporarily to avoid strict Prisma types during major refactor
-}
-
 import { useUser } from '@clerk/nextjs';
 import { trpc } from '@/lib/trpc';
+import { ProductSummary } from '@/types';
+
+interface ProductCardProps {
+  product: ProductSummary;
+}
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { isSignedIn } = useUser();
