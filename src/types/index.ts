@@ -13,6 +13,6 @@ export type ProductSummary = Pick<
   PrismaProduct,
   "id" | "name" | "slug" | "price" | "mrp" | "stock" | "images" | "unit" | "isFeatured" | "rating" | "reviewCount"
 > & {
-  vendor: Pick<PrismaVendor, "id" | "shopName">;
+  vendor: Pick<PrismaVendor, "id" | "shopName" | "plan">;
   category: Pick<PrismaCategory, "id" | "name" | "slug">;
 };

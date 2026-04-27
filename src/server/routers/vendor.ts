@@ -198,4 +198,23 @@ export const vendorRouter = createTRPCRouter({
       await ctx.prisma.address.delete({ where: { id: input.id } });
       return { success: true };
     }),
+
+
+  // ─── Subscription Upgrade (₹700/month) ───────────────────────────────────
+  upgradeToPremium: vendorProcedure
+    .mutation(async ({ ctx }) => {
+      // In a real app, you would verify payment here first.
+      // For this demo, we assume the ₹700 UPI payment was successful.
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + 30); // 30 days from now
+
+      return ctx.prisma.vendor.update({
+        where: { id: ctx.vendor.id },
+        data: {
+          plan: 'PREMIUM',
+          planExpiresAt: expiry,
+          isVerified: true, // Verification comes with the premium plan
+        },
+      });
+    }),
 });

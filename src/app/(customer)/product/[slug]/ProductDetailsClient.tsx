@@ -178,14 +178,20 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                   transition={{ duration: 0.4 }}
                   className="w-full h-full"
                 >
-                  <Image
-                    src={product.images[selectedImage]}
-                    alt={product.name}
-                    width={800}
-                    height={800}
-                    className="w-full h-full object-cover"
-                    priority
-                  />
+                  <motion.div
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ duration: 0.6, ease: [0.33, 1, 0.68, 1] }}
+                    className="w-full h-full cursor-zoom-in"
+                  >
+                    <Image
+                      src={product.images[selectedImage]}
+                      alt={product.name}
+                      width={800}
+                      height={800}
+                      className="w-full h-full object-cover"
+                      priority
+                    />
+                  </motion.div>
                 </motion.div>
               </AnimatePresence>
               {discount > 0 && (
@@ -331,6 +337,10 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                       <motion.button 
                         whileHover={{ scale: 1.03, y: -3 }}
                         whileTap={{ scale: 0.95 }}
+                        animate={{ 
+                          boxShadow: ["0 0 0 0 rgba(249, 115, 22, 0)", "0 0 0 10px rgba(249, 115, 22, 0.1)", "0 0 0 0 rgba(249, 115, 22, 0)"]
+                        }}
+                        transition={{ repeat: Infinity, duration: 2 }}
                         onClick={handleBuyNow}
                         className="w-full h-20 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-xl rounded-[2.5rem] shadow-2xl shadow-orange-500/30 flex items-center justify-center gap-3 tracking-wide uppercase italic transition-all"
                       >

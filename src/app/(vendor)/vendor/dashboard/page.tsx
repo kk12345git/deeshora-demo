@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 import { OrderStatusBadge } from '@/components/customer/OrderStatus';
 import toast from 'react-hot-toast';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── Pure SVG sparkline (no library needed) ───────────────────────────────────
 function Sparkline({ data, color = '#f97316' }: { data: number[]; color?: string }) {
@@ -104,9 +105,22 @@ function RevenueBar({ series }: { series: { date: string; revenue: number; order
 export default function VendorDashboardPage() {
   const [newBell, setNewBell] = useState(false);
 
-  const { data: vendorProfile, isLoading: isLoadingProfile, error: profileError } = trpc.vendor.myProfile.useQuery();
+  const { data: vendorProfile, isLoading: isLoadingProfile, error: profileError, refetch: refetchProfile } = trpc.vendor.myProfile.useQuery();
   const { data: stats, refetch: refetchStats } = trpc.order.vendorStats.useQuery(undefined, { enabled: !!vendorProfile });
   const { data: recentOrders, refetch: refetchOrders } = trpc.order.vendorOrders.useQuery({ limit: 5 }, { enabled: !!vendorProfile });
+
+  const upgradeMutation = trpc.vendor.upgradeToPremium.useMutation({
+    onSuccess: () => {
+      toast.success('Subscription active! Welcome to Deeshora Premium 🚀');
+      refetchProfile();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const adminUpiId = 'deeshware15@okicici';
+  const upiUrl = `upi://pay?pa=${adminUpiId}&pn=Deeshora%20Admin&am=700&cu=INR&tn=Vendor_Subscription_${vendorProfile?.id?.slice(-6)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiUrl)}`;
 
   const handleNewOrder = useCallback((data: any) => {
     setNewBell(true);
@@ -185,28 +199,72 @@ export default function VendorDashboardPage() {
         </button>
       </div>
 
-      {/* Pending Approval Banner */}
-      {vendorProfile?.status === 'PENDING' && (
-        <div className="flex flex-col md:flex-row items-center gap-6 p-8 bg-amber-50 border border-amber-100 rounded-[2.5rem] shadow-sm">
-          <div className="w-16 h-16 bg-amber-100 rounded-3xl flex items-center justify-center shrink-0">
-            <Clock size={32} className="text-amber-500 animate-pulse" />
+      {/* Subscription & Approval Banner */}
+      <div className="grid lg:grid-cols-1 xl:grid-cols-2 gap-6">
+        {vendorProfile?.status === 'PENDING' && (
+          <div className="flex flex-col md:flex-row items-center gap-6 p-8 bg-amber-50 border border-amber-100 rounded-[2.5rem] shadow-sm">
+            <div className="w-16 h-16 bg-amber-100 rounded-3xl flex items-center justify-center shrink-0">
+              <Clock size={32} className="text-amber-500 animate-pulse" />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-xl font-black text-amber-900 uppercase tracking-tight">Shop Under Review</h3>
+              <p className="text-sm text-amber-700 font-medium mt-1 leading-relaxed">
+                Your application is being verified. You can set up your catalog, but items go live once approved.
+              </p>
+            </div>
           </div>
-          <div className="flex-1 text-center md:text-left">
-            <h3 className="text-xl font-black text-amber-900 uppercase tracking-tight">Shop Under Review</h3>
-            <p className="text-sm text-amber-700 font-medium mt-1 leading-relaxed">
-              Your vendor application is currently being verified. You can already start adding products and setting up your catalog, 
-              but they will only go live on the storefront once your shop is approved (usually within 24h).
-            </p>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-             <Link href="/vendor/products/new" className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-amber-500/20 active:scale-95">
-                Add Items
-             </Link>
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Action Banners */}
+        {/* Subscription Status Card */}
+        <div className={`relative overflow-hidden p-8 rounded-[2.5rem] border shadow-xl shadow-gray-200/20 transition-all ${vendorProfile?.plan === 'PREMIUM' ? 'bg-indigo-900 border-indigo-800 text-white' : 'bg-white border-gray-100'}`}>
+          <div className="relative z-10 flex flex-col h-full justify-between">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${vendorProfile?.plan === 'PREMIUM' ? 'text-indigo-400' : 'text-orange-500'}`}>
+                  Current Plan
+                </p>
+                <h3 className="text-3xl font-black mt-1 tracking-tighter uppercase">
+                  {vendorProfile?.plan === 'PREMIUM' ? 'Premium Launch' : 'Free Trial'}
+                </h3>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${vendorProfile?.plan === 'PREMIUM' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-orange-50 text-orange-600 border border-orange-100'}`}>
+                {vendorProfile?.plan === 'PREMIUM' ? 'Active' : 'Restricted'}
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center gap-6">
+              <div className="flex-1">
+                <p className={`text-xs font-bold ${vendorProfile?.plan === 'PREMIUM' ? 'text-indigo-200' : 'text-gray-400'}`}>
+                  Product Limit:
+                </p>
+                <p className="text-lg font-black mt-0.5">
+                  {vendorProfile?.plan === 'PREMIUM' ? 'Unlimited' : `${vendorProfile?._count.products ?? 0} / 3 Items`}
+                </p>
+              </div>
+              {vendorProfile?.plan === 'PREMIUM' && vendorProfile.planExpiresAt && (
+                <div className="flex-1 border-l border-indigo-800 pl-6">
+                  <p className="text-xs font-bold text-indigo-200">Renew in:</p>
+                  <p className="text-lg font-black mt-0.5">
+                    {Math.ceil((new Date(vendorProfile.planExpiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} Days
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {vendorProfile?.plan === 'TRIAL' && (
+              <button 
+                onClick={() => setShowUpgradeModal(true)}
+                className="mt-6 w-full py-4 bg-orange-500 hover:bg-orange-600 text-white font-black text-sm uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2"
+              >
+                <IndianRupee size={16} /> Upgrade to sell more
+              </button>
+            )}
+          </div>
+          {vendorProfile?.plan === 'PREMIUM' && (
+            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl" />
+          )}
+        </div>
+      </div>
       <div className="grid lg:grid-cols-2 gap-4">
         {(stats?.pendingPayout ?? 0) > 0 && (
           <div className="flex items-center gap-4 bg-emerald-50 border border-emerald-100 px-6 py-5 rounded-3xl">
@@ -524,6 +582,80 @@ export default function VendorDashboardPage() {
             )}
           </div>
       </div>
+
+      {/* Upgrade Modal */}
+      <AnimatePresence>
+        {showUpgradeModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setShowUpgradeModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[3rem] overflow-hidden shadow-2xl"
+            >
+              <div className="p-10 text-center">
+                <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <Zap size={40} fill="currentColor" />
+                </div>
+                <h3 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">Premium Launch Package</h3>
+                <p className="text-gray-500 font-medium mt-3 px-4">
+                  Unlock unlimited product uploads, featured status, and a "Verified Seller" badge for your shop.
+                </p>
+
+                <div className="mt-8 bg-gray-50 rounded-3xl p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs font-black uppercase text-gray-400 tracking-widest">Subscription Fee</span>
+                    <span className="text-3xl font-black text-gray-900">₹700<span className="text-sm text-gray-400">/mo</span></span>
+                  </div>
+                  
+                  {/* QR Code Section */}
+                  <div className="bg-white p-4 rounded-2xl border border-gray-100 flex flex-col items-center gap-2 mb-4">
+                    <img src={qrUrl} alt="UPI QR" className="w-32 h-32" />
+                    <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Scan to Pay Admin</p>
+                    <p className="text-[11px] font-black text-gray-900">{adminUpiId}</p>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-200 space-y-2 text-left">
+                    <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
+                      <CheckCircle size={14} className="text-emerald-500" /> Unlimited Product Uploads
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
+                      <CheckCircle size={14} className="text-emerald-500" /> Blue Checkmark Verified Badge
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 space-y-3">
+                  <button
+                    disabled={upgradeMutation.isLoading}
+                    onClick={() => upgradeMutation.mutate()}
+                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black text-sm uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2"
+                  >
+                    {upgradeMutation.isLoading ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle size={18} /> I have paid ₹700</>}
+                  </button>
+                  <button 
+                    onClick={() => setShowUpgradeModal(false)}
+                    className="w-full py-4 text-gray-400 font-bold text-xs uppercase tracking-widest hover:text-gray-600 transition-colors"
+                  >
+                    Maybe Later
+                  </button>
+                </div>
+
+                <p className="mt-6 text-[10px] text-gray-400 font-medium uppercase tracking-tight">
+                  By upgrading, you agree to the Vendor Terms of Service.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

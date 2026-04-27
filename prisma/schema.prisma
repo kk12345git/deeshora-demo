@@ -29,6 +29,12 @@ enum VendorStatus {
 }
 
 
+enum VendorPlan {
+  TRIAL
+  PREMIUM
+}
+
+
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -119,6 +125,10 @@ model Vendor {
   categories      String[] // e.g., ["Groceries", "Electronics"]
   status          VendorStatus @default(PENDING)
   commissionRate  Float        @default(0.15)
+  // Subscription Details
+  plan            VendorPlan   @default(TRIAL)
+  planExpiresAt   DateTime?
+  isVerified      Boolean      @default(false)
   // Bank & Financial Details
   bankAccount     String?
   bankAccountName String?      // Account holder name

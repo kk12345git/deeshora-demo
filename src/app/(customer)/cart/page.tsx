@@ -7,6 +7,7 @@ import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, IndianRupee, ShieldCheck,
 import { getWhatsAppUrl } from '@/lib/whatsapp';
 import { trpc } from '@/lib/trpc';
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { useUser } from '@clerk/nextjs';
 
@@ -100,8 +101,16 @@ export default function CartPage() {
       <div className="grid lg:grid-cols-12 gap-12">
         {/* Cart Items */}
         <div className="lg:col-span-7 space-y-6">
-          {items.map((item) => (
-            <div key={item.productId} className="group relative bg-white border border-gray-100 p-6 rounded-[2.5rem] flex items-center gap-6 hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-500 hover:-translate-y-1">
+          <AnimatePresence mode="popLayout">
+            {items.map((item) => (
+              <motion.div 
+                key={item.productId}
+                layout
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="group relative bg-white border border-gray-100 p-6 rounded-[2.5rem] flex items-center gap-6 hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-500 hover:-translate-y-1"
+              >
               <div className="w-24 h-24 rounded-3xl overflow-hidden flex-shrink-0 shadow-inner bg-gray-50 border border-gray-50">
                  <Image src={item.image} alt={item.name} width={120} height={120} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
               </div>
@@ -133,8 +142,9 @@ export default function CartPage() {
                    <Trash2 size={18} />
                  </button>
               </div>
-            </div>
+            </motion.div>
           ))}
+          </AnimatePresence>
         </div>
 
         {/* Order Summary */}

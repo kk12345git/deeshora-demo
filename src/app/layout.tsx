@@ -71,6 +71,7 @@ import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
 import { WhatsAppSupport } from "@/components/customer/WhatsAppSupport";
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import PageTransition from "@/components/layout/PageTransition";
 
 export default function RootLayout({
   children,
@@ -87,7 +88,9 @@ export default function RootLayout({
                 <CartSync />
                 <RoleSwitcher />
                 <JsonLd />
-                {children}
+                <PageTransition>
+                  {children}
+                </PageTransition>
                 <WhatsAppSupport />
                 <Toaster 
                     position="bottom-center"

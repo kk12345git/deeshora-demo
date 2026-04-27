@@ -10,6 +10,7 @@ import { useCart } from '@/hooks/useCart';
 import { useRouter, usePathname } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
 import { ThemeToggle } from './ThemeToggle';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── Debounce hook ────────────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -146,11 +147,14 @@ export default function Navbar() {
       <div className={`container mx-auto px-4 transition-all duration-500 ${scrolled ? "mt-2" : "mt-4"}`}>
 
         {/* ── Main Nav Row ───────────────────────────────────────────────── */}
-        <nav className={`flex items-center gap-3 px-4 py-3 rounded-[2rem] border transition-all duration-500 ${
-           scrolled
-           ? "bg-white/85 backdrop-blur-xl border-white/40 shadow-2xl"
-           : "bg-white border-transparent shadow-sm"
-         }`}>
+          <motion.nav 
+            layout
+            className={`flex items-center gap-3 px-4 py-3 rounded-[2rem] border transition-all duration-500 ${
+              scrolled
+              ? "bg-white/70 dark:bg-gray-900/70 backdrop-blur-2xl border-white/20 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]"
+              : "bg-white dark:bg-gray-900 border-transparent shadow-sm"
+            }`}
+          >
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
@@ -339,7 +343,8 @@ export default function Navbar() {
               </div>
             )}
           </div>
-        </nav>
+          </div>
+        </motion.nav>
 
         {/* ── Mobile Inline Search Bar (below nav, slides in) ──────────── */}
         <div className={`md:hidden transition-all duration-300 overflow-hidden ${
@@ -439,76 +444,90 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* ── Mobile Slide-Out Menu ────────────────────────────────────────── */}
-      <div className={`fixed inset-0 z-[60] transition-all duration-500 ${isMobileMenuOpen ? "visible opacity-100" : "invisible opacity-0"}`}>
-        <div className="absolute inset-0 bg-gray-950/60 backdrop-blur-md" onClick={() => setIsMobileMenuOpen(false)} />
-        <div className={`absolute right-0 top-0 bottom-0 w-[82%] max-w-sm bg-white shadow-2xl transition-transform duration-500 flex flex-col ${isMobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}>
-          <div className="flex items-center justify-between p-6 border-b">
-            <div className="flex items-center gap-3">
-              <div className="relative w-9 h-9">
-                <Image src="/logo.jpg" alt="Logo" fill className="object-cover rounded-xl" />
-              </div>
-              <span className="font-black text-lg tracking-tighter">Deeshora</span>
-            </div>
-            <button onClick={() => setIsMobileMenuOpen(false)} className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
-              <X size={18} />
-            </button>
-          </div>
-
-          <div className="flex-grow overflow-y-auto p-6 space-y-2">
-            {navLinks.filter(l => !l.role || user?.publicMetadata.role === l.role).map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-4 p-4 rounded-2xl hover:bg-orange-50 hover:text-orange-600 transition-all font-bold group"
-              >
-                <div className="w-10 h-10 bg-gray-50 group-hover:bg-orange-100 rounded-xl flex items-center justify-center transition-colors">
-                  <link.icon size={20} />
-                </div>
-                {link.name}
-              </Link>
-            ))}
-
-            {/* City info in menu */}
-            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-orange-50">
-              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-                <MapPin size={18} className="text-orange-500" />
-              </div>
-              <div>
-                <p className="text-xs font-black text-gray-500 uppercase tracking-widest">Delivery Area</p>
-                <p className="text-sm font-bold text-gray-900">{city}</p>
-              </div>
-            </div>
-
-            {!isSignedIn && (
-              <Link
-                href="/vendor/register"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-orange-500 text-white font-black shadow-lg shadow-orange-500/20"
-              >
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                  <Sparkles size={20} />
-                </div>
-                Partner with Us
-              </Link>
-            )}
-          </div>
-
-          {isSignedIn && (
-            <div className="p-6 border-t">
-              <SignOutButton>
-                <button className="flex items-center gap-4 p-4 w-full rounded-2xl hover:bg-red-50 text-red-500 transition-all font-bold">
-                  <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
-                    <LogOut size={20} />
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-[60]">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-gray-950/40 backdrop-blur-md" 
+              onClick={() => setIsMobileMenuOpen(false)} 
+            />
+            <motion.div 
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-white dark:bg-gray-950 shadow-2xl flex flex-col"
+            >
+              <div className="flex items-center justify-between p-6 border-b dark:border-gray-800">
+                <div className="flex items-center gap-3">
+                  <div className="relative w-9 h-9">
+                    <Image src="/logo.jpg" alt="Logo" fill className="object-cover rounded-xl" />
                   </div>
-                  Sign Out
+                  <span className="font-black text-lg tracking-tighter">Deeshora</span>
+                </div>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center">
+                  <X size={18} />
                 </button>
-              </SignOutButton>
-            </div>
-          )}
-        </div>
-      </div>
+              </div>
+
+              <div className="flex-grow overflow-y-auto p-6 space-y-2">
+                {navLinks.filter(l => !l.role || user?.publicMetadata.role === l.role).map(link => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-4 p-4 rounded-2xl hover:bg-orange-50 dark:hover:bg-orange-950/30 hover:text-orange-600 transition-all font-bold group"
+                  >
+                    <div className="w-10 h-10 bg-gray-50 dark:bg-gray-900 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/50 rounded-xl flex items-center justify-center transition-colors">
+                      <link.icon size={20} />
+                    </div>
+                    {link.name}
+                  </Link>
+                ))}
+
+                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-orange-50 dark:bg-orange-900/10">
+                  <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
+                    <MapPin size={18} className="text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Delivery Area</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{city}</p>
+                  </div>
+                </div>
+
+                {!isSignedIn && (
+                  <Link
+                    href="/vendor/register"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-4 p-4 rounded-2xl bg-orange-500 text-white font-black shadow-lg shadow-orange-500/20"
+                  >
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                      <Sparkles size={20} />
+                    </div>
+                    Partner with Us
+                  </Link>
+                )}
+              </div>
+
+              {isSignedIn && (
+                <div className="p-6 border-t dark:border-gray-800">
+                  <SignOutButton>
+                    <button className="flex items-center gap-4 p-4 w-full rounded-2xl hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 transition-all font-bold">
+                      <div className="w-10 h-10 bg-red-50 dark:bg-red-900 rounded-xl flex items-center justify-center">
+                        <LogOut size={20} />
+                      </div>
+                      Sign Out
+                    </button>
+                  </SignOutButton>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

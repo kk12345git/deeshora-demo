@@ -11,8 +11,16 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { OrderStatus } from '@prisma/client';
 import toast from 'react-hot-toast';
-import WhatsAppChatBot from '@/components/customer/WhatsAppChatBot';
-import LiveTrackingMap from '@/components/customer/LiveTrackingMap';
+import dynamic from 'next/dynamic';
+
+const LiveTrackingMap = dynamic(() => import('@/components/customer/LiveTrackingMap'), {
+  ssr: false,
+  loading: () => <div className="h-64 bg-gray-50 animate-pulse rounded-2xl flex items-center justify-center text-gray-400 font-bold">Loading Map...</div>
+});
+
+const WhatsAppChatBot = dynamic(() => import('@/components/customer/WhatsAppChatBot'), {
+  ssr: false
+});
 
 
 // ─── Animated delivery progress ───────────────────────────────────────────────

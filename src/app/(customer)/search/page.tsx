@@ -6,6 +6,7 @@ import { trpc } from '@/lib/trpc';
 import ProductCard from '@/components/customer/ProductCard';
 import { Search as SearchIcon, Loader2, ShoppingBag, Sparkles, Zap, Tag, ArrowRight, X } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
 export default function SearchPage() {
@@ -65,8 +66,9 @@ export default function SearchPage() {
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* ─── Search Header ─────────────────────────────────────────────── */}
       <section className="bg-gray-950 pt-28 pb-16 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-emerald-500/10 to-transparent blur-3xl opacity-20" />
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-orange-500/10 to-transparent blur-3xl opacity-10" />
+        <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-emerald-500/20 to-transparent blur-3xl opacity-30 animate-pulse" />
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-orange-500/20 to-transparent blur-3xl opacity-20 animate-pulse delay-1000" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto space-y-6">
@@ -213,11 +215,25 @@ export default function SearchPage() {
               <span className="text-sm text-gray-400 font-medium">{filteredExact.length} product{filteredExact.length !== 1 ? 's' : ''} found</span>
               <span className="h-px bg-gray-200 flex-grow hidden md:block" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              {filteredExact.map((product) => (
-                <ProductCard key={product.id} product={product as any} />
-              ))}
-            </div>
+            <motion.div 
+              layout
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"
+            >
+              <AnimatePresence mode="popLayout">
+                {filteredExact.map((product) => (
+                  <motion.div
+                    key={product.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ProductCard product={product as any} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
           </section>
         )}
 

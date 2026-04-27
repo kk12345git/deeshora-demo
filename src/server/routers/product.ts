@@ -461,6 +461,19 @@ export const productRouter = createTRPCRouter({
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Your vendor account is pending approval. You can add products once the admin approves your account.' });
       }
 
+      // Check product limits for TRIAL plan
+      if (ctx.vendor.plan === 'TRIAL') {
+        const productCount = await ctx.prisma.product.count({
+          where: { vendorId: ctx.vendor.id }
+        });
+        if (productCount >= 3) {
+          throw new TRPCError({ 
+            code: 'FORBIDDEN', 
+            message: 'Trial limit reached! You can only add 3 products on the FREE plan. Upgrade to the Premium Launch Package (₹700/mo) for unlimited uploads.' 
+          });
+        }
+      }
+
       const imageUrls = await Promise.all(
         input.images.map((base64) => uploadImage(base64, 'products'))
       );
