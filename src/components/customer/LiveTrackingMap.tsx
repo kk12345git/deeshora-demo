@@ -1,0 +1,126 @@
+"use client";
+
+import { motion } from 'framer-motion';
+import { Bike, Home, Store, MapPin } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+interface LiveTrackingMapProps {
+  status: string;
+}
+
+export default function LiveTrackingMap({ status }: LiveTrackingMapProps) {
+  const [progress, setProgress] = useState(0);
+
+  // Simulate movement if OUT_FOR_DELIVERY
+  useEffect(() => {
+    if (status === 'OUT_FOR_DELIVERY') {
+      const interval = setInterval(() => {
+        setProgress((prev) => (prev >= 100 ? 0 : prev + 0.5));
+      }, 100);
+      return () => clearInterval(interval);
+    } else if (status === 'DELIVERED') {
+      setProgress(100);
+    } else {
+      setProgress(0);
+    }
+  }, [status]);
+
+  // Path data for the SVG (a simple curved path from Shop to House)
+  const pathData = "M 50 150 Q 200 50 350 150";
+
+  return (
+    <div className="relative w-full h-48 bg-gray-50 dark:bg-gray-900/50 rounded-[2rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-inner group">
+      {/* Map Background Grid */}
+      <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.07]" 
+           style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+
+      {/* SVG Map Layer */}
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 200">
+        {/* The Road/Path */}
+        <path
+          d={pathData}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="4"
+          className="text-gray-200 dark:text-gray-800"
+          strokeLinecap="round"
+        />
+        
+        {/* Progress Path */}
+        <motion.path
+          d={pathData}
+          fill="none"
+          stroke="url(#gradient)"
+          strokeWidth="6"
+          strokeLinecap="round"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: progress / 100 }}
+          transition={{ type: "spring", stiffness: 50, damping: 20 }}
+        />
+
+        <defs>
+          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#f97316" />
+            <stop offset="100%" stopColor="#fb923c" />
+          </linearGradient>
+        </defs>
+
+        {/* Landmarks */}
+        <g>
+          {/* Shop */}
+          <circle cx="50" cy="150" r="12" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="2" />
+          <foreignObject x="40" y="140" width="20" height="20">
+            <div className="flex items-center justify-center h-full text-orange-500">
+              <Store size={12} />
+            </div>
+          </foreignObject>
+          <text x="50" y="180" textAnchor="middle" className="text-[10px] font-black fill-gray-400 dark:fill-gray-600 uppercase tracking-widest">Shop</text>
+        </g>
+
+        <g>
+          {/* Home */}
+          <circle cx="350" cy="150" r="12" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="2" />
+          <foreignObject x="340" y="140" width="20" height="20">
+            <div className="flex items-center justify-center h-full text-emerald-500">
+              <Home size={12} />
+            </div>
+          </foreignObject>
+          <text x="350" y="180" textAnchor="middle" className="text-[10px] font-black fill-gray-400 dark:fill-gray-600 uppercase tracking-widest">You</text>
+        </g>
+
+        {/* Delivery Partner Icon */}
+        {status === 'OUT_FOR_DELIVERY' && (
+          <motion.g
+            style={{ offsetPath: `path("${pathData}")`, offsetDistance: `${progress}%` }}
+          >
+            <circle r="16" className="fill-orange-500 shadow-xl" />
+            <foreignObject x="-10" y="-10" width="20" height="20">
+              <div className="flex items-center justify-center h-full text-white">
+                <Bike size={14} className="animate-bounce" />
+              </div>
+            </foreignObject>
+            
+            {/* Pulsing Aura */}
+            <circle r="16" className="stroke-orange-500 fill-none animate-ping opacity-20" strokeWidth="4" />
+          </motion.g>
+        )}
+      </svg>
+
+      {/* Floating Info Badge */}
+      <div className="absolute top-4 right-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-2">
+        <div className={`w-2 h-2 rounded-full ${status === 'OUT_FOR_DELIVERY' ? 'bg-orange-500 animate-pulse' : 'bg-gray-300'}`} />
+        <span className="text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400">
+          {status === 'OUT_FOR_DELIVERY' ? 'Live Tracking Active' : 'Waiting for Dispatch'}
+        </span>
+      </div>
+
+      {/* Chennai / Thiruvottriyur Context Label */}
+      <div className="absolute bottom-4 left-6">
+        <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-600">
+          <MapPin size={10} />
+          <span className="text-[10px] font-bold uppercase tracking-tight">Thiruvottriyur Sector 4</span>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { OrderStatus } from '@prisma/client';
 import toast from 'react-hot-toast';
 import WhatsAppChatBot from '@/components/customer/WhatsAppChatBot';
+import LiveTrackingMap from '@/components/customer/LiveTrackingMap';
 
 
 // ─── Animated delivery progress ───────────────────────────────────────────────
@@ -309,7 +310,12 @@ export default function OrderTrackingPage() {
       </div>
 
       {/* Delivery progress */}
-      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-100/60 p-6 sm:p-8 mb-6">
+      <div className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-100/60 dark:shadow-black/20 p-6 sm:p-8 mb-6 space-y-8">
+        {(displayStatus === 'OUT_FOR_DELIVERY' || displayStatus === 'READY' || displayStatus === 'DELIVERED') && (
+          <div className="animate-in fade-in zoom-in-95 duration-700">
+            <LiveTrackingMap status={displayStatus} />
+          </div>
+        )}
         {displayStatus && <DeliveryProgress status={displayStatus} />}
       </div>
 

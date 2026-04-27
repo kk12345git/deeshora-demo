@@ -183,7 +183,7 @@ export const productRouter = createTRPCRouter({
         });
       }
 
-      // Log search to analytics (non-blocking — fire and forget)
+      // Log search to analytics
       ctx.prisma.searchLog.create({
         data: {
           query: q,
@@ -191,12 +191,24 @@ export const productRouter = createTRPCRouter({
           results: exactByName.length + relatedByDesc.length,
           city,
         },
-      }).catch(() => {}); // never throw on analytics failure
+      }).catch(() => {});
+
+      // 4. Intent detection: does this query imply a specific category?
+      const detectedCatName = autoDetectCategory(q);
+      let suggestedCategory = null;
+      if (detectedCatName) {
+        const cat = await ctx.prisma.category.findFirst({
+          where: { name: { contains: detectedCatName, mode: 'insensitive' } },
+          select: { name: true, slug: true }
+        });
+        if (cat) suggestedCategory = cat;
+      }
 
       return {
         exact: exactByName,
         related: [...relatedByDesc, ...categoryRelated],
         totalExact: exactByName.length,
+        suggestedCategory,
       };
     }),
 

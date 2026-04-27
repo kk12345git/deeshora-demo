@@ -70,6 +70,8 @@ import { CartSync } from "@/components/cart/CartSync";
 import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
 import { WhatsAppSupport } from "@/components/customer/WhatsAppSupport";
 
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -77,22 +79,24 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className="scroll-smooth">
-        <body className={`${outfit.variable} ${inter.variable} font-outfit antialiased bg-gray-50 text-gray-900`}>
+      <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+        <body className={`${outfit.variable} ${inter.variable} font-outfit antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
           <NextTopLoader color="#f97316" showSpinner={false} height={3} />
           <TRPCProvider>
-            <CartSync />
-            <RoleSwitcher />
-            <JsonLd />
-            {children}
-            <WhatsAppSupport />
-            <Toaster 
-                position="bottom-center"
-                toastOptions={{
-                    className: 'rounded-2xl font-bold text-sm shadow-2xl border border-gray-100',
-                    duration: 4000,
-                }}
-            />
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+                <CartSync />
+                <RoleSwitcher />
+                <JsonLd />
+                {children}
+                <WhatsAppSupport />
+                <Toaster 
+                    position="bottom-center"
+                    toastOptions={{
+                        className: 'rounded-2xl font-bold text-sm shadow-2xl border border-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-white',
+                        duration: 4000,
+                    }}
+                />
+            </ThemeProvider>
           </TRPCProvider>
         </body>
       </html>

@@ -111,18 +111,38 @@ export default function SearchPage() {
 
             {/* Results summary */}
             {!isSmartLoading && (
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-                  {hasResults ? (
-                    <>
-                      <span className="text-orange-400">{smartData?.totalExact ?? 0}</span> exact
-                      {(filteredRelated.length > 0) && <> + <span className="text-emerald-400">{smartData?.related.length}</span> related</>}
-                      <span className="text-white/40 font-medium"> for</span> "{query}"
-                    </>
-                  ) : (
-                    <>No results for "{query}"</>
-                  )}
-                </h1>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+                    {hasResults ? (
+                      <>
+                        <span className="text-orange-400">{smartData?.totalExact ?? 0}</span> exact
+                        {(filteredRelated.length > 0) && <> + <span className="text-emerald-400">{smartData?.related.length}</span> related</>}
+                        <span className="text-white/40 font-medium"> for</span> "{query}"
+                      </>
+                    ) : (
+                      <>No results for "{query}"</>
+                    )}
+                  </h1>
+                </div>
+
+                {/* AI Insight Banner */}
+                {smartData?.suggestedCategory && (
+                  <div className="animate-in fade-in slide-in-from-left-4 duration-700 delay-300">
+                    <div className="inline-flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 px-5 py-3 rounded-2xl">
+                      <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-emerald-500/20">
+                        <Tag size={16} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/60 leading-none mb-1">AI Smart Intent</p>
+                        <p className="text-sm font-bold text-emerald-400">
+                          Detected your interest in <span className="text-white underline decoration-emerald-500/50 underline-offset-4 decoration-2">{smartData.suggestedCategory.name}</span>. 
+                          I've prioritized fresh local items for you.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

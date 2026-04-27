@@ -9,6 +9,7 @@ import { UserButton, useUser, SignOutButton } from '@clerk/nextjs';
 import { useCart } from '@/hooks/useCart';
 import { useRouter, usePathname } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
+import { ThemeToggle } from './ThemeToggle';
 
 // ─── Debounce hook ────────────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -283,6 +284,9 @@ export default function Navbar() {
                 <Store size={13} /> Vendor
               </Link>
             )}
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
 
             {/* Mobile Search Button (shown on small screens) */}
             <button

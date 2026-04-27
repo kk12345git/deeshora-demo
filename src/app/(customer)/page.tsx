@@ -5,8 +5,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from '@/lib/trpc';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Suspense } from 'react';
 import { ShoppingBag, CheckCircle, Truck, ArrowRight, Star, MapPin, Loader2, X, Search, Sparkles, TrendingUp } from 'lucide-react';
 import ProductCard from '@/components/customer/ProductCard';
+import ProductCardSkeleton from '@/components/customer/ProductCardSkeleton';
 import CitySelector from '@/components/customer/CitySelector';
 import { useRouter } from 'next/navigation';
 
@@ -339,10 +341,12 @@ export default function HomePage() {
                <span className="h-px bg-gray-200 flex-grow hidden md:block" />
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              {isLoadingFeatured ? Array(4).fill(0).map((_, i) => <div key={i} className="h-80 bg-white rounded-3xl animate-pulse" />) :
-              featuredProducts?.products.map((product) => (
-                <ProductCard key={product.id} product={product as any} />
-              ))}
+              <Suspense fallback={Array(4).fill(0).map((_, i) => <ProductCardSkeleton key={i} />)}>
+                {isLoadingFeatured ? Array(4).fill(0).map((_, i) => <ProductCardSkeleton key={i} />) :
+                featuredProducts?.products.map((product, i) => (
+                  <ProductCard key={product.id} product={product as any} priority={i < 4} />
+                ))}
+              </Suspense>
             </div>
           </div>
         </section>
@@ -366,8 +370,8 @@ export default function HomePage() {
            </div>
 
           {isLoadingAll ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                 {Array(12).fill(0).map((_, i) => <div key={i} className="h-80 bg-gray-50 rounded-3xl animate-pulse" />)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                 {Array(12).fill(0).map((_, i) => <ProductCardSkeleton key={i} />)}
             </div>
           ) : (allProducts?.products.length || 0) > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">

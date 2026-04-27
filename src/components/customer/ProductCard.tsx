@@ -1,9 +1,9 @@
-// src/components/customer/ProductCard.tsx
 "use client";
 
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Star, Plus, Minus, ShoppingCart, Store } from 'lucide-react';
+import { Star, Plus, Minus, ShoppingCart, Store, ShoppingBag, Sparkles, TrendingUp, X } from 'lucide-react';
 import { useCart, CartItem } from '@/hooks/useCart';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import OnboardingModal from './OnboardingModal';
@@ -14,9 +14,10 @@ import { ProductSummary } from '@/types';
 
 interface ProductCardProps {
   product: ProductSummary;
+  priority?: boolean;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, priority = false }: ProductCardProps) {
   const { isSignedIn } = useUser();
   const { items, addItem, updateQuantity } = useCart();
   const { requireOnboarding, isModalOpen, closeModal, handleOnboardingSuccess } = useOnboarding();
@@ -73,31 +74,36 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -8, transition: { duration: 0.3 } }}
+      className="group bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgb(0,0,0,0.2)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_20px_40px_rgb(0,0,0,0.4)] flex flex-col h-full transition-all duration-500"
+    >
       <OnboardingModal
         isOpen={isModalOpen}
         onClose={closeModal}
         onSuccess={() => { handleOnboardingSuccess(); addToCart(); }}
       />
-    <div className="card group group relative hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] overflow-hidden">
+      
       {/* Image Container */}
-      <Link href={`/product/${product.slug}`} className="block relative overflow-hidden aspect-square rounded-t-[2rem]">
-        <Image
-          src={product.images[0]}
-          alt={product.name}
-          width={400}
-          height={400}
-          className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <Link href={`/product/${product.slug}`} className="relative aspect-square overflow-hidden block">
+        {product.images[0] ? (
+          <Image
+            src={product.images[0]}
+            alt={product.name}
+            fill
+            priority={priority}
+            className="object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+        ) : (
+          <div className="w-full h-full bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center">
+            <ShoppingBag size={40} className="text-brand-200 dark:text-brand-800" />
+          </div>
+        )}
         
-        {/* Floating Badges */}
+        {/* Badges */}
         <div className="absolute top-4 left-4 flex flex-col gap-2">
-            {discount > 0 && (
-                <div className="badge bg-orange-600 text-white shadow-lg">
-                    {discount}% OFF
-                </div>
-            )}
             {product.isFeatured && (
                 <div className="badge bg-emerald-500 text-white shadow-lg">
                     Featured
