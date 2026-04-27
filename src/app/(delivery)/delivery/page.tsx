@@ -4,7 +4,7 @@ import Link from "next/link";
 import { trpc } from "@/lib/trpc";
 import { 
   Package, MapPin, Phone, ExternalLink, 
-  Navigation, MessageSquare, Loader2 
+  Navigation, MessageSquare, Loader2, Bell 
 } from "lucide-react";
 import SwipeButton from "@/components/delivery/SwipeButton";
 import { WHATSAPP_TEMPLATES, getWhatsAppUrl } from "@/lib/whatsapp";
@@ -101,11 +101,18 @@ export default function MyTasksPage() {
                             <Phone size={20} />
                           </a>
                           <a 
-                            href={getWhatsAppUrl(task.user.phone, WHATSAPP_TEMPLATES.LOCATION_REQUEST(task.id, task.vendor.shopName))}
+                            href={getWhatsAppUrl(task.user.phone, WHATSAPP_TEMPLATES.ENGLISH.LOCATION_REQUEST(task.id, task.vendor.shopName))}
                             className="w-12 h-12 bg-gray-800 rounded-2xl flex items-center justify-center text-green-500 hover:bg-gray-700 transition-colors border border-gray-700"
                             target="_blank"
                           >
                             <MessageSquare size={20} />
+                          </a>
+                          <a 
+                            href={getWhatsAppUrl(task.user.phone, WHATSAPP_TEMPLATES.ENGLISH.DELIVERY_ARRIVAL(task.id, task.vendor.shopName))}
+                            className="w-12 h-12 bg-gray-800 rounded-2xl flex items-center justify-center text-orange-500 hover:bg-gray-700 transition-colors border border-gray-700"
+                            target="_blank"
+                          >
+                            <Bell size={20} />
                           </a>
                        </>
                     )}

@@ -7,8 +7,9 @@ import { VendorStatus } from '@prisma/client';
 import {
   Loader2, Store, ChevronDown, CheckCircle, Clock, Ban,
   Phone, MapPin, IndianRupee, Package, ShoppingCart, Star,
-  Search, RotateCcw, AlertTriangle, Building2, CreditCard,
+  Search, RotateCcw, AlertTriangle, Building2, CreditCard, MessageCircle,
 } from 'lucide-react';
+import { getWhatsAppUrl } from '@/lib/whatsapp';
 import toast from 'react-hot-toast';
 import { CreateVendorModal } from '@/components/admin/CreateVendorModal';
 
@@ -246,13 +247,22 @@ export default function AdminVendorsPage() {
                           </div>
                         )}
                         {vendor.status === 'APPROVED' && (
-                          <button
-                            onClick={() => handleAction(vendor.id, 'SUSPENDED')}
-                            disabled={updateStatus.isPending}
-                            className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-black text-xs px-3 py-2.5 rounded-xl border border-red-200 transition-all"
-                          >
-                            <Ban size={13} /> Suspend Vendor
-                          </button>
+                          <div className="space-y-2">
+                            <button
+                              onClick={() => handleAction(vendor.id, 'SUSPENDED')}
+                              disabled={updateStatus.isPending}
+                              className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-black text-xs px-3 py-2.5 rounded-xl border border-red-200 transition-all"
+                            >
+                              <Ban size={13} /> Suspend Vendor
+                            </button>
+                            <a
+                              href={getWhatsAppUrl(vendor.phone, `Hi ${vendor.shopName}! 🌟\n\nThis is Deeshora Admin. We wanted to reach out regarding your store...`)}
+                              target="_blank"
+                              className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-black text-xs px-3 py-2.5 rounded-xl border border-emerald-200 transition-all"
+                            >
+                              <MessageCircle size={13} fill="currentColor" /> Message on WhatsApp
+                            </a>
+                          </div>
                         )}
                         {vendor.status === 'SUSPENDED' && (
                           <button

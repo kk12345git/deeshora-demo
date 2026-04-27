@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { OrderStatus } from '@prisma/client';
 import toast from 'react-hot-toast';
+import WhatsAppChatBot from '@/components/customer/WhatsAppChatBot';
 
 
 // ─── Animated delivery progress ───────────────────────────────────────────────
@@ -407,8 +408,10 @@ export default function OrderTrackingPage() {
           </div>
         </div>
 
-        {/* Right column */}
-        <div className="space-y-4">
+        {/* Right column: Bot Experience */}
+        <div className="space-y-5">
+          <WhatsAppChatBot order={order} />
+
           {/* Delivery address */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Delivering To</p>
@@ -434,43 +437,6 @@ export default function OrderTrackingPage() {
                 {order.paymentStatus}
               </span>
             </div>
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-sm font-bold text-gray-600">Amount</span>
-              <span className="font-black text-gray-900">₹{order.total.toFixed(2)}</span>
-            </div>
-
-            {/* UPI QR Nudge for COD */}
-            {order.paymentMethod === 'COD' && order.paymentStatus === 'PENDING' && (
-              <div className="mt-6 pt-6 border-t border-dashed border-gray-100">
-                <div className="bg-gray-50 rounded-2xl p-4 text-center">
-                  <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-3">Scan to Pay via UPI</p>
-                  <div className="bg-white p-3 rounded-xl inline-block shadow-sm mb-3">
-                    <Image 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=${order.vendor.upiId || 'deeshware15@okicici'}&pn=${encodeURIComponent(order.vendor.shopName)}&am=${order.total.toFixed(2)}&cu=INR&tn=Order_${order.id.slice(-8).toUpperCase()}`)}`}
-                      alt="UPI QR Code"
-                      width={120}
-                      height={120}
-                      className="mx-auto"
-                    />
-                  </div>
-                  <p className="text-[10px] font-bold text-gray-400 leading-tight">
-                    Pay digitally during delivery using any UPI app
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Call store */}
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl p-5 shadow-lg shadow-orange-500/30">
-            <p className="text-xs font-black text-orange-200 uppercase tracking-widest mb-1 text-center">Trouble with order?</p>
-            <p className="text-sm font-bold mb-4 text-center opacity-90">Reach out to the store directly.</p>
-            <a
-              href={`tel:${order.vendor.phone}`}
-              className="flex items-center justify-center gap-2 bg-white text-orange-500 h-12 rounded-xl font-black text-sm shadow-md hover:scale-[1.02] transition-transform"
-            >
-              <Phone size={16} fill="currentColor" /> Call Store
-            </a>
           </div>
 
           {/* Review nudge if delivered and not reviewed */}

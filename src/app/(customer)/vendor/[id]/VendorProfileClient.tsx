@@ -141,7 +141,7 @@ export default function VendorProfileClient({ vendor }: VendorProfileClientProps
             {/* Actions */}
             <div className="flex gap-3 shrink-0">
                <a 
-                 href={getWhatsAppUrl(vendor.phone, WHATSAPP_TEMPLATES.GENERAL_INQUIRY(vendor.shopName))}
+                 href={getWhatsAppUrl(vendor.phone, WHATSAPP_TEMPLATES.ENGLISH.GENERAL_INQUIRY(vendor.shopName))}
                  target="_blank"
                  className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all active:scale-90"
                >

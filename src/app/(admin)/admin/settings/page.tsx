@@ -61,7 +61,20 @@ export default function AdminSettingsPage() {
             <div className="space-y-4">
               <div>
                 <label htmlFor="business_whatsapp" className="block text-sm font-medium text-gray-700">Deeshora Business WhatsApp (with 91 prefix)</label>
-                <input type="text" name="business_whatsapp" id="business_whatsapp" defaultValue={businessWhatsapp} className="input mt-1" placeholder="918939318865" />
+                <div className="flex gap-2 mt-1">
+                  <input type="text" name="business_whatsapp" id="business_whatsapp" defaultValue={businessWhatsapp} className="input flex-1" placeholder="918939318865" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const input = document.getElementById('business_whatsapp') as HTMLInputElement;
+                      const num = input.value.replace(/[^0-9]/g, '');
+                      window.open(`https://wa.me/${num}?text=Test%20from%20Deeshora%20Settings!%20%F0%9F%9A%80`, '_blank');
+                    }}
+                    className="px-3 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-black border border-emerald-100 hover:bg-emerald-100 transition-colors"
+                  >
+                    Test
+                  </button>
+                </div>
               </div>
               <div>
                 <label htmlFor="delivery_partners" className="block text-sm font-medium text-gray-700">Delivery Partner Numbers (comma separated)</label>

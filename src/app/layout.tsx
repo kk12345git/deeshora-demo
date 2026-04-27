@@ -68,6 +68,7 @@ export const metadata: Metadata = {
 
 import { CartSync } from "@/components/cart/CartSync";
 import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
+import { WhatsAppSupport } from "@/components/customer/WhatsAppSupport";
 
 export default function RootLayout({
   children,
@@ -84,6 +85,7 @@ export default function RootLayout({
             <RoleSwitcher />
             <JsonLd />
             {children}
+            <WhatsAppSupport />
             <Toaster 
                 position="bottom-center"
                 toastOptions={{

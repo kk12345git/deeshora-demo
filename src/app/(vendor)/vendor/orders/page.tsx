@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { getWhatsAppUrl, WHATSAPP_TEMPLATES } from '@/lib/whatsapp';
+import { getWhatsAppUrl, WHATSAPP_TEMPLATES, getUPILink } from '@/lib/whatsapp';
+import { Globe } from 'lucide-react';
 
 const STATUS_CONFIG: Record<OrderStatus | 'ALL', { label: string; color: string; next?: OrderStatus; nextLabel?: string }> = {
   ALL:              { label: 'All Orders',      color: 'gray' },
@@ -32,6 +33,7 @@ export default function VendorOrdersPage() {
   const [activeTab, setActiveTab] = useState<OrderStatus | 'ALL'>('ALL');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
+  const [language, setLanguage] = useState<'ENGLISH' | 'TAMIL'>('ENGLISH');
 
   const { data: vendorProfile } = trpc.vendor.myProfile.useQuery();
   const { data: config } = trpc.admin.getSettings.useQuery();
@@ -82,9 +84,25 @@ export default function VendorOrdersPage() {
           </h1>
           <p className="text-gray-400 text-sm mt-1">Manage and fulfill customer orders in real-time</p>
         </div>
-        <button onClick={() => refetch()} className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-orange-500 transition-colors">
-          <RefreshCw size={16} /> Refresh
-        </button>
+        <div className="flex items-center gap-4">
+          <div className="flex bg-white rounded-xl border border-gray-100 p-1 shadow-sm">
+            <button 
+              onClick={() => setLanguage('ENGLISH')}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5 ${language === 'ENGLISH' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              <Globe size={12} /> EN
+            </button>
+            <button 
+              onClick={() => setLanguage('TAMIL')}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5 ${language === 'TAMIL' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              <Globe size={12} /> தமிழ்
+            </button>
+          </div>
+          <button onClick={() => refetch()} className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-orange-500 transition-colors">
+            <RefreshCw size={16} /> Refresh
+          </button>
+        </div>
       </div>
 
       {/* Pending alert banner */}
@@ -219,7 +237,7 @@ export default function VendorOrdersPage() {
                                   </a>
                                   
                                   <a 
-                                    href={getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES.ORDER_UPDATE(order.id, order.status, vendorProfile?.shopName || 'Deeshora'))}
+                                    href={getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES[language].ORDER_UPDATE(order.id, order.status, vendorProfile?.shopName || 'Deeshora'))}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-100 transition-all"
@@ -228,13 +246,40 @@ export default function VendorOrdersPage() {
                                   </a>
 
                                   <a 
-                                    href={getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES.LOCATION_REQUEST(order.id, vendorProfile?.shopName || 'Deeshora'))}
+                                    href={getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES[language].LOCATION_REQUEST(order.id, vendorProfile?.shopName || 'Deeshora'))}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-blue-100 transition-all"
                                   >
                                     <MapPin size={12} /> Get Location
                                   </a>
+
+                                  {order.paymentStatus === 'PAID' && (
+                                    <a 
+                                      href={getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES[language].INVOICE_SHARE(order.id, vendorProfile?.shopName || 'Deeshora', `${window.location.origin}/orders/${order.id}/invoice`))}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-purple-100 transition-all"
+                                    >
+                                      <FileText size={12} /> Share Invoice
+                                    </a>
+                                  )}
+
+                                  {order.paymentStatus === 'PENDING' && vendorProfile?.vpa && (
+                                    <a 
+                                      href={getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES[language].PAYMENT_REQUEST(
+                                        order.id, 
+                                        vendorProfile?.shopName || 'Deeshora', 
+                                        order.total,
+                                        getUPILink(vendorProfile.vpa, vendorProfile.shopName, order.total, order.id)
+                                      ))}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-orange-100 transition-all"
+                                    >
+                                      <IndianRupee size={12} /> Request Pay
+                                    </a>
+                                  )}
                                 </>
                              )}
                           </div>
@@ -297,10 +342,31 @@ export default function VendorOrdersPage() {
                                     const message = `Hi ${order.user.name.split(' ')[0]}! 🌟\n\nThank you for ordering from *${vendorProfile?.shopName}* (via Deeshora)! \n\nYour order #${order.id.slice(-8).toUpperCase()} is currently *${STATUS_CONFIG[order.status].label}*. We are working hard to deliver it to you! \n\nHave a great day! 🙏`;
                                     window.open(`https://wa.me/${order.user.phone}?text=${encodeURIComponent(message)}`, '_blank');
                                   }}
-                                  className="w-full py-2 bg-orange-50 text-orange-600 hover:bg-orange-100 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2"
+                                  className="w-full py-2 bg-orange-50 text-orange-600 hover:bg-orange-100 font-bold text-[10px] rounded-xl transition-all flex items-center justify-center gap-2"
                                 >
-                                  <Bell size={14} /> Send "Thank You"
+                                  <Bell size={12} /> Send "Thank You"
                                 </button>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                  <button
+                                    onClick={() => {
+                                      const url = getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES[language].ORDER_DELAYED(order.id, vendorProfile?.shopName || 'Deeshora'));
+                                      window.open(url, '_blank');
+                                    }}
+                                    className="py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 font-bold text-[10px] rounded-xl transition-all flex items-center justify-center gap-1.5"
+                                  >
+                                    <Clock size={12} /> Notify Delay
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      const url = getWhatsAppUrl(order.user.phone, `Hi ${order.user.name.split(' ')[0]}! This is ${vendorProfile?.shopName}. Just wanted to check if you received your order and if everything is to your satisfaction? 🙏`);
+                                      window.open(url, '_blank');
+                                    }}
+                                    className="py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 font-bold text-[10px] rounded-xl transition-all flex items-center justify-center gap-1.5"
+                                  >
+                                    <CheckCircle size={12} /> Follow Up
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           )}

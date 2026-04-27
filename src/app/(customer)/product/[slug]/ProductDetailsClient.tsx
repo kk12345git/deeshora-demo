@@ -4,12 +4,13 @@ import { trpc } from '@/lib/trpc';
 import Image from 'next/image';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Minus, Plus, AlertTriangle, CheckCircle, ChevronLeft, ShoppingCart, Share2, Heart, MapPin, Loader2, Info, Zap } from 'lucide-react';
+import { Star, Minus, Plus, AlertTriangle, CheckCircle, ChevronLeft, ShoppingCart, Share2, Heart, MapPin, Loader2, Info, Zap, MessageCircle } from 'lucide-react';
 import { useCart, CartItem } from '@/hooks/useCart';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
 import JsonLd from '@/components/JsonLd';
+import { getProductShareUrl } from '@/lib/whatsapp';
 
 interface ProductDetailsClientProps {
   product: any; // Using the serializable product from the server
@@ -342,6 +343,15 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                       >
                         <ShoppingCart size={18} /> Add to Cart
                       </motion.button>
+                      
+                      <a 
+                        href={getProductShareUrl(product.vendor.phone, product.name, product.slug)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 text-xs font-black text-emerald-600 hover:text-emerald-700 transition-colors uppercase tracking-widest"
+                      >
+                        <MessageCircle size={14} fill="currentColor" /> Inquiry on WhatsApp
+                      </a>
                     </div>
                   )
                 ) : (
@@ -441,6 +451,14 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                       >
                         <ShoppingCart size={15} />
                       </button>
+                      <a 
+                        href={getProductShareUrl(product.vendor.phone, product.name, product.slug)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-12 w-12 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 shrink-0"
+                      >
+                        <MessageCircle size={20} fill="currentColor" />
+                      </a>
                       <button
                         onClick={handleBuyNow}
                         className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2 uppercase tracking-widest"

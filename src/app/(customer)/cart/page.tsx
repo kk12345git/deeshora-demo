@@ -3,7 +3,8 @@
 import { useCart } from '@/hooks/useCart';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, IndianRupee, ShieldCheck } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, IndianRupee, ShieldCheck, MessageCircle } from 'lucide-react';
+import { getWhatsAppUrl } from '@/lib/whatsapp';
 import { trpc } from '@/lib/trpc';
 import { useEffect, useState } from 'react';
 
@@ -186,6 +187,18 @@ export default function CartPage() {
                 <span>Secure Checkout</span>
                 <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
               </Link>
+              
+              <button 
+                onClick={() => {
+                  const businessNumber = config?.find((c: any) => c.key === 'business_whatsapp')?.value || '918939318865';
+                  const itemsList = items.map(i => `• ${i.quantity}x ${i.name} (₹${i.price})`).join('\n');
+                  const message = `Hi Deeshora! 🌟\n\nI want to order via WhatsApp!\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${grandTotal}\n\nPlease help me complete this order! 🙏`;
+                  window.open(getWhatsAppUrl(businessNumber, message), '_blank');
+                }}
+                className="w-full mt-3 py-4 border-2 border-emerald-500 text-emerald-500 hover:bg-emerald-50 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 uppercase tracking-widest"
+              >
+                <MessageCircle size={18} fill="currentColor" /> Order via WhatsApp
+              </button>
             </div>
 
             <div className="mt-8 flex items-center justify-center gap-2 opacity-40 relative z-10">
