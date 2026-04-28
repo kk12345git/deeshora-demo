@@ -255,8 +255,8 @@ export const productRouter = createTRPCRouter({
       const product = await ctx.prisma.product.findFirst({
         where: { id: input.id, isActive: true, vendor: { status: 'APPROVED' } },
         include: {
-          vendor: true,
-          category: true,
+          vendor: { select: { id: true, shopName: true, city: true, phone: true } },
+          category: { select: { id: true, name: true, slug: true } },
           reviews: {
             take: 10,
             orderBy: { createdAt: 'desc' },
@@ -279,8 +279,8 @@ export const productRouter = createTRPCRouter({
       const product = await ctx.prisma.product.findFirst({
         where: { slug: input.slug, isActive: true, vendor: { status: 'APPROVED' } },
         include: {
-          vendor: true,
-          category: true,
+          vendor: { select: { id: true, shopName: true, city: true, phone: true } },
+          category: { select: { id: true, name: true, slug: true } },
           reviews: {
             take: 10,
             orderBy: { createdAt: 'desc' },

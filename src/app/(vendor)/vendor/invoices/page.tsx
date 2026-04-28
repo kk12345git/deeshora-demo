@@ -109,7 +109,7 @@ export default function VendorInvoicesPage() {
                         <a
                           href={getWhatsAppUrl(
                             order.user.phone, 
-                            WHATSAPP_TEMPLATES.INVOICE_SHARE(
+                            WHATSAPP_TEMPLATES.ENGLISH.INVOICE_SHARE(
                               order.id, 
                               order.vendor?.shopName || 'Deeshora', 
                               `${baseUrl}/vendor/invoices/${order.id}`

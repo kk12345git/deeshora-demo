@@ -265,13 +265,13 @@ export default function VendorOrdersPage() {
                                     </a>
                                   )}
 
-                                  {order.paymentStatus === 'PENDING' && vendorProfile?.vpa && (
+                                  {order.paymentStatus === 'PENDING' && vendorProfile?.upiId && (
                                     <a 
                                       href={getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES[language].PAYMENT_REQUEST(
                                         order.id, 
                                         vendorProfile?.shopName || 'Deeshora', 
                                         order.total,
-                                        getUPILink(vendorProfile.vpa, vendorProfile.shopName, order.total, order.id)
+                                        getUPILink(vendorProfile.upiId, vendorProfile.shopName, order.total, order.id)
                                       ))}
                                       target="_blank"
                                       rel="noopener noreferrer"
@@ -337,36 +337,40 @@ export default function VendorOrdersPage() {
                                   <Phone size={14} fill="currentColor" /> Send to Partner
                                 </button>
                                 
-                                <button
-                                  onClick={() => {
-                                    const message = `Hi ${order.user.name.split(' ')[0]}! 🌟\n\nThank you for ordering from *${vendorProfile?.shopName}* (via Deeshora)! \n\nYour order #${order.id.slice(-8).toUpperCase()} is currently *${STATUS_CONFIG[order.status].label}*. We are working hard to deliver it to you! \n\nHave a great day! 🙏`;
-                                    window.open(`https://wa.me/${order.user.phone}?text=${encodeURIComponent(message)}`, '_blank');
-                                  }}
-                                  className="w-full py-2 bg-orange-50 text-orange-600 hover:bg-orange-100 font-bold text-[10px] rounded-xl transition-all flex items-center justify-center gap-2"
-                                >
-                                  <Bell size={12} /> Send "Thank You"
-                                </button>
+                                {order.user.phone && (
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        const message = `Hi ${order.user.name.split(' ')[0]}! 🌟\n\nThank you for ordering from *${vendorProfile?.shopName}* (via Deeshora)! \n\nYour order #${order.id.slice(-8).toUpperCase()} is currently *${STATUS_CONFIG[order.status].label}*. We are working hard to deliver it to you! \n\nHave a great day! 🙏`;
+                                        window.open(`https://wa.me/${order.user.phone}?text=${encodeURIComponent(message)}`, '_blank');
+                                      }}
+                                      className="w-full py-2 bg-orange-50 text-orange-600 hover:bg-orange-100 font-bold text-[10px] rounded-xl transition-all flex items-center justify-center gap-2"
+                                    >
+                                      <Bell size={12} /> Send "Thank You"
+                                    </button>
 
-                                <div className="grid grid-cols-2 gap-2">
-                                  <button
-                                    onClick={() => {
-                                      const url = getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES[language].ORDER_DELAYED(order.id, vendorProfile?.shopName || 'Deeshora'));
-                                      window.open(url, '_blank');
-                                    }}
-                                    className="py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 font-bold text-[10px] rounded-xl transition-all flex items-center justify-center gap-1.5"
-                                  >
-                                    <Clock size={12} /> Notify Delay
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      const url = getWhatsAppUrl(order.user.phone, `Hi ${order.user.name.split(' ')[0]}! This is ${vendorProfile?.shopName}. Just wanted to check if you received your order and if everything is to your satisfaction? 🙏`);
-                                      window.open(url, '_blank');
-                                    }}
-                                    className="py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 font-bold text-[10px] rounded-xl transition-all flex items-center justify-center gap-1.5"
-                                  >
-                                    <CheckCircle size={12} /> Follow Up
-                                  </button>
-                                </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <button
+                                        onClick={() => {
+                                          const url = getWhatsAppUrl(order.user.phone!, WHATSAPP_TEMPLATES[language].ORDER_DELAYED(order.id, vendorProfile?.shopName || 'Deeshora'));
+                                          window.open(url, '_blank');
+                                        }}
+                                        className="py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 font-bold text-[10px] rounded-xl transition-all flex items-center justify-center gap-1.5"
+                                      >
+                                        <Clock size={12} /> Notify Delay
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          const url = getWhatsAppUrl(order.user.phone!, `Hi ${order.user.name.split(' ')[0]}! This is ${vendorProfile?.shopName}. Just wanted to check if you received your order and if everything is to your satisfaction? 🙏`);
+                                          window.open(url, '_blank');
+                                        }}
+                                        className="py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 font-bold text-[10px] rounded-xl transition-all flex items-center justify-center gap-1.5"
+                                      >
+                                        <CheckCircle size={12} /> Follow Up
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </div>
                           )}

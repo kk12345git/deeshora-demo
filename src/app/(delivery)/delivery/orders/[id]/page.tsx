@@ -106,7 +106,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                         <Phone size={18} />
                       </a>
                       <a 
-                        href={getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES.LOCATION_REQUEST(order.id, order.vendor.shopName))}
+                        href={getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES.ENGLISH.LOCATION_REQUEST(order.id, order.vendor.shopName))}
                         target="_blank"
                         className="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center text-green-500 border border-gray-700 hover:bg-gray-700 transition-all"
                       >

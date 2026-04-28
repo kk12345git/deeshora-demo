@@ -634,11 +634,11 @@ export default function VendorDashboardPage() {
 
                 <div className="mt-8 space-y-3">
                   <button
-                    disabled={upgradeMutation.isLoading}
+                    disabled={upgradeMutation.isPending}
                     onClick={() => upgradeMutation.mutate()}
                     className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black text-sm uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2"
                   >
-                    {upgradeMutation.isLoading ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle size={18} /> I have paid ₹700</>}
+                    {upgradeMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle size={18} /> I have paid ₹700</>}
                   </button>
                   <button 
                     onClick={() => setShowUpgradeModal(false)}

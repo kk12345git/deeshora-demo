@@ -13,7 +13,7 @@ async function getProduct(slug: string) {
     where: { slug },
     include: {
       category: { select: { id: true, name: true, slug: true } },
-      vendor: { select: { id: true, shopName: true, city: true } },
+      vendor: { select: { id: true, shopName: true, city: true, phone: true } },
       reviews: {
         take: 3,
         orderBy: { createdAt: 'desc' },
