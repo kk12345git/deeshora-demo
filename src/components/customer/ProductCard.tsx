@@ -184,7 +184,6 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           </div>
         </div>
       </div>
-    </div>
-    </>
+    </motion.div>
   );
 }

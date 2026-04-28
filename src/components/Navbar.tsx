@@ -343,7 +343,6 @@ export default function Navbar() {
               </div>
             )}
           </div>
-          </div>
         </motion.nav>
 
         {/* ── Mobile Inline Search Bar (below nav, slides in) ──────────── */}
