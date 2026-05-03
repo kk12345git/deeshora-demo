@@ -247,21 +247,42 @@ export default function AdminVendorsPage() {
                           </div>
                         )}
                         {vendor.status === 'APPROVED' && (
-                          <div className="space-y-2">
-                            <button
-                              onClick={() => handleAction(vendor.id, 'SUSPENDED')}
-                              disabled={updateStatus.isPending}
-                              className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-black text-xs px-3 py-2.5 rounded-xl border border-red-200 transition-all"
-                            >
-                              <Ban size={13} /> Suspend Vendor
-                            </button>
-                            <a
-                              href={getWhatsAppUrl(vendor.phone, `Hi ${vendor.shopName}! 🌟\n\nThis is Deeshora Admin. We wanted to reach out regarding your store...`)}
-                              target="_blank"
-                              className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-black text-xs px-3 py-2.5 rounded-xl border border-emerald-200 transition-all"
-                            >
-                              <MessageCircle size={13} fill="currentColor" /> Message on WhatsApp
-                            </a>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Commission Rate (%)</label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="number"
+                                  min={0} max={50} step={1}
+                                  value={commPct}
+                                  onChange={e => setCommissionInputs(p => ({ ...p, [vendor.id]: e.target.value }))}
+                                  className="flex-1 px-3 py-2 text-sm font-black border-2 border-gray-200 rounded-xl focus:border-orange-400 outline-none transition-all"
+                                />
+                                <button
+                                  onClick={() => handleAction(vendor.id, 'APPROVED')}
+                                  disabled={updateStatus.isPending}
+                                  className="px-4 bg-gray-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-600 transition-colors"
+                                >
+                                  Save
+                                </button>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <button
+                                onClick={() => handleAction(vendor.id, 'SUSPENDED')}
+                                disabled={updateStatus.isPending}
+                                className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-black text-xs px-3 py-2.5 rounded-xl border border-red-200 transition-all"
+                              >
+                                <Ban size={13} /> Suspend Vendor
+                              </button>
+                              <a
+                                href={getWhatsAppUrl(vendor.phone, `Hi ${vendor.shopName}! 🌟\n\nThis is Deeshora Admin. We wanted to reach out regarding your store...`)}
+                                target="_blank"
+                                className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-black text-xs px-3 py-2.5 rounded-xl border border-emerald-200 transition-all"
+                              >
+                                <MessageCircle size={13} fill="currentColor" /> Message on WhatsApp
+                              </a>
+                            </div>
                           </div>
                         )}
                         {vendor.status === 'SUSPENDED' && (

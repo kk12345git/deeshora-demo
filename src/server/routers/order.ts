@@ -6,13 +6,15 @@ import { pusherServer, CHANNELS, EVENTS } from '@/lib/pusher';
 import { OrderStatus } from '@prisma/client';
 
 
+import { initiatePayment } from '@/lib/payments';
+
 export const orderRouter = createTRPCRouter({
   placeOrder: protectedProcedure
     .input(
       z.object({
         addressId: z.string(),
         notes: z.string().optional(),
-        paymentMethod: z.enum(['COD', 'UPI']).default('COD'),
+        paymentMethod: z.enum(['COD', 'UPI', 'PHONEPE', 'MANUAL_UPI']).default('COD'),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -32,7 +34,7 @@ export const orderRouter = createTRPCRouter({
           items: {
             include: {
               product: {
-                include: { vendor: true },
+                include: { vendor: true, category: true },
               },
             },
           },
@@ -83,8 +85,11 @@ export const orderRouter = createTRPCRouter({
       const config = await ctx.prisma.siteConfig.findMany();
       const deliveryFeeConfig = config.find((c) => c.key === 'delivery_fee');
       const freeDeliveryConfig = config.find((c) => c.key === 'free_delivery_above');
+      const platformFixedFeeConfig = config.find((c) => c.key === 'platform_fixed_fee');
+
       const baseDeliveryFee = deliveryFeeConfig ? parseFloat(deliveryFeeConfig.value) : 40;
       const freeDeliveryThreshold = freeDeliveryConfig ? parseFloat(freeDeliveryConfig.value) : 299;
+      const platformFixedFee = platformFixedFeeConfig ? parseFloat(platformFixedFeeConfig.value) : 0;
 
       const finalOrders = await ctx.prisma.$transaction(async (tx) => {
         const createdOrders = [];
@@ -94,8 +99,29 @@ export const orderRouter = createTRPCRouter({
           const deliveryFee = subtotal >= freeDeliveryThreshold ? 0 : baseDeliveryFee;
           const total = subtotal + deliveryFee;
 
-          const commission = subtotal * vendor.commissionRate;
-          const vendorAmount = subtotal - commission;
+          // Powerful Commission Logic: Fixed Fee + Sum(Item Commissions)
+          let totalCommission = platformFixedFee;
+          const itemsToCreate = items.map((item) => {
+            // Hierarchy: Product Rate -> Category Rate -> Vendor Rate
+            const itemCommissionRate = item.product.commissionRate ?? item.product.category.commissionRate ?? vendor.commissionRate;
+            const itemCommission = (item.product.price * item.quantity) * itemCommissionRate;
+            totalCommission += itemCommission;
+
+            return {
+              productId: item.productId,
+              name: item.product.name,
+              image: item.product.images[0],
+              price: item.product.price,
+              mrp: item.product.mrp,
+              quantity: item.quantity,
+              total: item.product.price * item.quantity,
+              commission: itemCommission,
+              gstRate: item.product.gstRate ?? 0,
+              gstAmount: (item.product.price * item.quantity) * (item.product.gstRate ?? 0) / 100,
+            };
+          });
+
+          const vendorAmount = subtotal - totalCommission;
 
           const order = await tx.order.create({
             data: {
@@ -105,25 +131,14 @@ export const orderRouter = createTRPCRouter({
               subtotal,
               deliveryFee,
               total,
-              commission,
+              commission: totalCommission,
               vendorAmount,
               notes,
               paymentMethod,
-              // L1: Fixed dead ternary — COD orders start PENDING until delivered
               paymentStatus: 'PENDING',
               status: OrderStatus.PENDING,
               items: {
-                create: items.map((item) => ({
-                  productId: item.productId,
-                  name: item.product.name,
-                  image: item.product.images[0],
-                  price: item.product.price,
-                  mrp: item.product.mrp,
-                  quantity: item.quantity,
-                  total: item.product.price * item.quantity,
-                  gstRate: item.product.gstRate ?? 0,
-                  gstAmount: (item.product.price * item.quantity) * (item.product.gstRate ?? 0),
-                })),
+                create: itemsToCreate,
               },
               timeline: {
                 create: {
@@ -177,6 +192,78 @@ export const orderRouter = createTRPCRouter({
         orderIds: finalOrders.map((o) => o.id),
         paymentMethod,
       };
+    }),
+
+
+  /**
+   * Initiate payment for an existing order via a specific provider
+   */
+  initiatePayment: protectedProcedure
+    .input(z.object({
+      orderId: z.string(),
+      provider: z.enum(['PHONEPE', 'MANUAL_UPI']),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const order = await ctx.prisma.order.findUnique({
+        where: { id: input.orderId, userId: ctx.user.id },
+        include: { user: true, vendor: true }
+      });
+
+      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+
+      return await initiatePayment(input.provider, {
+        orderId: order.id,
+        amount: order.total,
+        customerName: order.user.name,
+        customerEmail: order.user.email,
+        customerPhone: order.user.phone || '',
+        callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/orders/${order.id}`,
+      });
+    }),
+
+
+  /**
+   * Submit UTR for manual UPI verification
+   */
+  submitUtr: protectedProcedure
+    .input(z.object({
+      orderId: z.string(),
+      utrNumber: z.string().min(12, 'UTR must be at least 12 digits'),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const order = await ctx.prisma.order.findUnique({
+        where: { id: input.orderId, userId: ctx.user.id }
+      });
+
+      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+
+      const updated = await ctx.prisma.order.update({
+        where: { id: input.orderId },
+        data: {
+          utrNumber: input.utrNumber,
+          paymentMethod: 'MANUAL_UPI',
+          paymentStatus: 'PENDING',
+          timeline: {
+            create: {
+              status: order.status,
+              message: `UTR ${input.utrNumber} submitted for verification.`,
+            }
+          }
+        }
+      });
+
+      // Notify admin
+      try {
+        await pusherServer.trigger(
+          CHANNELS.ADMIN,
+          EVENTS.NEW_PAYMENT_VERIFICATION,
+          { orderId: order.id, utrNumber: input.utrNumber }
+        );
+      } catch (err) {
+        console.error('[Order] Pusher admin notify failed:', err);
+      }
+
+      return updated;
     }),
 
   // C3: UPI self-confirmation endpoint REMOVED.
@@ -315,22 +402,35 @@ export const orderRouter = createTRPCRouter({
       };
 
 
-      const updatedOrder = await ctx.prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status,
-          deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
-          // Mark COD as PAID when delivered
-          paymentStatus: status === 'DELIVERED' && order.paymentMethod === 'COD' ? 'PAID' : order.paymentStatus,
-          timeline: {
-            create: {
-              status,
-              message: messages[status],
+      const updatedOrder = await ctx.prisma.$transaction(async (tx) => {
+        const updated = await tx.order.update({
+          where: { id: orderId },
+          data: {
+            status,
+            deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
+            // Mark COD as PAID when delivered
+            paymentStatus: status === 'DELIVERED' && order.paymentMethod === 'COD' ? 'PAID' : order.paymentStatus,
+            timeline: {
+              create: {
+                status,
+                message: messages[status],
+              },
             },
           },
-        },
-      });
+        });
 
+        // If order was delivered, increment vendor's pending payout
+        if (status === 'DELIVERED' && order.status !== 'DELIVERED') {
+          await tx.vendor.update({
+            where: { id: order.vendorId },
+            data: {
+              pendingPayout: { increment: order.vendorAmount },
+            },
+          });
+        }
+
+        return updated;
+      });
 
       // M3: Pusher in try/catch
       try {
@@ -342,7 +442,6 @@ export const orderRouter = createTRPCRouter({
       } catch (pusherErr) {
         console.error('[Order] Pusher status update failed:', orderId, pusherErr);
       }
-
 
       return updatedOrder;
     }),

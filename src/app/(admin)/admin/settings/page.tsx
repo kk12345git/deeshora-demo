@@ -25,12 +25,14 @@ export default function AdminSettingsPage() {
     const free_delivery_above = formData.get('free_delivery_above') as string;
     const business_whatsapp = formData.get('business_whatsapp') as string;
     const delivery_partners = formData.get('delivery_partners') as string;
+    const platform_fixed_fee = formData.get('platform_fixed_fee') as string;
 
 
     updateConfigMutation.mutate({ key: 'delivery_fee', value: delivery_fee });
     updateConfigMutation.mutate({ key: 'free_delivery_above', value: free_delivery_above });
     updateConfigMutation.mutate({ key: 'business_whatsapp', value: business_whatsapp });
     updateConfigMutation.mutate({ key: 'delivery_partners', value: delivery_partners });
+    updateConfigMutation.mutate({ key: 'platform_fixed_fee', value: platform_fixed_fee });
   };
 
 
@@ -39,8 +41,9 @@ export default function AdminSettingsPage() {
 
   const deliveryFee = config?.find((c: any) => c.key === 'delivery_fee')?.value || '40';
   const freeDeliveryAbove = config?.find((c: any) => c.key === 'free_delivery_above')?.value || '299';
-  const businessWhatsapp = config?.find((c: any) => c.key === 'business_whatsapp')?.value || '8939318865';
+  const businessWhatsapp = config?.find((c: any) => c.key === 'business_whatsapp')?.value || '918939318865';
   const deliveryPartners = config?.find((c: any) => c.key === 'delivery_partners')?.value || '';
+  const platformFixedFee = config?.find((c: any) => c.key === 'platform_fixed_fee')?.value || '10';
 
 
   return (
@@ -55,6 +58,11 @@ export default function AdminSettingsPage() {
           <div>
             <label htmlFor="free_delivery_above" className="block text-sm font-medium text-gray-700">Free Delivery Threshold (₹)</label>
             <input type="number" name="free_delivery_above" id="free_delivery_above" defaultValue={freeDeliveryAbove} className="input mt-1" />
+          </div>
+          <div>
+            <label htmlFor="platform_fixed_fee" className="block text-sm font-medium text-gray-700 font-bold text-orange-600">Platform Fixed Fee per Order (₹)</label>
+            <input type="number" name="platform_fixed_fee" id="platform_fixed_fee" defaultValue={platformFixedFee} className="input mt-1 border-orange-200 focus:border-orange-500" />
+            <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold tracking-widest">Charged to vendors for every successful order.</p>
           </div>
           <div className="pt-4 border-t">
             <h3 className="text-md font-semibold mb-3">WhatsApp Automation</h3>

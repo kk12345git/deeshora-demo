@@ -2,16 +2,18 @@
 "use client";
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Check, CheckCheck, Loader2, IndianRupee, MapPin } from 'lucide-react';
+import { MessageCircle, Check, CheckCheck, Loader2, IndianRupee, MapPin, FileText, Send } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { OrderStatus } from '@prisma/client';
+import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 interface Message {
   id: string;
   text: string;
   sender: 'bot' | 'user';
   timestamp: Date;
-  type?: 'text' | 'status' | 'payment' | 'location';
+  type?: 'text' | 'status' | 'payment' | 'location' | 'invoice' | 'location_request';
   data?: any;
 }
 
@@ -82,8 +84,62 @@ export default function WhatsAppChatBot({ order }: WhatsAppChatBotProps) {
       });
     }
 
+    if (order.paymentStatus === 'PAID') {
+      sequence.push({
+        id: 'invoice_msg',
+        text: `Your payment of ₹${order.total} is confirmed! 🧾`,
+        sender: 'bot',
+        timestamp: new Date(),
+        type: 'invoice'
+      });
+    } else if (order.status === 'PENDING' || order.status === 'CONFIRMED') {
+      sequence.push({
+        id: 'loc_request',
+        text: `Please share your delivery location for faster delivery! 📍`,
+        sender: 'bot',
+        timestamp: new Date(),
+        type: 'location_request'
+      });
+    }
+
     setMessages(sequence);
-  }, [order.status, order.id, order.user.name, order.vendor.shopName, order.createdAt]);
+  }, [order.status, order.paymentStatus, order.id, order.user.name, order.vendor.shopName, order.createdAt, order.total]);
+
+  const handleShareLocation = async () => {
+    try {
+      setIsTyping(true);
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+      });
+      const { latitude, longitude } = position.coords;
+      
+      const newMsg: Message = {
+        id: `user_loc_${Date.now()}`,
+        text: `Shared my location: https://www.google.com/maps?q=${latitude},${longitude}`,
+        sender: 'user',
+        timestamp: new Date(),
+        type: 'text'
+      };
+      
+      setMessages(prev => [...prev, newMsg]);
+      setIsTyping(false);
+      
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          id: `bot_ack_${Date.now()}`,
+          text: `Thank you! 📍 We've updated your delivery partner with the exact location.`,
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'text'
+        }]);
+      }, 1000);
+      
+      toast.success('Location shared with delivery partner!');
+    } catch (err) {
+      toast.error('Could not get location. Please check permissions.');
+      setIsTyping(false);
+    }
+  };
 
   return (
     <div className="bg-[#efe7dd] rounded-[2rem] overflow-hidden border border-gray-200 shadow-xl flex flex-col h-[500px] relative">
@@ -135,6 +191,28 @@ export default function WhatsAppChatBot({ order }: WhatsAppChatBotProps) {
                     </div>
                     <button className="bg-emerald-500 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">
                       Pay
+                    </button>
+                  </div>
+                )}
+
+                {msg.type === 'invoice' && (
+                  <div className="mt-2 flex flex-col gap-2">
+                    <Link 
+                      href={`/orders/${order.id}/invoice`}
+                      className="flex items-center justify-center gap-2 bg-emerald-500 text-white p-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-colors shadow-sm"
+                    >
+                      <FileText size={14} /> View Invoice
+                    </Link>
+                  </div>
+                )}
+
+                {msg.type === 'location_request' && (
+                  <div className="mt-2">
+                    <button 
+                      onClick={handleShareLocation}
+                      className="w-full flex items-center justify-center gap-2 bg-[#075e54] text-white p-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#128c7e] transition-colors shadow-sm"
+                    >
+                      <MapPin size={14} /> Share My Location
                     </button>
                   </div>
                 )}

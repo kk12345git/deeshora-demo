@@ -326,6 +326,7 @@ export const productRouter = createTRPCRouter({
   categories: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.category.findMany({
       where: { isActive: true },
+      select: { id: true, name: true, slug: true, image: true, commissionRate: true },
       orderBy: { sortOrder: 'asc' },
     });
   }),
@@ -334,6 +335,7 @@ export const productRouter = createTRPCRouter({
   /** Public: get all categories regardless of active status (for admin) */
   listAllCategories: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.category.findMany({
+      select: { id: true, name: true, slug: true, image: true, commissionRate: true, isActive: true, sortOrder: true },
       orderBy: { name: 'asc' },
     });
   }),

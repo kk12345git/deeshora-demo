@@ -108,6 +108,7 @@ export default function AdminProductsPage() {
                   <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Product Detail</th>
                   <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Vendor Source</th>
                   <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Pricing Status</th>
+                  <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Commission</th>
                   <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Stock Control</th>
                   <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Management</th>
                 </tr>
@@ -143,6 +144,16 @@ export default function AdminProductsPage() {
                       <div className="space-y-1">
                         <p className="text-lg font-black text-gray-950 tracking-tighter leading-none">₹{product.price}</p>
                         <p className="text-xs text-gray-400 line-through font-medium">MRP ₹{product.mrp}</p>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex flex-col gap-1">
+                        <p className="text-sm font-black text-orange-600">
+                          {((product.commissionRate ?? product.category.commissionRate ?? product.vendor.commissionRate) * 100).toFixed(1)}%
+                        </p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                          {product.commissionRate ? 'Product Override' : product.category.commissionRate ? 'Category Default' : 'Vendor Default'}
+                        </p>
                       </div>
                     </td>
                     <td className="px-8 py-6">

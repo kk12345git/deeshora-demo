@@ -60,6 +60,7 @@ export default function AdminNewProductPage() {
       stock: parseInt(formData.get('stock') as string),
       unit: formData.get('unit') as string,
       isFeatured: formData.get('isFeatured') === 'on',
+      commissionRate: formData.get('commissionRate') ? parseFloat(formData.get('commissionRate') as string) / 100 : undefined,
       images,
     });
   };
@@ -178,6 +179,36 @@ export default function AdminNewProductPage() {
                 <option>ml</option>
                 <option>pack</option>
               </select>
+            </div>
+          </div>
+        </section>
+
+        {/* Commission Control */}
+        <section className="bg-orange-50 p-6 rounded-[2rem] border-2 border-orange-100">
+          <h3 className="text-lg font-bold text-orange-950 mb-4 flex items-center gap-2 uppercase tracking-tighter">
+            <span className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs">5</span>
+            Custom Commission Override
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div>
+              <label htmlFor="commissionRate" className="block text-xs font-black text-orange-800 uppercase tracking-widest mb-1">Commission Rate (%)</label>
+              <div className="relative">
+                <input 
+                  type="number" 
+                  name="commissionRate" 
+                  id="commissionRate" 
+                  step="0.1" 
+                  min="0" 
+                  max="100" 
+                  className="w-full h-14 pl-4 pr-12 bg-white border-2 border-orange-100 rounded-2xl focus:border-orange-500 focus:ring-0 outline-none font-black text-orange-900" 
+                  placeholder="Leave blank for auto" 
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-orange-300">%</span>
+              </div>
+            </div>
+            <div className="text-xs text-orange-700 font-bold leading-relaxed">
+              <p>Leave blank to use the <span className="underline italic">Category Default</span> or <span className="underline italic">Vendor Default</span>.</p>
+              <p className="mt-1 opacity-70 italic">Example: Enter 12.5 for 12.5% commission on this specific product.</p>
             </div>
           </div>
         </section>

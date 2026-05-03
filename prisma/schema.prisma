@@ -60,6 +60,16 @@ enum PaymentMethod {
   RAZORPAY
   ONLINE
   UPI
+  PHONEPE
+  MANUAL_UPI
+}
+
+
+enum SubscriptionStatus {
+  NONE
+  PENDING_APPROVAL
+  ACTIVE
+  EXPIRED
 }
 
 
@@ -129,6 +139,12 @@ model Vendor {
   plan            VendorPlan   @default(TRIAL)
   planExpiresAt   DateTime?
   isVerified      Boolean      @default(false)
+  razorpaySubscriptionId String? // Added for real-time subscription
+  lastPaymentId   String?       // Added to track last payment
+  subscriptionStatus SubscriptionStatus @default(NONE)
+  subscriptionUtr    String?
+  subscriptionMethod PaymentMethod?
+  subscriptionPaidAt DateTime?
   // Bank & Financial Details
   bankAccount     String?
   bankAccountName String?      // Account holder name
@@ -162,6 +178,7 @@ model Category {
   description String?
   isActive    Boolean   @default(true)
   sortOrder   Int       @default(0)
+  commissionRate Float? // If set, overrides vendor default
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -189,6 +206,7 @@ model Product {
   rating       Float    @default(0)
   reviewCount  Int      @default(0)
   viewCount    Int      @default(0)       // used for trending / popularity ranking
+  commissionRate Float?                  // If set, overrides category and vendor default
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -250,6 +268,7 @@ model Order {
   paymentMethod   PaymentMethod @default(COD)
   paymentId       String?
   razorpayOrderId String?
+  utrNumber       String?       // Added for manual UPI verification
   subtotal        Float
   deliveryFee     Float         @default(0)
   discount        Float         @default(0)
@@ -292,6 +311,7 @@ model OrderItem {
   mrp       Float
   quantity  Int
   total     Float
+  commission Float    @default(0)   // commission taken for this item
   gstRate   Float   @default(0)   // snapshot of product's GST rate at order time
   gstAmount Float   @default(0)   // computed: price * quantity * gstRate
 

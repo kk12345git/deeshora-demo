@@ -4,6 +4,7 @@
 import { trpc } from '@/lib/trpc';
 import { useVendorNotifications } from '@/hooks/useOrderTracking';
 import Link from 'next/link';
+import Script from 'next/script';
 import {
   Loader2, Clock, Package, ShoppingCart, IndianRupee,
   AlertCircle, TrendingUp, Bell, ArrowRight, CheckCircle,
@@ -109,13 +110,29 @@ export default function VendorDashboardPage() {
   const { data: stats, refetch: refetchStats } = trpc.order.vendorStats.useQuery(undefined, { enabled: !!vendorProfile });
   const { data: recentOrders, refetch: refetchOrders } = trpc.order.vendorOrders.useQuery({ limit: 5 }, { enabled: !!vendorProfile });
 
-  const upgradeMutation = trpc.vendor.upgradeToPremium.useMutation({
+  const [utr, setUtr] = useState('');
+  const initiateSub = trpc.vendor.initiateSubscription.useMutation();
+  const submitSubUtr = trpc.vendor.submitSubscriptionUtr.useMutation({
     onSuccess: () => {
-      toast.success('Subscription active! Welcome to Deeshora Premium 🚀');
+      toast.success('UTR submitted for verification! Your shop will be upgraded once verified.');
+      setShowUpgradeModal(false);
       refetchProfile();
     },
     onError: (err) => toast.error(err.message),
   });
+
+  const handlePhonePeUpgrade = async () => {
+    try {
+      const res = await initiateSub.mutateAsync({ provider: 'PHONEPE' });
+      if (res.redirectUrl) {
+        window.location.href = res.redirectUrl;
+      } else {
+        toast.error('Failed to initiate PhonePe payment');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Payment initiation failed');
+    }
+  };
 
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const adminUpiId = 'deeshware15@okicici';
@@ -171,6 +188,7 @@ export default function VendorDashboardPage() {
 
   return (
     <div className="space-y-8">
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-5">
@@ -632,14 +650,39 @@ export default function VendorDashboardPage() {
                   </div>
                 </div>
 
-                <div className="mt-8 space-y-3">
+                <div className="mt-8 space-y-4">
                   <button
-                    disabled={upgradeMutation.isPending}
-                    onClick={() => upgradeMutation.mutate()}
-                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black text-sm uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2"
+                    disabled={initiateSub.isPending}
+                    onClick={handlePhonePeUpgrade}
+                    className="w-full py-4 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black text-sm uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2"
                   >
-                    {upgradeMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle size={18} /> I have paid ₹700</>}
+                    {initiateSub.isPending 
+                      ? <Loader2 size={18} className="animate-spin" /> 
+                      : <><Zap size={18} fill="currentColor" /> Pay via PhonePe (Instant)</>}
                   </button>
+
+                  <div className="relative py-4">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
+                    <div className="relative flex justify-center text-[10px] uppercase font-black text-gray-400 bg-white px-4">OR MANUAL VERIFICATION</div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder="Enter 12-digit UTR Number"
+                      value={utr}
+                      onChange={(e) => setUtr(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                      className="w-full h-14 bg-gray-50 border-2 border-gray-100 rounded-2xl px-6 font-mono font-bold text-center focus:border-indigo-500 outline-none transition-all"
+                    />
+                    <button
+                      disabled={submitSubUtr.isPending || utr.length < 12}
+                      onClick={() => submitSubUtr.mutate({ utrNumber: utr })}
+                      className="w-full py-4 bg-gray-900 hover:bg-black disabled:opacity-50 text-white font-black text-sm uppercase tracking-widest rounded-2xl transition-all"
+                    >
+                      {submitSubUtr.isPending ? <Loader2 size={18} className="animate-spin" /> : 'Confirm Manual Payment'}
+                    </button>
+                  </div>
+
                   <button 
                     onClick={() => setShowUpgradeModal(false)}
                     className="w-full py-4 text-gray-400 font-bold text-xs uppercase tracking-widest hover:text-gray-600 transition-colors"

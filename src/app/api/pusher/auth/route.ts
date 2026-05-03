@@ -18,9 +18,7 @@ export async function POST(req: NextRequest) {
   }
 
 
-  const data = await req.formData();
-  const socketId = data.get('socket_id') as string;
-  const channel = data.get('channel_name') as string;
+  const { socket_id: socketId, channel_name: channel } = await req.json();
 
 
   let isAuthorized = false;

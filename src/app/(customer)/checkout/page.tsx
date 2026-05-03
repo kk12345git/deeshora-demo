@@ -26,7 +26,7 @@ export default function CheckoutPage() {
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [notes, setNotes] = useState('');
   const [paymentStep, setPaymentStep] = useState<PaymentStep>('SELECT');
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'UPI'>('COD');
+  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'PHONEPE' | 'MANUAL_UPI'>('COD');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<null | { id: string; code: string; discount: number; description: string }>(null);
@@ -95,10 +95,16 @@ export default function CheckoutPage() {
         paymentMethod,
       });
 
-      if (paymentMethod === 'UPI') {
+      if (paymentMethod === 'MANUAL_UPI') {
         clearCart();
         setPlacedOrderIds(result.orderIds);
         setShowUpiModal(true);
+      } else if (paymentMethod === 'PHONEPE') {
+        // We need to initiate PhonePe and redirect
+        // For now, let's just use the modal but we'll add redirect logic
+        clearCart();
+        setPlacedOrderIds(result.orderIds);
+        setShowUpiModal(true); 
       } else {
         clearCart();
         setPlacedOrderIds(result.orderIds);
@@ -152,6 +158,15 @@ export default function CheckoutPage() {
 function UpiModal({ orderId, onClose }: { orderId: string; onClose: () => void }) {
   const { data: order } = trpc.order.byId.useQuery({ id: orderId });
   const router = useRouter();
+  const [utr, setUtr] = useState('');
+  
+  const submitUtr = trpc.order.submitUtr.useMutation({
+    onSuccess: () => {
+      toast.success('Payment submitted for verification!');
+      router.push(`/orders/${orderId}?success=true`);
+    },
+    onError: (e) => toast.error(e.message)
+  });
 
   if (!order) return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
@@ -195,18 +210,35 @@ function UpiModal({ orderId, onClose }: { orderId: string; onClose: () => void }
             <span className="text-xl font-black text-orange-900">₹{amount}</span>
           </div>
 
-          <button
-            onClick={() => {
-              toast.success('Payment confirmation received!');
-              router.push(`/orders/${orderId}?success=true`);
-            }}
-            className="w-full h-16 bg-gray-900 text-white rounded-2xl font-black text-lg shadow-xl shadow-gray-900/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
-          >
-            I have paid <CheckCircle size={22} className="text-emerald-400" />
-          </button>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Transaction Ref / UTR Number</label>
+              <input
+                type="text"
+                placeholder="12-digit UTR Number"
+                value={utr}
+                onChange={(e) => setUtr(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                className="w-full h-14 bg-gray-50 border-2 border-gray-100 rounded-2xl px-6 font-mono font-bold text-lg focus:border-orange-500 focus:bg-white outline-none transition-all"
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                if (utr.length < 12) {
+                  toast.error('Please enter a valid 12-digit UTR number.');
+                  return;
+                }
+                submitUtr.mutate({ orderId, utrNumber: utr });
+              }}
+              disabled={submitUtr.isPending}
+              className="w-full h-16 bg-gray-900 text-white rounded-2xl font-black text-lg shadow-xl shadow-gray-900/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+            >
+              {submitUtr.isPending ? <Loader2 className="animate-spin" /> : <>Submit & Confirm <CheckCircle size={22} className="text-emerald-400" /></>}
+            </button>
+          </div>
 
           <p className="text-[10px] text-center text-gray-400 font-bold leading-relaxed px-4">
-            Once you complete the payment in your UPI app, click the button above to confirm.
+            Pay ₹{amount} in your UPI app, then copy the 12-digit UTR/Transaction ID and paste it here to confirm your order.
           </p>
         </div>
       </div>
@@ -336,30 +368,56 @@ function UpiModal({ orderId, onClose }: { orderId: string; onClose: () => void }
                   </div>
                 </button>
 
-                {/* UPI */}
+                {/* PhonePe (Automatic) */}
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('UPI')}
+                  onClick={() => setPaymentMethod('PHONEPE')}
                   className={`relative group flex flex-col p-5 rounded-2xl border-2 text-left transition-all ${
-                    paymentMethod === 'UPI'
+                    paymentMethod === 'PHONEPE'
                       ? 'border-orange-500 bg-orange-50/50 shadow-lg shadow-orange-500/10'
                       : 'border-gray-100 bg-white hover:border-gray-200'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-md transition-all ${
-                      paymentMethod === 'UPI' ? 'bg-orange-500 shadow-orange-500/20' : 'bg-gray-100'
+                      paymentMethod === 'PHONEPE' ? 'bg-orange-500 shadow-orange-500/20' : 'bg-gray-100'
                     }`}>
-                      <CreditCard size={20} className={paymentMethod === 'UPI' ? 'text-white' : 'text-gray-400'} />
+                      <CreditCard size={20} className={paymentMethod === 'PHONEPE' ? 'text-white' : 'text-gray-400'} />
                     </div>
-                    {paymentMethod === 'UPI' && (
+                    {paymentMethod === 'PHONEPE' && (
                       <div className="w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center border-orange-500 bg-orange-500">
                         <Check size={11} className="text-white" strokeWidth={3} />
                       </div>
                     )}
                   </div>
-                  <p className={`font-black text-base ${paymentMethod === 'UPI' ? 'text-orange-900' : 'text-gray-400'}`}>Pay with UPI</p>
-                  <p className="text-xs text-gray-400 font-medium mt-1 leading-relaxed">Scan QR code and pay instantly for faster processing.</p>
+                  <p className={`font-black text-base ${paymentMethod === 'PHONEPE' ? 'text-orange-900' : 'text-gray-400'}`}>Online Payment (Automatic)</p>
+                  <p className="text-xs text-gray-400 font-medium mt-1 leading-relaxed">UPI, Cards, Netbanking. Instant confirmation.</p>
+                </button>
+
+                {/* Manual UPI (Free) */}
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('MANUAL_UPI')}
+                  className={`relative group flex flex-col p-5 rounded-2xl border-2 text-left transition-all ${
+                    paymentMethod === 'MANUAL_UPI'
+                      ? 'border-orange-500 bg-orange-50/50 shadow-lg shadow-orange-500/10'
+                      : 'border-gray-100 bg-white hover:border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-md transition-all ${
+                      paymentMethod === 'MANUAL_UPI' ? 'bg-orange-500 shadow-orange-500/20' : 'bg-gray-100'
+                    }`}>
+                      <CreditCard size={20} className={paymentMethod === 'MANUAL_UPI' ? 'text-white' : 'text-gray-400'} />
+                    </div>
+                    {paymentMethod === 'MANUAL_UPI' && (
+                      <div className="w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center border-orange-500 bg-orange-500">
+                        <Check size={11} className="text-white" strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                  <p className={`font-black text-base ${paymentMethod === 'MANUAL_UPI' ? 'text-orange-900' : 'text-gray-400'}`}>Direct UPI Transfer (Zero Cost)</p>
+                  <p className="text-xs text-gray-400 font-medium mt-1 leading-relaxed">Pay via any UPI app and enter Transaction ID. Free for you!</p>
                 </button>
               </div>
             </div>

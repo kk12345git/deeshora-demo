@@ -411,7 +411,7 @@ export const adminRouter = createTRPCRouter({
 
 
   getSettings: protectedProcedure.query(async ({ ctx }) => {
-    const keys = ['business_whatsapp', 'delivery_partners', 'delivery_fee', 'free_delivery_above'];
+    const keys = ['business_whatsapp', 'delivery_partners', 'delivery_fee', 'free_delivery_above', 'platform_fixed_fee'];
     return ctx.prisma.siteConfig.findMany({
       where: { key: { in: keys } },
     });
@@ -459,8 +459,8 @@ export const adminRouter = createTRPCRouter({
             : undefined,
         },
         include: {
-          vendor: { select: { shopName: true, city: true } },
-          category: { select: { name: true } },
+          vendor: { select: { shopName: true, city: true, commissionRate: true } },
+          category: { select: { name: true, commissionRate: true } },
         },
         cursor: cursor ? { id: cursor } : undefined,
         orderBy: { createdAt: 'desc' },
@@ -501,6 +501,7 @@ export const adminRouter = createTRPCRouter({
         categoryId: z.string(),
         images: z.array(z.string().startsWith('data:image/')).min(1),
         isFeatured: z.boolean().optional(),
+        commissionRate: z.number().min(0).max(1).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -528,7 +529,31 @@ export const adminRouter = createTRPCRouter({
           images: imageUrls,
           isFeatured: input.isFeatured ?? false,
           vendorId: input.vendorId,
+          commissionRate: input.commissionRate,
         },
+      });
+    }),
+
+  updateProduct: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        price: z.number().optional(),
+        mrp: z.number().optional(),
+        stock: z.number().optional(),
+        unit: z.string().optional(),
+        categoryId: z.string().optional(),
+        isFeatured: z.boolean().optional(),
+        commissionRate: z.number().min(0).max(1).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return ctx.prisma.product.update({
+        where: { id },
+        data,
       });
     }),
 
@@ -606,6 +631,41 @@ export const adminRouter = createTRPCRouter({
       return ctx.prisma.serviceArea.delete({ where: { id: input.id } });
     }),
 
+  // ─── CATEGORY MANAGEMENT ───────────────────────────────────────────────
+  
+  createCategory: adminProcedure
+    .input(
+      z.object({
+        name: z.string().min(2),
+        slug: z.string().min(2),
+        image: z.string().url(),
+        description: z.string().optional(),
+        sortOrder: z.number().int().default(0),
+        commissionRate: z.number().min(0).max(1).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.category.create({ data: input });
+    }),
+
+  updateCategory: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().optional(),
+        slug: z.string().optional(),
+        image: z.string().optional(),
+        description: z.string().optional(),
+        sortOrder: z.number().int().optional(),
+        commissionRate: z.number().min(0).max(1).optional(),
+        isActive: z.boolean().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return ctx.prisma.category.update({ where: { id }, data });
+    }),
+
   /** Admin: manually override any order's status */
   updateOrderStatus: adminProcedure
     .input(
@@ -632,15 +692,28 @@ export const adminRouter = createTRPCRouter({
         PENDING:          '',
       };
 
-      const updated = await ctx.prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status,
-          deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
-          timeline: {
-            create: { status, message: messages[status] },
+      const updated = await ctx.prisma.$transaction(async (tx) => {
+        const updatedOrder = await tx.order.update({
+          where: { id: orderId },
+          data: {
+            status,
+            deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
+            timeline: {
+              create: { status, message: messages[status] },
+            },
           },
-        },
+        });
+
+        if (status === 'DELIVERED' && order.status !== 'DELIVERED') {
+          await tx.vendor.update({
+            where: { id: order.vendorId },
+            data: {
+              pendingPayout: { increment: order.vendorAmount },
+            },
+          });
+        }
+
+        return updatedOrder;
       });
 
       // M3: Pusher wrapped in try/catch — admin action is not rolled back if notify fails
@@ -759,5 +832,59 @@ export const adminRouter = createTRPCRouter({
           status: 'APPROVED',
         },
       });
+    }),
+
+
+  /** ─── Payment & Subscription Verification ────────────────────────── */
+
+  getPendingVerifications: adminProcedure.query(async ({ ctx }) => {
+    const pendingOrders = await ctx.prisma.order.findMany({
+      where: { paymentStatus: 'PENDING', utrNumber: { not: null } },
+      include: { user: { select: { name: true } }, vendor: { select: { shopName: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    const pendingSubscriptions = await ctx.prisma.vendor.findMany({
+      where: { subscriptionStatus: 'PENDING_APPROVAL' },
+      include: { user: { select: { name: true } } },
+      orderBy: { updatedAt: 'desc' }
+    });
+    
+    return { pendingOrders, pendingSubscriptions };
+  }),
+
+
+  approvePayment: adminProcedure
+    .input(z.object({ orderId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+       const order = await ctx.prisma.order.update({
+         where: { id: input.orderId },
+         data: {
+           paymentStatus: 'PAID',
+           status: 'CONFIRMED', // Auto-confirm once paid
+           timeline: { 
+             create: { 
+               status: 'CONFIRMED', 
+               message: 'Payment verified manually by admin. Order confirmed.' 
+             } 
+           }
+         }
+       });
+       return order;
+    }),
+
+
+  approveSubscription: adminProcedure
+    .input(z.object({ vendorId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+       return await ctx.prisma.vendor.update({
+         where: { id: input.vendorId },
+         data: {
+           plan: 'PREMIUM',
+           subscriptionStatus: 'ACTIVE',
+           subscriptionPaidAt: new Date(),
+           planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+         }
+       });
     }),
 });

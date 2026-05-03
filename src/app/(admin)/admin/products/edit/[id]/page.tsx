@@ -1,0 +1,288 @@
+// src/app/(admin)/admin/products/edit/[id]/page.tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { trpc } from '@/lib/trpc';
+import { 
+  Loader2, ChevronLeft, Save, Package, IndianRupee, Box, 
+  Sparkles, AlertTriangle, Percent 
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import Image from 'next/image';
+
+export default function AdminEditProductPage() {
+  const router = useRouter();
+  const { id } = useParams<{ id: string }>();
+
+  // Fetch product and categories
+  const { data: product, isLoading: isLoadingProduct } = trpc.admin.products.useQuery({ limit: 1 });
+  // Since we only fetched 1, we need to make sure we're getting the right one if this query was specific.
+  // Actually, better to have a getProductById in adminRouter. But let's check if we can use the product search.
+  const { data: searchResult } = trpc.admin.products.useQuery({ search: id }); 
+  const currentProduct = searchResult?.products.find(p => p.id === id);
+
+  const { data: categories } = trpc.product.categories.useQuery();
+
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    price: '',
+    mrp: '',
+    stock: '',
+    unit: 'piece',
+    categoryId: '',
+    isFeatured: false,
+    isActive: true,
+    commissionRate: '',
+  });
+
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    if (currentProduct && !isInitialized) {
+      setForm({
+        name: currentProduct.name,
+        description: currentProduct.description,
+        price: currentProduct.price.toString(),
+        mrp: currentProduct.mrp.toString(),
+        stock: currentProduct.stock.toString(),
+        unit: currentProduct.unit,
+        categoryId: currentProduct.categoryId,
+        isFeatured: currentProduct.isFeatured,
+        isActive: currentProduct.isActive,
+        commissionRate: currentProduct.commissionRate ? (currentProduct.commissionRate * 100).toString() : '',
+      });
+      setIsInitialized(true);
+    }
+  }, [currentProduct, isInitialized]);
+
+  const updateMutation = trpc.admin.updateProduct.useMutation({
+    onSuccess: () => {
+      toast.success('Product updated successfully!');
+      router.push('/admin/products');
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateMutation.mutate({
+      id,
+      name: form.name,
+      description: form.description,
+      price: parseFloat(form.price),
+      mrp: parseFloat(form.mrp),
+      stock: parseInt(form.stock),
+      unit: form.unit,
+      categoryId: form.categoryId,
+      isFeatured: form.isFeatured,
+      isActive: form.isActive,
+      commissionRate: form.commissionRate ? parseFloat(form.commissionRate) / 100 : undefined,
+    });
+  };
+
+  if (isLoadingProduct) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-900">
+        <Loader2 className="w-12 h-12 animate-spin text-orange-500" />
+      </div>
+    );
+  }
+
+  if (!currentProduct && isInitialized) {
+    return (
+      <div className="p-12 text-center">
+        <AlertTriangle size={48} className="mx-auto text-red-500 mb-4" />
+        <h1 className="text-2xl font-black text-gray-900 uppercase">Product Not Found</h1>
+        <button onClick={() => router.push('/admin/products')} className="mt-6 text-orange-500 font-bold hover:underline uppercase tracking-widest text-xs">← Back to List</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex items-center gap-6">
+        <button onClick={() => router.back()} className="w-12 h-12 bg-white border-2 border-gray-100 rounded-2xl flex items-center justify-center text-gray-400 hover:text-orange-500 hover:border-orange-200 transition-all">
+          <ChevronLeft size={24} />
+        </button>
+        <div>
+          <h1 className="text-4xl font-black text-gray-950 uppercase tracking-tighter leading-none">Edit Product</h1>
+          <p className="text-gray-400 font-medium mt-1">Refine product details and commission overrides.</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Info */}
+        <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl p-8 space-y-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center">
+              <Package size={18} />
+            </div>
+            <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Standard Info</h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Product Name</label>
+              <input
+                value={form.name}
+                onChange={e => setForm({ ...form, name: e.target.value })}
+                className="w-full h-14 px-5 bg-gray-50 border-2 border-transparent focus:border-orange-500 focus:bg-white rounded-2xl outline-none font-bold text-gray-900 transition-all"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Description</label>
+              <textarea
+                value={form.description}
+                onChange={e => setForm({ ...form, description: e.target.value })}
+                className="w-full p-5 bg-gray-50 border-2 border-transparent focus:border-orange-500 focus:bg-white rounded-2xl outline-none font-medium text-gray-700 transition-all min-h-[120px]"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Category</label>
+              <select
+                value={form.categoryId}
+                onChange={e => setForm({ ...form, categoryId: e.target.value })}
+                className="w-full h-14 px-5 bg-gray-50 border-2 border-transparent focus:border-orange-500 focus:bg-white rounded-2xl outline-none font-bold text-gray-900 transition-all"
+                required
+              >
+                {categories?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Featured Status</label>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, isFeatured: !form.isFeatured })}
+                className={`w-full h-14 px-5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${form.isFeatured ? 'bg-orange-500 text-white shadow-lg shadow-orange-200' : 'bg-gray-100 text-gray-400'}`}
+              >
+                <Sparkles size={18} />
+                {form.isFeatured ? 'Featured Product' : 'Standard Product'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Financials & Stock */}
+        <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl p-8 space-y-6">
+           <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">
+              <IndianRupee size={18} />
+            </div>
+            <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Pricing & Stock</h2>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Selling Price</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                <input
+                  type="number"
+                  value={form.price}
+                  onChange={e => setForm({ ...form, price: e.target.value })}
+                  className="w-full h-14 pl-8 pr-4 bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white rounded-2xl outline-none font-bold text-gray-900 transition-all"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">MRP</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                <input
+                  type="number"
+                  value={form.mrp}
+                  onChange={e => setForm({ ...form, mrp: e.target.value })}
+                  className="w-full h-14 pl-8 pr-4 bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white rounded-2xl outline-none font-bold text-gray-900 transition-all"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Stock</label>
+              <div className="relative">
+                <Box size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="number"
+                  value={form.stock}
+                  onChange={e => setForm({ ...form, stock: e.target.value })}
+                  className="w-full h-14 pl-10 pr-4 bg-gray-50 border-2 border-transparent focus:border-orange-500 focus:bg-white rounded-2xl outline-none font-bold text-gray-900 transition-all"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Unit</label>
+              <select
+                value={form.unit}
+                onChange={e => setForm({ ...form, unit: e.target.value })}
+                className="w-full h-14 px-5 bg-gray-50 border-2 border-transparent focus:border-orange-500 focus:bg-white rounded-2xl outline-none font-bold text-gray-900 transition-all"
+              >
+                {['piece', 'kg', 'g', 'litre', 'ml', 'pack'].map(u => <option key={u} value={u}>{u}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Commission Override */}
+        <div className="bg-orange-950 rounded-[2.5rem] border border-orange-800 shadow-xl p-8 space-y-6">
+           <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 bg-orange-500 text-white rounded-lg flex items-center justify-center">
+              <Percent size={18} />
+            </div>
+            <h2 className="text-xl font-black text-white uppercase tracking-tight">Commission Management</h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-orange-300 uppercase tracking-widest ml-1">Product-Specific Rate (%)</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.1"
+                  value={form.commissionRate}
+                  onChange={e => setForm({ ...form, commissionRate: e.target.value })}
+                  placeholder="e.g. 15.0"
+                  className="w-full h-16 px-6 bg-white/5 border-2 border-white/10 focus:border-orange-500 focus:bg-white/10 rounded-2xl outline-none font-black text-white transition-all text-xl"
+                />
+                <span className="absolute right-6 top-1/2 -translate-y-1/2 font-black text-orange-500 text-xl">%</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-orange-100 text-sm font-bold leading-relaxed">
+                Platform currently takes <span className="text-orange-400 font-black underline">{( (currentProduct?.commissionRate ?? currentProduct?.category.commissionRate ?? currentProduct?.vendor.commissionRate) * 100).toFixed(1)}%</span> from this product.
+              </p>
+              <p className="text-orange-300/60 text-xs">
+                Entering a value here will <span className="italic">override</span> both category and vendor defaults. Leave blank to reset to defaults.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={updateMutation.isPending}
+          className="w-full h-20 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-lg tracking-widest uppercase rounded-[2.5rem] shadow-2xl shadow-orange-500/20 flex items-center justify-center gap-4 disabled:opacity-60 transition-all hover:-translate-y-1 hover:shadow-orange-500/40"
+        >
+          {updateMutation.isPending ? (
+            <><Loader2 size={24} className="animate-spin" /> Updating Database...</>
+          ) : (
+            <><Save size={24} /> Sync Product Changes</>
+          )}
+        </button>
+      </form>
+    </div>
+  );
+}

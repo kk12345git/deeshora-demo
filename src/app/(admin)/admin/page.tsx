@@ -1,4 +1,5 @@
 // src/app/(admin)/admin/page.tsx
+export const dynamic = 'force-dynamic';
 import { api } from "@/lib/trpc-server";
 import { Users, Store, ShoppingCart, IndianRupee, AlertTriangle, ArrowRight, TrendingUp, Clock, CheckCircle } from "lucide-react";
 import Link from "next/link";

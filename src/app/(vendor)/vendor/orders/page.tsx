@@ -215,6 +215,12 @@ export default function VendorOrdersPage() {
                             <div className="flex justify-between text-xs text-emerald-600 font-bold">
                               <span>Your earnings</span><span>₹{order.vendorAmount.toFixed(2)}</span>
                             </div>
+                            {order.utrNumber && (
+                              <div className="bg-orange-50 p-2.5 rounded-xl mt-3 border border-orange-100">
+                                <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-0.5">Customer UTR (Verification Pending)</p>
+                                <p className="text-xs font-mono font-bold text-orange-900 tracking-wider">{order.utrNumber}</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

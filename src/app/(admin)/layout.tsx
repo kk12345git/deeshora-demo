@@ -13,6 +13,7 @@ const navItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart2 },
   { name: "Vendors",   href: "/admin/vendors",  icon: Store },
+  { name: "Categories",href: "/admin/categories",icon: Tag },
   { name: "Products",  href: "/admin/products", icon: Package },
   { name: "Users",     href: "/admin/users",    icon: Users },
   { name: "Orders",    href: "/admin/orders",   icon: ShoppingCart },
