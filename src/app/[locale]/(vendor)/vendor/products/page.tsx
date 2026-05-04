@@ -8,20 +8,22 @@ import Image from 'next/image';
 import {
   Plus, ToggleLeft, ToggleRight, Trash2, Loader2, Package,
   Edit3, IndianRupee, Box, Star, AlertCircle, CheckCircle,
-  LayoutGrid, List, Search, Save, X, TrendingDown, Sparkles,
+  LayoutGrid, List, Search, Save, X, TrendingDown, Sparkles, Upload,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import BulkUploadModal from '@/components/vendor/BulkUploadModal';
 
 type ViewMode = 'grid' | 'bulk';
 
 export default function VendorProductsPage() {
   const { data, isLoading, refetch } = trpc.product.vendorProducts.useQuery({ limit: 100 });
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [search, setSearch] = useState('');
   // Bulk stock edit: map of productId -> pending stock value
   const [stockEdits, setStockEdits] = useState<Record<string, string>>({});
   const [savingStock, setSavingStock] = useState<string | null>(null);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
   const updateMutation = trpc.product.update.useMutation({
     onSuccess: () => { toast.success('Saved!'); refetch(); },
@@ -69,12 +71,20 @@ export default function VendorProductsPage() {
             )}
           </p>
         </div>
-        <Link
-          href="/vendor/products/new"
-          className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-black text-sm px-5 py-3 rounded-2xl transition-all shadow-lg shadow-orange-500/20 hover:-translate-y-0.5"
-        >
-          <Plus size={18} /> Add Product
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsBulkModalOpen(true)}
+            className="inline-flex items-center gap-2 bg-white border-2 border-gray-100 hover:border-orange-200 text-gray-700 font-black text-sm px-5 py-3 rounded-2xl transition-all shadow-sm"
+          >
+            <Upload size={18} className="text-orange-500" /> Bulk Upload
+          </button>
+          <Link
+            href="/vendor/products/new"
+            className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-black text-sm px-5 py-3 rounded-2xl transition-all shadow-lg shadow-orange-500/20 hover:-translate-y-0.5"
+          >
+            <Plus size={18} /> Add Product
+          </Link>
+        </div>
       </div>
 
       {/* Low stock banner */}
@@ -366,6 +376,13 @@ export default function VendorProductsPage() {
             </div>
           )}
         </div>
+      )}
+
+      {isBulkModalOpen && (
+        <BulkUploadModal 
+          onClose={() => setIsBulkModalOpen(false)} 
+          onSuccess={() => refetch()} 
+        />
       )}
     </div>
   );

@@ -164,6 +164,36 @@ export const orderRouter = createTRPCRouter({
                 message: `"${item.product.name}" just ran out of stock. Please remove it from your cart and try again.`,
               });
             }
+
+            // Low stock alert check
+            const productAfterUpdate = await tx.product.findUnique({
+              where: { id: item.productId },
+              select: { stock: true, lowStockThreshold: true, name: true, vendorId: true }
+            });
+
+            if (productAfterUpdate && productAfterUpdate.stock <= productAfterUpdate.lowStockThreshold) {
+              // Create DB notification
+              await tx.notification.create({
+                data: {
+                  userId: productAfterUpdate.vendorId, // Vendor is a user
+                  title: 'Low Stock Alert!',
+                  message: `"${productAfterUpdate.name}" is running low on stock. Only ${productAfterUpdate.stock} left.`,
+                  type: 'LOW_STOCK',
+                  link: `/vendor/inventory`,
+                }
+              });
+
+              // Trigger Pusher for real-time UI update
+              try {
+                await pusherServer.trigger(
+                  CHANNELS.VENDOR(productAfterUpdate.vendorId),
+                  EVENTS.LOW_STOCK_ALERT,
+                  { productId: item.productId, stock: productAfterUpdate.stock, name: productAfterUpdate.name }
+                );
+              } catch (pusherErr) {
+                console.error('[Order] Pusher low stock alert failed:', pusherErr);
+              }
+            }
           }
 
           // M3: Pusher wrapped in try/catch — order is NOT rolled back if notification fails
@@ -427,6 +457,38 @@ export const orderRouter = createTRPCRouter({
               pendingPayout: { increment: order.vendorAmount },
             },
           });
+
+          // Referral Reward Logic
+          const userWithReferrer = await tx.user.findUnique({
+            where: { id: order.userId },
+            select: { referredById: true, _count: { select: { orders: { where: { status: 'DELIVERED' } } } } }
+          });
+
+          if (userWithReferrer?.referredById && userWithReferrer._count.orders === 0) {
+            // This is the first delivered order for a referred user
+            const referrerId = userWithReferrer.referredById;
+            const couponCode = `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+            
+            await tx.coupon.create({
+              data: {
+                code: couponCode,
+                type: 'FIXED',
+                value: 50, // ₹50 reward for referring
+                minOrder: 200,
+                maxUses: 1,
+              }
+            });
+
+            await tx.notification.create({
+              data: {
+                userId: referrerId,
+                title: 'Referral Reward! 🎁',
+                message: `Your friend's first order was delivered! You've earned a ₹50 coupon: ${couponCode}`,
+                type: 'SYSTEM',
+                link: '/profile',
+              }
+            });
+          }
         }
 
         return updated;

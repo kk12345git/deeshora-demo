@@ -8,6 +8,19 @@ import {
   Loader2, ToggleLeft, ToggleRight, EyeOff, Eye, AlertTriangle,
 } from 'lucide-react';
 import type { ServiceArea } from '@prisma/client';
+import dynamic from 'next/dynamic';
+
+const CoverageMap = dynamic(() => import('@/components/admin/CoverageMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[400px] w-full bg-gray-50 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-200">
+      <div className="flex flex-col items-center gap-2">
+        <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
+        <p className="text-sm font-bold text-gray-400">Loading Map...</p>
+      </div>
+    </div>
+  )
+});
 
 type EditingArea = Partial<ServiceArea> & { isNew?: boolean };
 
@@ -51,6 +64,7 @@ export default function CoveragePage() {
         pincode: editing.pincode ?? undefined,
         isServiceable: editing.isServiceable ?? true,
         sortOrder: editing.sortOrder ?? 0,
+        coordinates: editing.coordinates,
       });
     } else {
       updateArea.mutate({
@@ -60,6 +74,7 @@ export default function CoveragePage() {
         pincode: editing.pincode ?? undefined,
         isServiceable: editing.isServiceable,
         sortOrder: editing.sortOrder,
+        coordinates: editing.coordinates,
       });
     }
   };
@@ -83,6 +98,18 @@ export default function CoveragePage() {
         >
           <Plus size={18} /> Add Locality
         </button>
+      </div>
+
+      {/* Map Overview */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+            <MapPin size={16} className="text-orange-500" />
+            Coverage Map
+          </h2>
+          <p className="text-[10px] font-bold text-gray-400">Click a marker to see locality details</p>
+        </div>
+        <CoverageMap areas={areas} />
       </div>
 
       {/* Stats Row */}
@@ -172,6 +199,27 @@ export default function CoveragePage() {
                     {val ? '✅ Live Now' : '⏳ Coming Soon'}
                   </button>
                 ))}
+              </div>
+            </Field>
+          </div>
+
+          <div className="pt-2">
+            <Field label="Locality Center (Click on map below to set)">
+              <div className="space-y-3">
+                <div className="flex items-center gap-4 text-xs">
+                   <div className="bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 flex-1">
+                     <span className="text-gray-400 font-bold mr-2 uppercase tracking-tighter">Lat:</span>
+                     <span className="font-mono text-gray-700">{(editing.coordinates as any)?.lat?.toFixed(6) || 'Not set'}</span>
+                   </div>
+                   <div className="bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 flex-1">
+                     <span className="text-gray-400 font-bold mr-2 uppercase tracking-tighter">Lng:</span>
+                     <span className="font-mono text-gray-700">{(editing.coordinates as any)?.lng?.toFixed(6) || 'Not set'}</span>
+                   </div>
+                </div>
+                <CoverageMap 
+                  center={editing.coordinates ? [(editing.coordinates as any).lat, (editing.coordinates as any).lng] : undefined}
+                  onLocationSelect={(lat, lng) => setEditing(p => ({ ...p, coordinates: { lat, lng } }))} 
+                />
               </div>
             </Field>
           </div>

@@ -96,6 +96,13 @@ model User {
   cart      Cart?
   reviews   Review[]
   deliveries Order[] @relation("DeliveryPartner")
+  notifications Notification[]
+
+  // Referral System
+  referralCode String? @unique
+  referredById String?
+  referredBy   User?   @relation("UserReferral", fields: [referredById], references: [id])
+  referrals    User[]  @relation("UserReferral")
 }
 
 
@@ -207,6 +214,7 @@ model Product {
   reviewCount  Int      @default(0)
   viewCount    Int      @default(0)       // used for trending / popularity ranking
   commissionRate Float?                  // If set, overrides category and vendor default
+  lowStockThreshold Int   @default(5)      // Alert when stock hits this
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -346,6 +354,8 @@ model Review {
   userId    String
   rating    Int
   comment   String?
+  images    String[] @default([]) // Added for review photos
+  isVerified Boolean @default(false) // Verified purchase badge
   createdAt DateTime @default(now())
 
 
@@ -392,6 +402,7 @@ model ServiceArea {
   isServiceable Boolean  @default(true)  // false = "Coming Soon"
   isActive      Boolean  @default(true)  // false = hidden entirely
   sortOrder     Int      @default(0)
+  coordinates   Json?               // Added for map polygons/center
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -448,5 +459,20 @@ model SearchLog {
 
   @@index([query])
   @@index([createdAt])
+  @@index([userId])
+}
+
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // e.g., "LOW_STOCK", "ORDER", "SYSTEM"
+  isRead    Boolean  @default(false)
+  link      String?  // Optional link to action
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
 }

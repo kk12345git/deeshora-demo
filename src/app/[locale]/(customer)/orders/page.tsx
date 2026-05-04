@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import Image from 'next/image';
 import { OrderStatusBadge } from '@/components/customer/OrderStatus';
 import {

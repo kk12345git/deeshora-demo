@@ -3,14 +3,14 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from '@/lib/trpc';
-import Link from 'next/link';
+import { Link, useRouter } from '@/navigation';
 import Image from 'next/image';
 import { Suspense } from 'react';
 import { ShoppingBag, CheckCircle, Truck, ArrowRight, Star, MapPin, Loader2, X, Search, Sparkles, TrendingUp } from 'lucide-react';
 import ProductCard from '@/components/customer/ProductCard';
 import ProductCardSkeleton from '@/components/customer/ProductCardSkeleton';
 import CitySelector from '@/components/customer/CitySelector';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 // ─── Debounce hook ─────────────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -30,6 +30,8 @@ export default function HomePage() {
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const t = useTranslations('Home');
+  const tc = useTranslations('Common');
 
   const debouncedSearch = useDebounce(searchInput, 250);
 
@@ -105,14 +107,10 @@ export default function HomePage() {
                Empowering Local Commerce
             </div>
             
-            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white leading-tight tracking-tighter">
-              Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">Hometown</span> 
-              <br className="hidden sm:block" /> Marketplace.
-            </h1>
+            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white leading-tight tracking-tighter" dangerouslySetInnerHTML={{ __html: t.raw('hero_title').replace('Hometown', '<span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">Hometown</span>') }} />
             
             <p className="max-w-2xl mx-auto text-xl text-white/60 font-medium leading-relaxed">
-              Deeshora connects you directly with local shops in your neighborhood. 
-              Get fresh groceries, daily essentials, and more delivered instantly.
+              {t('hero_subtitle')}
             </p>
 
             {/* ─── AI Search Bar ─────────────────────────────────────────── */}
@@ -134,7 +132,7 @@ export default function HomePage() {
                       setShowSuggestions(e.target.value.length >= 2);
                     }}
                     onFocus={() => searchInput.length >= 2 && setShowSuggestions(true)}
-                    placeholder="Search tomatoes, milk, electronics..."
+                    placeholder={tc('search')}
                     className="flex-1 px-4 py-4 text-gray-900 font-medium placeholder:text-gray-400 outline-none bg-transparent text-base"
                   />
 
@@ -233,7 +231,7 @@ export default function HomePage() {
                 onCityChange={setSelectedCity} 
               />
               <Link href="#all-products" className="btn-primary px-8 py-3.5 rounded-2xl shadow-orange-500/20 shadow-xl hover:scale-105 transition-transform">
-                Browse Products <ArrowRight size={18} className="ml-1.5 inline" />
+                {t('browse_products')} <ArrowRight size={18} className="ml-1.5 inline" />
               </Link>
             </div>
 
@@ -285,15 +283,13 @@ export default function HomePage() {
       {/* Categories */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-end mb-12">
             <div>
-              <h2 className="text-3xl font-black text-gray-900">Explore by Category</h2>
+              <h2 className="text-3xl font-black text-gray-900">{t('explore_categories')}</h2>
               <p className="text-gray-500 mt-2">Find exactly what you need in your {selectedCity || "local area"}.</p>
             </div>
             <Link href="/categories" className="text-orange-600 font-bold hover:underline flex items-center">
-                See All <ArrowRight size={16} className="ml-1" />
+                {t('see_all')} <ArrowRight size={16} className="ml-1" />
             </Link>
-          </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
             {isLoadingCats ? Array(8).fill(0).map((_, i) => <div key={i} className="aspect-square bg-gray-100 animate-pulse rounded-3xl" />) : 
@@ -337,7 +333,7 @@ export default function HomePage() {
         <section className="bg-gray-50 py-24 border-y border-gray-100">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-black text-gray-900 mb-12 flex items-center gap-4">
-               Featured Specials
+               {t('featured_specials')}
                <span className="h-px bg-gray-200 flex-grow hidden md:block" />
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
@@ -357,7 +353,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
            <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-4">
             <h2 className="text-3xl font-black text-gray-900">
-                Fresh from <span className="text-orange-500">{selectedCity || "Local Stores"}</span>
+                {t('fresh_from')} <span className="text-orange-500">{selectedCity || "Local Stores"}</span>
             </h2>
             {selectedCity && (
                 <button 

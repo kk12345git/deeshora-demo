@@ -1,0 +1,21 @@
+{
+  "name": "Deeshora - Local Food & Essentials",
+  "short_name": "Deeshora",
+  "description": "Premium delivery service for food and essentials from India to the World.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

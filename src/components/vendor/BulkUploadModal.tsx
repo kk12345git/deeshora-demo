@@ -1,0 +1,208 @@
+// src/components/vendor/BulkUploadModal.tsx
+'use client';
+
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
+import { X, Upload, FileText, CheckCircle, Loader2, AlertCircle, Download } from 'lucide-react';
+import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
+
+interface BulkUploadModalProps {
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export default function BulkUploadModal({ onClose, onSuccess }: BulkUploadModalProps) {
+  const [file, setFile] = useState<File | null>(null);
+  const [parsedData, setParsedData] = useState<any[]>([]);
+  const [isParsing, setIsParsing] = useState(false);
+  
+  const uploadMutation = trpc.product.bulkUpload.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Successfully uploaded ${data.count} products!`);
+      onSuccess();
+      onClose();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      parseFile(selectedFile);
+    }
+  };
+
+  const parseFile = (file: File) => {
+    setIsParsing(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = e.target?.result;
+      const workbook = XLSX.read(data, { type: 'binary' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json(sheet);
+      
+      // Basic validation mapping
+      const mapped = json.map((row: any) => ({
+        name: row.Name || row.name,
+        description: row.Description || row.description,
+        price: Number(row.Price || row.price),
+        mrp: Number(row.MRP || row.mrp || row.Price || row.price),
+        stock: Number(row.Stock || row.stock || 0),
+        unit: row.Unit || row.unit || 'pcs',
+        categoryName: row.Category || row.category,
+      })).filter(item => item.name && item.categoryName && !isNaN(item.price));
+
+      setParsedData(mapped);
+      setIsParsing(false);
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const handleUpload = () => {
+    if (parsedData.length === 0) return;
+    uploadMutation.mutate(parsedData);
+  };
+
+  const downloadTemplate = () => {
+    const template = [
+      { Name: 'Sample Product', Description: 'Great quality product', Price: 100, MRP: 120, Stock: 50, Unit: 'kg', Category: 'Groceries' }
+    ];
+    const ws = XLSX.utils.json_to_sheet(template);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Products');
+    XLSX.writeFile(wb, 'deeshora_bulk_template.xlsx');
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+          <div>
+            <h2 className="text-xl font-black text-gray-900">Bulk Product Upload</h2>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-0.5">Import from Excel/CSV</p>
+          </div>
+          <button onClick={onClose} className="w-10 h-10 bg-white border border-gray-100 rounded-2xl flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto space-y-6">
+          {/* Instructions */}
+          {!file && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
+                <AlertCircle size={18} className="text-blue-500 mt-0.5" />
+                <div className="text-xs text-blue-700 space-y-1">
+                  <p className="font-black">Guidelines</p>
+                  <p>• Use our Excel template for correct formatting.</p>
+                  <p>• Ensure Category names match existing categories in Deeshora.</p>
+                  <p>• Price and Stock must be numbers.</p>
+                </div>
+              </div>
+              <button 
+                onClick={downloadTemplate}
+                className="flex items-center gap-2 text-xs font-black text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                <Download size={14} /> Download Excel Template
+              </button>
+            </div>
+          )}
+
+          {/* Upload Area */}
+          <div 
+            className={`relative border-2 border-dashed rounded-3xl p-10 transition-all text-center ${
+              file ? 'border-emerald-200 bg-emerald-50/30' : 'border-gray-200 hover:border-orange-300 bg-gray-50/50'
+            }`}
+          >
+            <input 
+              type="file" 
+              accept=".csv,.xlsx,.xls" 
+              onChange={handleFileChange}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            <div className="flex flex-col items-center">
+              {file ? (
+                <>
+                  <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-4">
+                    <FileText size={28} />
+                  </div>
+                  <p className="font-black text-gray-900">{file.name}</p>
+                  <p className="text-xs text-gray-400 mt-1">{(file.size / 1024).toFixed(1)} KB</p>
+                </>
+              ) : (
+                <>
+                  <div className="w-14 h-14 bg-white shadow-sm border border-gray-100 rounded-2xl flex items-center justify-center text-orange-500 mb-4">
+                    <Upload size={28} />
+                  </div>
+                  <p className="font-black text-gray-900">Choose a file</p>
+                  <p className="text-xs text-gray-400 mt-1">Excel (.xlsx) or CSV files supported</p>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Parsed Summary */}
+          {file && !isParsing && (
+            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 animate-in slide-in-from-bottom-2">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={16} className="text-emerald-500" />
+                  <p className="text-sm font-black text-gray-800">Ready to import</p>
+                </div>
+                <span className="bg-white px-3 py-1 rounded-full border border-gray-200 text-xs font-black text-gray-600">
+                  {parsedData.length} items found
+                </span>
+              </div>
+              <div className="max-h-40 overflow-y-auto space-y-2">
+                {parsedData.slice(0, 5).map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-gray-50 text-[11px]">
+                    <span className="font-bold text-gray-700 truncate max-w-[200px]">{item.name}</span>
+                    <span className="text-emerald-600 font-black">₹{item.price}</span>
+                  </div>
+                ))}
+                {parsedData.length > 5 && (
+                  <p className="text-center text-[10px] text-gray-400 font-bold py-1">
+                    + {parsedData.length - 5} more items
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {isParsing && (
+            <div className="flex flex-col items-center py-8">
+              <Loader2 size={24} className="animate-spin text-orange-500" />
+              <p className="text-xs font-bold text-gray-400 mt-2">Parsing file...</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 border-t border-gray-100 flex gap-3">
+          <button 
+            onClick={onClose}
+            className="flex-1 h-12 rounded-2xl border border-gray-200 text-sm font-black text-gray-500 hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleUpload}
+            disabled={!file || parsedData.length === 0 || uploadMutation.isPending}
+            className="flex-[2] h-12 rounded-2xl bg-orange-500 text-white text-sm font-black hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {uploadMutation.isPending ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <CheckCircle size={18} />
+            )}
+            Import Products
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -2,15 +2,17 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import Link from 'next/link';
+import { Link, useRouter, usePathname } from '@/navigation';
 import Image from 'next/image';
 import { MapPin, Search, ShoppingCart, Menu, Sparkles, X, LayoutDashboard, Store, Package, LogOut, UserRound, Loader2 } from 'lucide-react';
 import { UserButton, useUser, SignOutButton } from '@clerk/nextjs';
 import { useCart } from '@/hooks/useCart';
-import { useRouter, usePathname } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
 import { ThemeToggle } from './ThemeToggle';
 import { motion, AnimatePresence } from 'framer-motion';
+import LanguageSwitcher from './LanguageSwitcher';
+import NotificationBell from './customer/NotificationBell';
+import { useTranslations } from 'next-intl';
 
 // ─── Debounce hook ────────────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -27,6 +29,8 @@ export default function Navbar() {
   const cart = useCart();
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations('Navbar');
+  const tc = useTranslations('Common');
 
   const [scrolled, setScrolled] = useState(false);
   const [city, setCity] = useState("Local Area");
@@ -136,10 +140,10 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { name: "Dashboard", href: "/admin", icon: LayoutDashboard, role: "ADMIN" },
-    { name: "Vendor Dashboard", href: "/vendor/dashboard", icon: Store, role: "VENDOR" },
-    { name: "My Space", href: "/profile", icon: UserRound },
-    { name: "My Orders", href: "/orders", icon: Package },
+    { name: t('dashboard'), href: "/admin", icon: LayoutDashboard, role: "ADMIN" },
+    { name: t('vendor_dashboard'), href: "/vendor/dashboard", icon: Store, role: "VENDOR" },
+    { name: t('my_space'), href: "/profile", icon: UserRound },
+    { name: t('my_orders'), href: "/orders", icon: Package },
   ];
 
   return (
@@ -189,7 +193,7 @@ export default function Navbar() {
                     setDesktopOpen(e.target.value.trim().length >= 2);
                   }}
                   onFocus={() => desktopQuery.trim().length >= 2 && setDesktopOpen(true)}
-                  placeholder="Search products, shops..."
+                  placeholder={tc('search')}
                   className="flex-1 px-3 py-2.5 bg-transparent text-sm font-medium text-gray-800 placeholder:text-gray-400 outline-none min-w-0"
                 />
 
@@ -208,7 +212,7 @@ export default function Navbar() {
                   className="m-1 flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs px-4 py-2 rounded-[0.875rem] transition-all shadow-md shadow-orange-500/20 flex-shrink-0"
                 >
                   <Search size={14} />
-                  <span>Search</span>
+                  <span>{tc('search').split(' ')[0]}</span>
                 </button>
               </div>
             </form>
@@ -292,6 +296,14 @@ export default function Navbar() {
             {/* Theme Toggle */}
             <ThemeToggle />
 
+            {/* Language Switcher */}
+            <div className="hidden sm:block">
+              <LanguageSwitcher />
+            </div>
+
+            {/* Notifications */}
+            {isSignedIn && <NotificationBell />}
+
             {/* Mobile Search Button (shown on small screens) */}
             <button
               onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
@@ -332,7 +344,7 @@ export default function Navbar() {
             ) : (
               <div className="flex items-center gap-2">
                 <Link href="/sign-in" className="btn-primary py-2 px-5 rounded-2xl text-xs md:text-sm">
-                  Sign In
+                  {t('sign_in')}
                 </Link>
                 <button
                   onClick={() => setIsMobileMenuOpen(true)}
@@ -369,7 +381,7 @@ export default function Navbar() {
                     setMobileOpen(e.target.value.trim().length >= 2);
                   }}
                   onFocus={() => mobileQuery.trim().length >= 2 && setMobileOpen(true)}
-                  placeholder="Search products, shops..."
+                  placeholder={tc('search')}
                   className="flex-1 px-3 py-3.5 bg-transparent text-sm font-medium text-gray-800 placeholder:text-gray-400 outline-none"
                 />
                 {mobileQuery ? (
@@ -506,7 +518,7 @@ export default function Navbar() {
                     <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
                       <Sparkles size={20} />
                     </div>
-                    Partner with Us
+                    {t('partner_with_us')}
                   </Link>
                 )}
               </div>
@@ -518,7 +530,7 @@ export default function Navbar() {
                       <div className="w-10 h-10 bg-red-50 dark:bg-red-900 rounded-xl flex items-center justify-center">
                         <LogOut size={20} />
                       </div>
-                      Sign Out
+                      {tc('logout')}
                     </button>
                   </SignOutButton>
                 </div>

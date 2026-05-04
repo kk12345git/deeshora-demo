@@ -20,10 +20,12 @@ async function checkServiceable(prisma: any, area: string | null | undefined): P
 export const userRouter = createTRPCRouter({
   // Fetch the current logged-in user's full profile
   me: protectedProcedure.query(async ({ ctx }) => {
-    const user = await ctx.prisma.user.findUnique({
+    let user = await ctx.prisma.user.findUnique({
       where: { id: ctx.user.id },
       include: {
         addresses: { orderBy: { isDefault: 'desc' } },
+        referredBy: { select: { name: true } },
+        referrals: { take: 10, select: { id: true, name: true, createdAt: true } },
         orders: {
           take: 5,
           orderBy: { createdAt: 'desc' },
@@ -37,10 +39,40 @@ export const userRouter = createTRPCRouter({
             items: { take: 1, select: { image: true, name: true } },
           },
         },
-        _count: { select: { orders: true, reviews: true } },
+        _count: { select: { orders: true, reviews: true, referrals: true } },
       },
     });
+
     if (!user) throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+
+    // Auto-generate referral code if missing
+    if (!user.referralCode) {
+      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      user = await ctx.prisma.user.update({
+        where: { id: user.id },
+        data: { referralCode: code },
+        include: {
+          addresses: { orderBy: { isDefault: 'desc' } },
+          referredBy: { select: { name: true } },
+          referrals: { take: 10, select: { id: true, name: true, createdAt: true } },
+          orders: {
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              status: true,
+              total: true,
+              createdAt: true,
+              paymentStatus: true,
+              vendor: { select: { shopName: true } },
+              items: { take: 1, select: { image: true, name: true } },
+            },
+          },
+          _count: { select: { orders: true, reviews: true, referrals: true } },
+        },
+      });
+    }
+
     return user;
   }),
 
@@ -123,4 +155,109 @@ export const userRouter = createTRPCRouter({
     }
     return { canOrder: true, reason: null };
   }),
+
+
+  // ─── Address Management (Moved from vendor) ─────────────────────────
+
+  myAddresses: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.address.findMany({
+      where: { userId: ctx.user.id },
+      orderBy: { isDefault: 'desc' },
+    });
+  }),
+
+
+  addAddress: protectedProcedure
+    .input(
+      z.object({
+        label: z.string(),
+        line1: z.string(),
+        line2: z.string().optional(),
+        city: z.string(),
+        state: z.string(),
+        pincode: z.string(),
+        isDefault: z.boolean().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.isDefault) {
+        await ctx.prisma.address.updateMany({
+          where: { userId: ctx.user.id },
+          data: { isDefault: false },
+        });
+      }
+      return ctx.prisma.address.create({
+        data: {
+          ...input,
+          userId: ctx.user.id,
+        },
+      });
+    }),
+
+
+  deleteAddress: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const address = await ctx.prisma.address.findFirst({
+        where: { id: input.id, userId: ctx.user.id },
+      });
+      if (!address) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Address not found.' });
+      }
+      await ctx.prisma.address.delete({ where: { id: input.id } });
+      return { success: true };
+    }),
+
+
+  // ─── Referral Logic ──────────────────────────────────────────────────
+
+  applyReferralCode: protectedProcedure
+    .input(z.object({ code: z.string().toUpperCase() }))
+    .mutation(async ({ ctx, input }) => {
+      const currentUser = await ctx.prisma.user.findUnique({
+        where: { id: ctx.user.id }
+      });
+
+      if (currentUser?.referredById) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'You have already been referred.' });
+      }
+
+      const referrer = await ctx.prisma.user.findUnique({
+        where: { referralCode: input.code }
+      });
+
+      if (!referrer) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Invalid referral code.' });
+      }
+
+      if (referrer.id === ctx.user.id) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot refer yourself.' });
+      }
+
+      return ctx.prisma.user.update({
+        where: { id: ctx.user.id },
+        data: { referredById: referrer.id }
+      });
+    }),
+
+
+  // ─── Notifications ──────────────────────────────────────────────────
+
+  myNotifications: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.notification.findMany({
+      where: { userId: ctx.user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+  }),
+
+
+  markNotificationRead: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.notification.update({
+        where: { id: input.id, userId: ctx.user.id },
+        data: { isRead: true }
+      });
+    }),
 });

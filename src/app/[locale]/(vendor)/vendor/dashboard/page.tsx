@@ -3,7 +3,7 @@
 
 import { trpc } from '@/lib/trpc';
 import { useVendorNotifications } from '@/hooks/useOrderTracking';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import Script from 'next/script';
 import {
   Loader2, Clock, Package, ShoppingCart, IndianRupee,

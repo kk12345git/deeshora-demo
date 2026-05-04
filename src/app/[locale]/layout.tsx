@@ -73,33 +73,62 @@ import { WhatsAppSupport } from "@/components/customer/WhatsAppSupport";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import PageTransition from "@/components/layout/PageTransition";
 
-export default function RootLayout({
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+
+import PWARegistration from '@/components/PWARegistration';
+import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+
+export default async function RootLayout({
   children,
+  params: { locale }
 }: Readonly<{
   children: React.ReactNode;
+  params: { locale: string };
 }>) {
+  // Ensure that the incoming `locale` is valid
+  if (!['en', 'ta'].includes(locale)) {
+    notFound();
+  }
+
+  // Receiving messages provided in `i18n.ts`
+  const messages = await getMessages();
+
   return (
     <ClerkProvider>
-      <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+      <html lang={locale} className="scroll-smooth" suppressHydrationWarning>
+        <head>
+          <link rel="manifest" href="/manifest.json" />
+          <meta name="theme-color" content="#f97316" />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+          <meta name="apple-mobile-web-app-title" content="Deeshora" />
+          <link rel="apple-touch-icon" href="/logo.jpg" />
+        </head>
         <body className={`${outfit.variable} ${inter.variable} font-outfit antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
           <NextTopLoader color="#f97316" showSpinner={false} height={3} />
           <TRPCProvider>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-                <CartSync />
-                <RoleSwitcher />
-                <JsonLd />
-                <PageTransition>
-                  {children}
-                </PageTransition>
-                <WhatsAppSupport />
-                <Toaster 
-                    position="bottom-center"
-                    toastOptions={{
-                        className: 'rounded-2xl font-bold text-sm shadow-2xl border border-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-white',
-                        duration: 4000,
-                    }}
-                />
-            </ThemeProvider>
+            <PWARegistration />
+            <PWAInstallPrompt />
+            <NextIntlClientProvider messages={messages}>
+              <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+                  <CartSync />
+                  <RoleSwitcher />
+                  <JsonLd />
+                  <PageTransition>
+                    {children}
+                  </PageTransition>
+                  <WhatsAppSupport />
+                  <Toaster 
+                      position="bottom-center"
+                      toastOptions={{
+                          className: 'rounded-2xl font-bold text-sm shadow-2xl border border-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-white',
+                          duration: 4000,
+                      }}
+                  />
+              </ThemeProvider>
+            </NextIntlClientProvider>
           </TRPCProvider>
         </body>
       </html>

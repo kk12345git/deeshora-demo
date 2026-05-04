@@ -453,6 +453,7 @@ export const productRouter = createTRPCRouter({
         isFeatured: z.boolean().optional(),
         gstRate: z.number().min(0).max(0.28).default(0),
         tags: z.array(z.string()).optional(),
+        lowStockThreshold: z.number().int().min(1).default(5),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -502,6 +503,7 @@ export const productRouter = createTRPCRouter({
           gstRate: input.gstRate,
           vendorId: ctx.vendor.id,
           tags: autoTags,
+          lowStockThreshold: input.lowStockThreshold,
         },
       });
       return product;
@@ -523,6 +525,7 @@ export const productRouter = createTRPCRouter({
         isFeatured: z.boolean().optional(),
         gstRate: z.number().min(0).max(0.28).optional(),
         tags: z.array(z.string()).optional(),
+        lowStockThreshold: z.number().int().min(1).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -598,6 +601,7 @@ export const productRouter = createTRPCRouter({
         productId: z.string(),
         rating: z.number().min(1).max(5),
         comment: z.string().optional(),
+        images: z.array(z.string().startsWith('data:image/')).max(3).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -621,12 +625,21 @@ export const productRouter = createTRPCRouter({
         throw new TRPCError({ code: 'CONFLICT', message: 'You have already reviewed this product. Edit your existing review instead.' });
       }
 
+      let reviewImages: string[] = [];
+      if (input.images) {
+        reviewImages = await Promise.all(
+          input.images.map(img => uploadImage(img, 'reviews'))
+        );
+      }
+
       const newReview = await ctx.prisma.review.create({
         data: {
           productId: input.productId,
           userId: ctx.user.id,
           rating: input.rating,
           comment: input.comment,
+          images: reviewImages,
+          isVerified: true, // Only buyers can review currently
         },
       });
 
@@ -646,5 +659,50 @@ export const productRouter = createTRPCRouter({
       });
 
       return newReview;
+    }),
+
+
+  bulkUpload: vendorProcedure
+    .input(
+      z.array(z.object({
+        name: z.string().min(3),
+        description: z.string().min(10),
+        price: z.number().positive(),
+        mrp: z.number().positive(),
+        stock: z.number().int().min(0),
+        unit: z.string(),
+        categoryName: z.string(),
+        images: z.array(z.string().url()).min(1).optional(), // URLs for bulk upload
+      }))
+    )
+    .mutation(async ({ ctx, input }) => {
+      const results = [];
+      const categories = await ctx.prisma.category.findMany();
+
+      for (const item of input) {
+        const category = categories.find(c => c.name.toLowerCase() === item.categoryName.toLowerCase());
+        if (!category) continue;
+
+        const slug = `${slugify(item.name, { lower: true, strict: true })}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+        const product = await ctx.prisma.product.create({
+          data: {
+            name: item.name,
+            slug,
+            description: item.description,
+            price: item.price,
+            mrp: item.mrp,
+            stock: item.stock,
+            unit: item.unit,
+            categoryId: category.id,
+            images: item.images ?? ['https://images.unsplash.com/photo-1542838132-92c53300491e?w=800'],
+            vendorId: ctx.vendor.id,
+            isActive: true,
+          },
+        });
+        results.push(product.id);
+      }
+
+      return { success: true, count: results.length };
     }),
 });

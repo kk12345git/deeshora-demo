@@ -593,6 +593,7 @@ export const adminRouter = createTRPCRouter({
         pincode: z.string().optional(),
         isServiceable: z.boolean().default(true),
         sortOrder: z.number().int().default(0),
+        coordinates: z.any().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -613,6 +614,7 @@ export const adminRouter = createTRPCRouter({
         isServiceable: z.boolean().optional(),
         isActive: z.boolean().optional(),
         sortOrder: z.number().int().optional(),
+        coordinates: z.any().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

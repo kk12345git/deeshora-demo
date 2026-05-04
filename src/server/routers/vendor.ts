@@ -153,56 +153,6 @@ export const vendorRouter = createTRPCRouter({
     }),
 
 
-  myAddresses: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.address.findMany({
-      where: { userId: ctx.user.id },
-      orderBy: { isDefault: 'desc' },
-    });
-  }),
-
-
-  addAddress: protectedProcedure
-    .input(
-      z.object({
-        label: z.string(),
-        line1: z.string(),
-        line2: z.string().optional(),
-        city: z.string(),
-        state: z.string(),
-        pincode: z.string(),
-        isDefault: z.boolean().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (input.isDefault) {
-        await ctx.prisma.address.updateMany({
-          where: { userId: ctx.user.id },
-          data: { isDefault: false },
-        });
-      }
-      return ctx.prisma.address.create({
-        data: {
-          ...input,
-          userId: ctx.user.id,
-        },
-      });
-    }),
-
-
-  deleteAddress: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const address = await ctx.prisma.address.findFirst({
-        where: { id: input.id, userId: ctx.user.id },
-      });
-      if (!address) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Address not found.' });
-      }
-      await ctx.prisma.address.delete({ where: { id: input.id } });
-      return { success: true };
-    }),
-
-
   // ─── Real Subscription Integration (₹700/month) ───────────────────────
   
   initiateSubscription: vendorProcedure

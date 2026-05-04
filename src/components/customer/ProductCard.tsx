@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { Star, Plus, Minus, ShoppingCart, Store, ShoppingBag, Sparkles, TrendingUp, X, CheckCircle2 } from 'lucide-react';
 import { useCart, CartItem } from '@/hooks/useCart';
 import { useOnboarding } from '@/hooks/useOnboarding';

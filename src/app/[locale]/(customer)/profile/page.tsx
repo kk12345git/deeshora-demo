@@ -6,7 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { trpc } from '@/lib/trpc';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import {
   User, Phone, MapPin, Mail, Package, Star, Edit3, Save,
   X, CheckCircle, AlertTriangle, ChevronRight, Loader2,
@@ -503,6 +503,8 @@ export default function MySpacePage() {
           </div>
           <div className="divide-y divide-gray-50">
             <QuickLink href="/orders" icon={<ShoppingBag size={18} />} label="My Orders" badge={profile._count.orders > 0 ? `${profile._count.orders}` : undefined} />
+            <QuickLink href="/profile/addresses" icon={<MapPin size={18} />} label="Saved Addresses" />
+            <QuickLink href="/profile/referrals" icon={<Users size={18} />} label="Invite & Earn" />
             <QuickLink href="/cart" icon={<Package size={18} />} label="My Cart" />
             <QuickLink href="/" icon={<Star size={18} />} label="Featured Products" />
           </div>

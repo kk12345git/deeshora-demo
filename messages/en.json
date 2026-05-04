@@ -1,0 +1,54 @@
+{
+  "Common": {
+    "welcome": "Welcome to Deeshora",
+    "search": "Search for products...",
+    "cart": "Cart",
+    "profile": "Profile",
+    "orders": "My Orders",
+    "logout": "Logout",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete"
+  },
+  "Navbar": {
+    "dashboard": "Dashboard",
+    "vendor_dashboard": "Vendor Dashboard",
+    "my_space": "My Space",
+    "sign_in": "Sign In",
+    "partner_with_us": "Partner with Us",
+    "my_orders": "My Orders"
+  },
+  "Auth": {
+    "login": "Login",
+    "signup": "Sign Up",
+    "onboarding_title": "Choose your location",
+    "onboarding_desc": "Select your locality to see products available near you."
+  },
+  "Product": {
+    "add_to_cart": "Add to Cart",
+    "out_of_stock": "Out of Stock",
+    "reviews": "Reviews",
+    "buy_now": "Buy Now"
+  },
+  "Referral": {
+    "title": "Invite & Earn",
+    "desc": "Spread the word, get rewards",
+    "code": "Your Referral Code",
+    "share": "Share Invite Link"
+  },
+  "Address": {
+    "title": "Saved Addresses",
+    "add_new": "Add New Address",
+    "home": "Home",
+    "work": "Work"
+  },
+  "Home": {
+    "hero_title": "Your Hometown Marketplace.",
+    "hero_subtitle": "Deeshora connects you directly with local shops in your neighborhood.",
+    "browse_products": "Browse Products",
+    "explore_categories": "Explore by Category",
+    "featured_specials": "Featured Specials",
+    "fresh_from": "Fresh from",
+    "see_all": "See All"
+  }
+}

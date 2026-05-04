@@ -32,7 +32,7 @@ export default function AdminCategoriesPage() {
     setEditForm({
       name: cat.name,
       slug: cat.slug,
-      commissionRate: (cat.commissionRate * 100).toString(),
+      commissionRate: ((cat.commissionRate ?? 0) * 100).toString(),
       isActive: cat.isActive,
     });
   };
@@ -123,7 +123,7 @@ export default function AdminCategoriesPage() {
                         <Percent size={14} className="text-gray-400" />
                       </div>
                     ) : (
-                      <span className="font-black text-orange-600">{(cat.commissionRate * 100).toFixed(1)}%</span>
+                      <span className="font-black text-orange-600">{((cat.commissionRate ?? 0) * 100).toFixed(1)}%</span>
                     )}
                 </td>
                 <td className="px-8 py-6">

@@ -21,7 +21,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const utils = trpc.useUtils();
 
-  const { data: addresses, isLoading: isLoadingAddresses } = trpc.vendor.myAddresses.useQuery();
+  const { data: addresses, isLoading: isLoadingAddresses } = trpc.user.myAddresses.useQuery();
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [notes, setNotes] = useState('');
@@ -33,9 +33,9 @@ export default function CheckoutPage() {
   const [showUpiModal, setShowUpiModal] = useState(false);
   const [placedOrderIds, setPlacedOrderIds] = useState<string[]>([]);
 
-  const addAddressMutation = trpc.vendor.addAddress.useMutation({
+  const addAddressMutation = trpc.user.addAddress.useMutation({
     onSuccess: () => {
-      utils.vendor.myAddresses.invalidate();
+      utils.user.myAddresses.invalidate();
       toast.success('Address added!');
       setShowNewAddressForm(false);
     },
