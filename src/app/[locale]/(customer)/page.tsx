@@ -196,7 +196,7 @@ export default function HomePage() {
                           className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-gray-50 hover:bg-orange-50 border-t border-gray-100 text-sm font-bold text-orange-600 transition-colors"
                         >
                           <Search size={14} />
-                          See all results for "{debouncedSearch}"
+                          See all results for &quot;{debouncedSearch}&quot;
                         </button>
                       </>
                     ) : (
@@ -381,7 +381,7 @@ export default function HomePage() {
                 <ShoppingBag size={40} />
               </div>
               <h3 className="text-2xl font-bold text-gray-900">No products here yet</h3>
-              <p className="mt-2 text-gray-500 max-w-sm mx-auto">We're still onboarding shop owners in {selectedCity ? selectedCity : "this area"}. Check back soon!</p>
+              <p className="mt-2 text-gray-500 max-w-sm mx-auto">We&apos;re still onboarding shop owners in {selectedCity ? selectedCity : "this area"}. Check back soon!</p>
               <div className="mt-8 flex justify-center gap-4">
                   <Link href="/vendor/register" className="btn-primary">Become a Vendor</Link>
                   <button onClick={() => setSelectedCity(undefined)} className="btn-secondary">View All Areas</button>

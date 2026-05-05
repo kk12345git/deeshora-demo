@@ -19,8 +19,6 @@ export function WhatsAppSupport() {
                          pathname.startsWith('/vendor') || 
                          pathname.startsWith('/delivery');
 
-  if (isExcludedPage && !pathname.startsWith('/vendor') && !pathname.startsWith('/delivery') && !pathname.startsWith('/admin')) return null;
-
   const businessNumber = config?.find((c: any) => c.key === 'business_whatsapp')?.value || '918939318865';
   
   const isPartnerPage = pathname.startsWith('/vendor') || pathname.startsWith('/delivery') || pathname.startsWith('/admin');
@@ -45,6 +43,8 @@ export function WhatsAppSupport() {
       });
     }
   }, []);
+
+  if (isExcludedPage && !pathname.startsWith('/vendor') && !pathname.startsWith('/delivery') && !pathname.startsWith('/admin')) return null;
 
   return (
     <motion.div

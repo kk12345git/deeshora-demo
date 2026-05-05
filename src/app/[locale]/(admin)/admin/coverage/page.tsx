@@ -360,9 +360,9 @@ export default function CoveragePage() {
         <div className="text-sm text-blue-700 space-y-1">
           <p className="font-black">How this works</p>
           <p>• <strong>Live</strong> — shown as selectable options in onboarding &amp; profile</p>
-          <p>• <strong>Coming Soon</strong> — shown as greyed-out tiles with "Coming soon" label</p>
+          <p>• <strong>Coming Soon</strong> — shown as greyed-out tiles with &quot;Coming soon&quot; label</p>
           <p>• <strong>Hidden</strong> — completely invisible to customers</p>
-          <p>• The <strong>DB Value</strong> field is what gets saved in the user's profile — don't change it if users have already selected it.</p>
+          <p>• The <strong>DB Value</strong> field is what gets saved in the user&apos;s profile — don&apos;t change it if users have already selected it.</p>
         </div>
       </div>
     </div>

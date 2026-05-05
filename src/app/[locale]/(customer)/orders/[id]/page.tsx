@@ -458,7 +458,7 @@ export default function OrderTrackingPage() {
             <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 text-center space-y-3">
               <div className="text-2xl">⭐</div>
               <p className="font-black text-amber-800 text-sm">How was your order?</p>
-              <p className="text-xs text-amber-600">Tap "Review" next to any item to leave your rating</p>
+              <p className="text-xs text-amber-600">Tap &quot;Review&quot; next to any item to leave your rating</p>
             </div>
           )}
         </div>

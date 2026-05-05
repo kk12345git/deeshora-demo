@@ -179,7 +179,7 @@ export default function EditProductPage() {
           <AlertTriangle size={32} className="text-red-400" />
         </div>
         <p className="font-black text-gray-800 text-lg">Product not found</p>
-        <p className="text-gray-400 text-sm mt-2">This product doesn't exist or doesn't belong to your shop.</p>
+        <p className="text-sm text-gray-400 mt-2">This product doesn&apos;t exist or doesn&apos;t belong to your shop.</p>
         <button onClick={() => router.push('/vendor/products')} className="btn-primary mt-6">
           ← Back to Products
         </button>

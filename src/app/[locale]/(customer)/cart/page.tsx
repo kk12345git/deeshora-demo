@@ -78,7 +78,7 @@ export default function CartPage() {
            <ShoppingBag size={48} className="text-orange-500" />
         </div>
         <h1 className="text-4xl font-black text-gray-900 tracking-tight italic">Your bag is empty</h1>
-        <p className="mt-4 text-gray-500 font-medium max-w-xs mx-auto">Looks like you haven't discovered anything amazing yet.</p>
+        <p className="mt-4 text-gray-500 font-medium max-w-xs mx-auto">Looks like you haven&apos;t discovered anything amazing yet.</p>
         <Link href="/" className="btn-primary mt-10">
           Start Shopping
         </Link>

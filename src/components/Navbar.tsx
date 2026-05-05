@@ -259,7 +259,7 @@ export default function Navbar() {
                       className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 hover:bg-orange-50 border-t border-gray-100 text-xs font-bold text-orange-600 transition-colors"
                     >
                       <Search size={12} />
-                      See all results for "{debouncedDesktop}"
+                      See all results for &quot;{debouncedDesktop}&quot;
                     </button>
                   </>
                 ) : (
@@ -440,7 +440,7 @@ export default function Navbar() {
                       onClick={() => { submitSearch(mobileQuery); setMobileOpen(false); setMobileSearchOpen(false); }}
                       className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 text-xs font-bold text-orange-600"
                     >
-                      <Search size={12} /> See all results for "{debouncedMobile}"
+                      <Search size={12} /> See all results for &quot;{debouncedMobile}&quot;
                     </button>
                   </>
                 ) : (

@@ -383,7 +383,7 @@ export default function NewProductPage() {
           </FormField>
 
           {discount > 0 && (
-            <p className="text-xs text-emerald-600 font-black">✅ You're offering a {discount}% discount!</p>
+            <p className="text-xs text-emerald-600 font-black">✅ You&apos;re offering a {discount}% discount!</p>
           )}
         </div>
 
@@ -435,7 +435,7 @@ export default function NewProductPage() {
 
         {vendorStatus?.status === 'PENDING' && (
           <p className="text-center text-xs text-amber-600 font-bold">
-            ⏳ Product will be saved but won't be visible to customers until your account is approved.
+            ⏳ Product will be saved but won&apos;t be visible to customers until your account is approved.
           </p>
         )}
       </form>

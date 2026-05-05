@@ -624,7 +624,7 @@ export default function VendorDashboardPage() {
                 </div>
                 <h3 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">Premium Launch Package</h3>
                 <p className="text-gray-500 font-medium mt-3 px-4">
-                  Unlock unlimited product uploads, featured status, and a "Verified Seller" badge for your shop.
+                  Unlock unlimited product uploads, featured status, and a &quot;Verified Seller&quot; badge for your shop.
                 </p>
 
                 <div className="mt-8 bg-gray-50 rounded-3xl p-6 border border-gray-100">

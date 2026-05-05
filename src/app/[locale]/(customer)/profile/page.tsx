@@ -519,7 +519,7 @@ export default function MySpacePage() {
             <div>
               <p className="font-black text-orange-800 text-sm">Delivery not available in your area</p>
               <p className="text-xs text-orange-600 mt-1">
-                Deeshora currently serves <strong>Thiruvottriyur & nearby localities, Chennai</strong>. Watch for us to expand soon!
+                Deeshora currently serves <strong>Thiruvottriyur &amp; nearby localities, Chennai</strong>. Watch for us to expand soon!
               </p>
             </div>
           </div>

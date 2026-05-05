@@ -118,7 +118,7 @@ export default function VendorRegisterPage() {
                 </div>
                 <div>
                    <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight">Step 1: Branding Lab</h2>
-                   <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Your shop's digital identity</p>
+                   <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Your shop&apos;s digital identity</p>
                 </div>
              </div>
 

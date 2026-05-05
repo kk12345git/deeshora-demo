@@ -112,7 +112,7 @@ export default function OrdersPage() {
           </h3>
           <p className="text-gray-400 text-sm mt-2 max-w-xs">
             {activeTab === 'ALL'
-              ? "When you place orders from local shops, they'll show up here."
+              ? "When you place orders from local shops, they&apos;ll show up here."
               : 'Try a different status filter above.'}
           </p>
           {activeTab === 'ALL' && (

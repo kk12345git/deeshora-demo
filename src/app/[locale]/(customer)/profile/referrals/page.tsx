@@ -62,7 +62,7 @@ export default function ReferralDashboard() {
         <div className="relative z-10 space-y-6">
           <div className="space-y-2">
             <h2 className="text-3xl font-black leading-tight">Get ₹50 for every friend!</h2>
-            <p className="text-orange-100 text-sm font-medium">When your friend places their first order, we'll send a ₹50 coupon straight to your wallet.</p>
+            <p className="text-orange-100 text-sm font-medium">When your friend places their first order, we&apos;ll send a ₹50 coupon straight to your wallet.</p>
           </div>
 
           <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 flex flex-col items-center gap-4 border border-white/20">

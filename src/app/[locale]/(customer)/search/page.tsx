@@ -120,10 +120,10 @@ export default function SearchPage() {
                       <>
                         <span className="text-orange-400">{smartData?.totalExact ?? 0}</span> exact
                         {(filteredRelated.length > 0) && <> + <span className="text-emerald-400">{smartData?.related.length}</span> related</>}
-                        <span className="text-white/40 font-medium"> for</span> "{query}"
+                        <span className="text-white/40 font-medium"> for</span> &quot;{query}&quot;
                       </>
                     ) : (
-                      <>No results for "{query}"</>
+                      <>No results for &quot;{query}&quot;</>
                     )}
                   </h1>
                 </div>
@@ -139,7 +139,7 @@ export default function SearchPage() {
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/60 leading-none mb-1">AI Smart Intent</p>
                         <p className="text-sm font-bold text-emerald-400">
                           Detected your interest in <span className="text-white underline decoration-emerald-500/50 underline-offset-4 decoration-2">{smartData.suggestedCategory.name}</span>. 
-                          I've prioritized fresh local items for you.
+                          I&apos;ve prioritized fresh local items for you.
                         </p>
                       </div>
                     </div>
@@ -264,7 +264,7 @@ export default function SearchPage() {
             </div>
             <h3 className="text-2xl font-bold text-gray-900 uppercase tracking-tight">Nothing found</h3>
             <p className="mt-2 text-gray-500 max-w-sm mx-auto font-medium">
-              Couldn't find anything matching "{query}" {selectedCity ? `in ${selectedCity}` : 'in your area'}.
+              Couldn&apos;t find anything matching &quot;{query}&quot; {selectedCity ? `in ${selectedCity}` : 'in your area'}.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
               <button onClick={() => window.history.back()} className="btn-secondary">← Try Different Search</button>

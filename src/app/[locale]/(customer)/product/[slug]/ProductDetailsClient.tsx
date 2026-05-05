@@ -398,7 +398,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                         {new Date(review.createdAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="text-gray-700 font-medium leading-relaxed italic line-clamp-4 flex-grow">"{review.comment}"</p>
+                  <p className="text-gray-700 font-medium leading-relaxed italic line-clamp-4 flex-grow">&quot;{review.comment}&quot;</p>
                   <div className="flex items-center gap-3 pt-4 border-t border-gray-50 mt-4">
                     <div className="w-8 h-8 rounded-full overflow-hidden border">
                         <Image src={review.user.avatar || '/default-avatar.png'} alt={review.user.name} width={32} height={32} />

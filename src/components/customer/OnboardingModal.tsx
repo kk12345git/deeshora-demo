@@ -32,7 +32,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
     if (clerkUser?.fullName && !formData.name) {
       setFormData(prev => ({ ...prev, name: clerkUser.fullName ?? '' }));
     }
-  }, [clerkUser?.fullName]);
+  }, [clerkUser?.fullName, formData.name]);
 
   // Reset step when modal opens
   useEffect(() => {
@@ -151,7 +151,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
                 onClick={() => setStep('details')}
                 className="btn-primary w-full h-14 rounded-2xl font-black text-sm tracking-widest uppercase flex items-center justify-center gap-2"
               >
-                Let's Go <ChevronRight size={18} />
+                Let&apos;s Go <ChevronRight size={18} />
               </button>
               <button
                 onClick={onClose}
@@ -348,7 +348,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
               </div>
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-black text-gray-900 tracking-tight">You're all set! 🎉</h2>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight">You&apos;re all set! 🎉</h2>
               <p className="text-gray-500 text-sm max-w-xs mx-auto">
                 Welcome to Deeshora, {formData.name.split(' ')[0]}! You can now order from local shops in{' '}
                 <span className="font-bold text-orange-600">{formData.area}</span>.
@@ -372,8 +372,8 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
             <div className="space-y-2">
               <h2 className="text-2xl font-black text-gray-900 tracking-tight">Not Available Yet</h2>
               <p className="text-gray-500 text-sm max-w-xs mx-auto">
-                We're currently delivering in <span className="font-bold text-orange-600">Thiruvottriyur &amp; nearby areas, Chennai</span>.
-                You can still browse our products — we're expanding soon!
+                We&apos;re currently delivering in <span className="font-bold text-orange-600">Thiruvottriyur &amp; nearby areas, Chennai</span>.
+                You can still browse our products — we&apos;re expanding soon!
               </p>
             </div>
             <div className="w-full bg-orange-50 border border-orange-100 rounded-2xl p-4 text-left space-y-1">
@@ -389,7 +389,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
               >
                 Browse Products
               </button>
-              <p className="text-xs text-gray-400">We're expanding soon — stay tuned!</p>
+              <p className="text-xs text-gray-400">We&apos;re expanding soon — stay tuned!</p>
             </div>
           </div>
         )}

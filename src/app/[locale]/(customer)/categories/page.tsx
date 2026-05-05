@@ -78,7 +78,7 @@ export default function CategoriesPage() {
                 <LayoutGrid size={40} />
               </div>
               <h3 className="text-2xl font-bold text-gray-900">No categories found</h3>
-              <p className="mt-2 text-gray-500 max-w-sm mx-auto">We're in the middle of updating our catalog. Please check back later.</p>
+              <p className="mt-2 text-gray-500 max-w-sm mx-auto">We&apos;re in the middle of updating our catalog. Please check back later.</p>
         </div>
       )}
     </div>

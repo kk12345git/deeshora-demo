@@ -106,7 +106,7 @@ export default function VendorSettingsPage() {
             <Sparkles size={12} /> Partner Experience
           </p>
           <h1 className="text-4xl font-black text-gray-950 uppercase tracking-tighter mt-1">Vendor Studio</h1>
-          <p className="text-sm text-gray-400 mt-1 font-medium">Design your shop's digital identity and manage operations.</p>
+          <p className="text-sm text-gray-400 mt-1 font-medium">Design your shop&apos;s digital identity and manage operations.</p>
         </div>
         <div className="flex gap-3">
            <span className={`inline-flex items-center gap-1.5 text-[10px] font-black px-3 py-1.5 rounded-full ${hasBank ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>

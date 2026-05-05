@@ -352,7 +352,7 @@ export default function VendorOrdersPage() {
                                       }}
                                       className="w-full py-2 bg-orange-50 text-orange-600 hover:bg-orange-100 font-bold text-[10px] rounded-xl transition-all flex items-center justify-center gap-2"
                                     >
-                                      <Bell size={12} /> Send "Thank You"
+                                      <Bell size={12} /> Send &quot;Thank You&quot;
                                     </button>
 
                                     <div className="grid grid-cols-2 gap-2">

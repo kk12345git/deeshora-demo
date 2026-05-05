@@ -34,7 +34,7 @@ export default function VendorProductsPage() {
     onError: (err) => toast.error(err.message),
   });
 
-  const products = data?.products ?? [];
+  const products = useMemo(() => data?.products ?? [], [data?.products]);
   const activeCount = products.filter(p => p.isActive).length;
   const lowStockItems = products.filter(p => p.stock <= 5);
 
@@ -278,7 +278,7 @@ export default function VendorProductsPage() {
           {filtered.length === 0 && (
             <div className="col-span-full py-12 text-center text-gray-400">
               <Search size={28} className="mx-auto mb-3 text-gray-200" />
-              <p className="font-bold">No products match "{search}"</p>
+              <p className="font-bold">No products match &quot;{search}&quot;</p>
             </div>
           )}
         </div>
@@ -372,7 +372,7 @@ export default function VendorProductsPage() {
           </div>
           {filtered.length === 0 && (
             <div className="py-12 text-center text-gray-400">
-              <p className="font-bold text-sm">No products match "{search}"</p>
+              <p className="font-bold text-sm">No products match &quot;{search}&quot;</p>
             </div>
           )}
         </div>
