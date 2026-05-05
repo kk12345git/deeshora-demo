@@ -94,14 +94,14 @@ export default function ReferralDashboard() {
           <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center mb-1">
             <Users size={24} />
           </div>
-          <p className="text-2xl font-black text-gray-900">{profile?.referralsCount || 0}</p>
+          <p className="text-2xl font-black text-gray-900">{profile?._count.referrals || 0}</p>
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Friends Joined</p>
         </div>
         <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col items-center text-center gap-2">
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center mb-1">
             <TrendingUp size={24} />
           </div>
-          <p className="text-2xl font-black text-gray-900">₹{(profile?.referralsCount || 0) * 50}</p>
+          <p className="text-2xl font-black text-gray-900">₹{(profile?._count.referrals || 0) * 50}</p>
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Potential Earned</p>
         </div>
       </div>

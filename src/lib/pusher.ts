@@ -47,4 +47,6 @@ export const EVENTS = {
   ORDER_STATUS_UPDATED: 'order-status-updated',
   NEW_ORDER: 'new-order',
   VENDOR_APPROVED: 'vendor-approved',
+  LOW_STOCK_ALERT: 'low-stock-alert',
+  NEW_PAYMENT_VERIFICATION: 'new-payment-verification',
 };

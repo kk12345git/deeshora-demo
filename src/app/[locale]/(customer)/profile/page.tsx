@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { Link } from '@/navigation';
 import {
-  User, Phone, MapPin, Mail, Package, Star, Edit3, Save,
+  User, Users, Phone, MapPin, Mail, Package, Star, Edit3, Save,
   X, CheckCircle, AlertTriangle, ChevronRight, Loader2,
   ShoppingBag, Camera, ArrowRight, IndianRupee, Flame,
   Shield, Crown, Zap,

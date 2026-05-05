@@ -1,7 +1,1 @@
-import {createSharedPathnamesNavigation} from 'next-intl/navigation';
- 
-export const locales = ['en', 'ta'] as const;
-export const localePrefix = 'always'; // Default
- 
-export const {Link, redirect, usePathname, useRouter} =
-  createSharedPathnamesNavigation({locales, localePrefix});
+export {Link, redirect, usePathname, useRouter, getPathname, locales, routing} from './i18n/routing';

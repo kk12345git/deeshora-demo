@@ -546,6 +546,7 @@ export const adminRouter = createTRPCRouter({
         unit: z.string().optional(),
         categoryId: z.string().optional(),
         isFeatured: z.boolean().optional(),
+        isActive: z.boolean().optional(),
         commissionRate: z.number().min(0).max(1).optional(),
       })
     )

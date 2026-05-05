@@ -261,7 +261,7 @@ export default function AdminEditProductPage() {
             </div>
             <div className="space-y-2">
               <p className="text-orange-100 text-sm font-bold leading-relaxed">
-                Platform currently takes <span className="text-orange-400 font-black underline">{( (currentProduct?.commissionRate ?? currentProduct?.category.commissionRate ?? currentProduct?.vendor.commissionRate) * 100).toFixed(1)}%</span> from this product.
+                Platform currently takes <span className="text-orange-400 font-black underline">{( (currentProduct?.commissionRate ?? currentProduct?.category?.commissionRate ?? currentProduct?.vendor?.commissionRate ?? 0) * 100).toFixed(1)}%</span> from this product.
               </p>
               <p className="text-orange-300/60 text-xs">
                 Entering a value here will <span className="italic">override</span> both category and vendor defaults. Leave blank to reset to defaults.

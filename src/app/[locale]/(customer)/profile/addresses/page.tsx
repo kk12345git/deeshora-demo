@@ -18,8 +18,10 @@ export default function MyAddressesPage() {
   
   const [newAddr, setNewAddr] = useState({
     label: 'Home',
-    fullAddress: '',
+    line1: '',
+    line2: '',
     city: 'Thiruvottriyur',
+    state: 'Tamil Nadu',
     pincode: '',
     isDefault: false
   });
@@ -29,7 +31,7 @@ export default function MyAddressesPage() {
       toast.success('Address added!');
       utils.user.myAddresses.invalidate();
       setIsAdding(false);
-      setNewAddr({ label: 'Home', fullAddress: '', city: 'Thiruvottriyur', pincode: '', isDefault: false });
+      setNewAddr({ label: 'Home', line1: '', line2: '', city: 'Thiruvottriyur', state: 'Tamil Nadu', pincode: '', isDefault: false });
     },
     onError: (err) => toast.error(err.message)
   });
@@ -99,12 +101,22 @@ export default function MyAddressesPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Address (House No, Building, Street)</label>
-              <textarea
-                value={newAddr.fullAddress}
-                onChange={e => setNewAddr(p => ({ ...p, fullAddress: e.target.value }))}
-                placeholder="e.g. #12, 3rd Floor, Rose Garden Apt, Kathivakkam High Road"
-                className="w-full p-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-orange-300 focus:bg-white outline-none transition-all text-sm font-medium min-h-[100px] resize-none"
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Street Address / House No *</label>
+              <input
+                value={newAddr.line1}
+                onChange={e => setNewAddr(p => ({ ...p, line1: e.target.value }))}
+                placeholder="e.g. #12, Rose Garden Apt"
+                className="w-full p-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-orange-300 focus:bg-white outline-none transition-all text-sm font-medium"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Area / Landmark (Optional)</label>
+              <input
+                value={newAddr.line2}
+                onChange={e => setNewAddr(p => ({ ...p, line2: e.target.value }))}
+                placeholder="e.g. Near Bus Stop, Kathivakkam High Road"
+                className="w-full p-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-orange-300 focus:bg-white outline-none transition-all text-sm font-medium"
               />
             </div>
 
@@ -130,7 +142,7 @@ export default function MyAddressesPage() {
 
             <button
               onClick={() => addMutation.mutate(newAddr)}
-              disabled={addMutation.isPending || !newAddr.fullAddress}
+              disabled={addMutation.isPending || !newAddr.line1}
               className="w-full h-14 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-orange-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {addMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : <Navigation size={18} />}
@@ -164,7 +176,7 @@ export default function MyAddressesPage() {
                     <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full uppercase">Default</span>
                   )}
                 </div>
-                <p className="text-sm text-gray-500 font-medium mt-1 leading-relaxed">{addr.fullAddress}</p>
+                <p className="text-sm text-gray-500 font-medium mt-1 leading-relaxed">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</p>
                 <p className="text-xs text-gray-400 font-bold mt-1 uppercase tracking-tighter">{addr.city} - {addr.pincode}</p>
               </div>
               <button 
