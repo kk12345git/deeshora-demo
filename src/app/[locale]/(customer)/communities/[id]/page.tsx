@@ -109,7 +109,7 @@ export default function CommunityDetailPage() {
                     <div className="card p-6 bg-white shadow-xl shadow-gray-200/40 border-none">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200" />
-                            <span className="text-sm font-bold text-gray-400">What's on your mind?</span>
+                            <span className="text-sm font-bold text-gray-400">What&apos;s on your mind?</span>
                         </div>
                         <div className="flex justify-end pt-4 border-t border-gray-50">
                             <button className="px-6 py-2 bg-orange-50 text-orange-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-orange-100 transition-colors">
@@ -121,7 +121,7 @@ export default function CommunityDetailPage() {
 
                 {/* Posts */}
                 {community.posts.length > 0 ? (
-                    community.posts.map((post, i) => (
+                    community.posts.map((post: any, i: number) => (
                         <motion.div 
                             key={post.id}
                             initial={{ opacity: 0, y: 20 }}

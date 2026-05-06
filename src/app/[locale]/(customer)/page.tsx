@@ -6,7 +6,8 @@ import { trpc } from '@/lib/trpc';
 import { Link, useRouter } from '@/navigation';
 import Image from 'next/image';
 import { Suspense } from 'react';
-import { ShoppingBag, CheckCircle, Truck, ArrowRight, Star, MapPin, Loader2, X, Search, Sparkles, TrendingUp } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ShoppingBag, CheckCircle, Truck, ArrowRight, Star, MapPin, Loader2, X, Search, Sparkles, TrendingUp, Users } from 'lucide-react';
 import ProductCard from '@/components/customer/ProductCard';
 import ProductCardSkeleton from '@/components/customer/ProductCardSkeleton';
 import CitySelector from '@/components/customer/CitySelector';
@@ -326,7 +327,7 @@ export default function HomePage() {
             </div>
 
             <div className="flex gap-8 overflow-x-auto pb-8 -mx-4 px-4 no-scrollbar">
-                {communities.items.map((community, i) => (
+                {communities.items.map((community: any, i: number) => (
                     <motion.div
                         key={community.id}
                         initial={{ opacity: 0, scale: 0.9 }}

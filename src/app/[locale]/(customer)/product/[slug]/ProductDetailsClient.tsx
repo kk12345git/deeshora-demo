@@ -48,6 +48,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
       image: product.images[0],
       price: product.price,
       stock: product.stock,
+      type: product.type,
     };
     addItem(item);
 
@@ -76,6 +77,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
       image: product.images[0],
       price: product.price,
       stock: product.stock,
+      type: product.type,
     };
     // Update local cart (add if not present, keep qty if already there)
     if (!cartItem) addItem(item);

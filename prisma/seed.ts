@@ -1,5 +1,5 @@
 // prisma/seed.ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, ProductType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -117,8 +117,8 @@ async function main() {
   for (const p of products) {
     await prisma.product.upsert({
       where: { slug: p.slug },
-      create: p,
-      update: { price: p.price, stock: p.stock, type: (p as any).type || 'PHYSICAL' },
+      create: p as any,
+      update: { price: p.price, stock: p.stock, type: (p as any).type as ProductType || 'PHYSICAL' },
     });
   }
   console.log(`✅ Seeded ${products.length} products.`);

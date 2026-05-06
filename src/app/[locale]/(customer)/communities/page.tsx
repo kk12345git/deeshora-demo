@@ -36,7 +36,7 @@ export default function CommunitiesPage() {
           </div>
         ) : data?.items && data.items.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {data.items.map((community, i) => (
+            {data.items.map((community: any, i: number) => (
               <motion.div
                 key={community.id}
                 initial={{ opacity: 0, y: 20 }}

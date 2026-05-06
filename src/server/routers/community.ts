@@ -6,7 +6,7 @@ export const communityRouter = createTRPCRouter({
   list: publicProcedure
     .input(z.object({ limit: z.number().min(1).max(100).optional(), cursor: z.string().optional() }))
     .query(async ({ ctx, input }) => {
-      const items = await ctx.db.community.findMany({
+      const items = await ctx.prisma.community.findMany({
         take: (input.limit ?? 10) + 1,
         cursor: input.cursor ? { id: input.cursor } : undefined,
         include: {
@@ -28,7 +28,7 @@ export const communityRouter = createTRPCRouter({
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const community = await ctx.db.community.findUnique({
+      const community = await ctx.prisma.community.findUnique({
         where: { id: input.id },
         include: {
           vendor: { select: { shopName: true, logo: true, description: true } },
@@ -41,7 +41,7 @@ export const communityRouter = createTRPCRouter({
       
       let isMember = false;
       if (ctx.userId) {
-        const membership = await ctx.db.communityMember.findUnique({
+        const membership = await ctx.prisma.communityMember.findUnique({
           where: { communityId_userId: { communityId: input.id, userId: ctx.userId } }
         });
         isMember = !!membership;
@@ -53,7 +53,7 @@ export const communityRouter = createTRPCRouter({
   join: protectedProcedure
     .input(z.object({ communityId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.communityMember.create({
+      return ctx.prisma.communityMember.create({
         data: {
           communityId: input.communityId,
           userId: ctx.userId,
@@ -64,7 +64,7 @@ export const communityRouter = createTRPCRouter({
   leave: protectedProcedure
     .input(z.object({ communityId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.communityMember.delete({
+      return ctx.prisma.communityMember.delete({
         where: { communityId_userId: { communityId: input.communityId, userId: ctx.userId } },
       });
     }),
