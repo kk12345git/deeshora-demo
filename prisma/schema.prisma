@@ -73,6 +73,13 @@ enum SubscriptionStatus {
 }
 
 
+enum ProductType {
+  PHYSICAL
+  DIGITAL
+  COMMUNITY_ACCESS
+}
+
+
 // MODELS
 model User {
   id          String   @id @default(cuid())
@@ -103,6 +110,7 @@ model User {
   referredById String?
   referredBy   User?   @relation("UserReferral", fields: [referredById], references: [id])
   referrals    User[]  @relation("UserReferral")
+  communityMemberships CommunityMember[]
 }
 
 
@@ -170,6 +178,7 @@ model Vendor {
   products Product[]
   orders   Order[]
   payouts  Payout[]
+  community Community?
 
 
   @@index([city])
@@ -215,6 +224,7 @@ model Product {
   viewCount    Int      @default(0)       // used for trending / popularity ranking
   commissionRate Float?                  // If set, overrides category and vendor default
   lowStockThreshold Int   @default(5)      // Alert when stock hits this
+  type         ProductType @default(PHYSICAL)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -475,4 +485,41 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+model Community {
+  id          String   @id @default(cuid())
+  vendorId    String   @unique
+  name        String
+  description String?
+  image       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  vendor      Vendor            @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  members     CommunityMember[]
+  posts       CommunityPost[]
+}
+
+model CommunityMember {
+  id          String   @id @default(cuid())
+  communityId String
+  userId      String
+  role        String   @default("MEMBER")
+  joinedAt    DateTime @default(now())
+
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+}
+
+model CommunityPost {
+  id          String   @id @default(cuid())
+  communityId String
+  authorId    String
+  content     String
+  image       String?
+  createdAt   DateTime @default(now())
+
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
 }

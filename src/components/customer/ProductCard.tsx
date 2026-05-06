@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Link } from '@/navigation';
-import { Star, Plus, Minus, ShoppingCart, Store, ShoppingBag, Sparkles, TrendingUp, X, CheckCircle2 } from 'lucide-react';
+import { Star, Plus, Minus, ShoppingCart, Store, ShoppingBag, Sparkles, TrendingUp, X, CheckCircle2, Globe, Laptop, Users } from 'lucide-react';
 import { useCart, CartItem } from '@/hooks/useCart';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import OnboardingModal from './OnboardingModal';
@@ -36,6 +36,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       image: product.images[0],
       price: product.price,
       stock: product.stock,
+      type: product.type,
     };
     addItem(item);
 
@@ -108,6 +109,18 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             {product.isFeatured && (
                 <div className="badge bg-emerald-500 text-white shadow-lg">
                     Featured
+                </div>
+            )}
+            {product.type === 'DIGITAL' && (
+                <div className="badge bg-blue-500 text-white shadow-lg flex items-center gap-1">
+                    <Laptop size={10} />
+                    Digital
+                </div>
+            )}
+            {product.type === 'COMMUNITY_ACCESS' && (
+                <div className="badge bg-purple-500 text-white shadow-lg flex items-center gap-1">
+                    <Users size={10} />
+                    Community
                 </div>
             )}
         </div>

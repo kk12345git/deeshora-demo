@@ -11,7 +11,7 @@ export type ProductWithRelations = PrismaProduct & {
 
 export type ProductSummary = Pick<
   PrismaProduct,
-  "id" | "name" | "slug" | "price" | "mrp" | "stock" | "images" | "unit" | "isFeatured" | "rating" | "reviewCount"
+  "id" | "name" | "slug" | "price" | "mrp" | "stock" | "images" | "unit" | "isFeatured" | "rating" | "reviewCount" | "type"
 > & {
   vendor: Pick<PrismaVendor, "id" | "shopName" | "plan">;
   category: Pick<PrismaCategory, "id" | "name" | "slug">;

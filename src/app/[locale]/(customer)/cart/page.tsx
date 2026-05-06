@@ -66,7 +66,8 @@ export default function CartPage() {
   }, [config]);
 
   const cartTotal = total();
-  const isEligibleForFreeDelivery = cartTotal >= freeDeliveryThreshold;
+  const hasPhysicalItems = items.some(item => item.type === 'PHYSICAL');
+  const isEligibleForFreeDelivery = cartTotal >= freeDeliveryThreshold || !hasPhysicalItems;
   const finalDeliveryFee = isEligibleForFreeDelivery ? 0 : deliveryFee;
   const grandTotal = cartTotal + finalDeliveryFee;
   const amountForFreeDelivery = freeDeliveryThreshold - cartTotal;
@@ -166,7 +167,7 @@ export default function CartPage() {
               <div className="flex justify-between items-center text-gray-400 border-b border-white/5 pb-4">
                 <span className="text-xs font-black uppercase tracking-widest">Delivery Fee</span>
                 <span className={`text-xs font-black uppercase tracking-wider ${isEligibleForFreeDelivery ? 'text-green-400' : 'text-white'}`}>
-                   {isEligibleForFreeDelivery ? 'Complimentary' : `₹${deliveryFee}`}
+                   {!hasPhysicalItems ? 'Not Applicable' : (isEligibleForFreeDelivery ? 'Complimentary' : `₹${deliveryFee}`)}
                 </span>
               </div>
 
@@ -179,7 +180,7 @@ export default function CartPage() {
               </div>
             </div>
 
-            {!isEligibleForFreeDelivery && amountForFreeDelivery > 0 && (
+            {!isEligibleForFreeDelivery && amountForFreeDelivery > 0 && hasPhysicalItems && (
               <div className="mt-10 bg-white/5 border border-white/10 p-5 rounded-2xl relative z-10 text-center group/free transition-all hover:bg-white/10">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400 mb-1">Free Delivery Unlock</p>
                 <p className="text-sm font-bold text-gray-200">Add <span className="text-white font-black">₹{amountForFreeDelivery}</span> more items</p>

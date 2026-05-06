@@ -100,26 +100,15 @@ async function main() {
 
   const products = [
     {
-      name: 'Organic Farm Fresh Milk',
-      slug: 'organic-milk-1l',
-      description: '<p>Pure, organic farm-fresh milk delivered daily. No preservatives added.</p>',
-      price: 65,
-      mrp: 75,
-      stock: 50,
-      unit: '1L',
-      images: ['https://images.unsplash.com/photo-1550583724-125581f77833?w=800'],
-      categoryId: groceryCat.id,
-      vendorId: vendor.id,
-    },
-    {
-      name: 'Premium Basmati Rice',
-      slug: 'basmati-rice-5kg',
-      description: '<p>Long-grain, aromatic premium basmati rice for your perfect biryanis.</p>',
-      price: 549,
-      mrp: 699,
-      stock: 20,
-      unit: '5kg',
-      images: ['https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=800'],
+      name: 'Smart Kitchen Masterclass',
+      slug: 'smart-kitchen-masterclass',
+      description: '<p>Learn to organize and manage your kitchen efficiently with our digital masterclass.</p>',
+      price: 299,
+      mrp: 499,
+      stock: 999,
+      unit: 'Course',
+      type: 'DIGITAL',
+      images: ['https://images.unsplash.com/photo-1556911220-e15224bbaf47?w=800'],
       categoryId: groceryCat.id,
       vendorId: vendor.id,
     }
@@ -129,10 +118,24 @@ async function main() {
     await prisma.product.upsert({
       where: { slug: p.slug },
       create: p,
-      update: { price: p.price, stock: p.stock },
+      update: { price: p.price, stock: p.stock, type: (p as any).type || 'PHYSICAL' },
     });
   }
   console.log(`✅ Seeded ${products.length} products.`);
+
+  // ── Seed Sample Communities ──────────────────────────────────────────
+  console.log('👥 Seeding communities...');
+  await prisma.community.upsert({
+    where: { vendorId: vendor.id },
+    create: {
+      vendorId: vendor.id,
+      name: 'Fresh Mart Inner Circle',
+      description: 'Exclusive updates, early access to sales, and cooking tips from Fresh Mart.',
+      image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800',
+    },
+    update: { name: 'Fresh Mart Inner Circle' },
+  });
+  console.log('✅ Seeded 1 community.');
 }
 
 main()

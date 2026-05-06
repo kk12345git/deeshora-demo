@@ -59,6 +59,7 @@ export default function HomePage() {
   );
 
   const { data: categories, isLoading: isLoadingCats } = trpc.product.categories.useQuery();
+  const { data: communities, isLoading: isLoadingCommunities } = trpc.community.list.useQuery({ limit: 4 });
   const { data: featuredProducts, isLoading: isLoadingFeatured } = trpc.product.list.useQuery({ 
     limit: 8, 
     featured: true,
@@ -309,6 +310,69 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Trending Communities */}
+      {communities?.items && communities.items.length > 0 && (
+        <section className="py-24 bg-gray-50 border-y border-gray-100 overflow-hidden">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-12">
+                <div>
+                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">Trending Communities</h2>
+                    <p className="text-gray-500 mt-2">Join local hubs and connect with shops.</p>
+                </div>
+                <Link href="/communities" className="btn-secondary px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                    View All <ArrowRight size={14} />
+                </Link>
+            </div>
+
+            <div className="flex gap-8 overflow-x-auto pb-8 -mx-4 px-4 no-scrollbar">
+                {communities.items.map((community, i) => (
+                    <motion.div
+                        key={community.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.1 }}
+                        className="flex-shrink-0 w-80 group cursor-pointer"
+                    >
+                        <Link href={`/communities/${community.id}`}>
+                            <div className="relative h-48 rounded-[2.5rem] overflow-hidden mb-6 shadow-xl group-hover:shadow-orange-500/20 transition-all">
+                                <Image 
+                                    src={community.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800'} 
+                                    alt={community.name} 
+                                    fill 
+                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                <div className="absolute bottom-6 left-6 right-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-white overflow-hidden p-1 flex-shrink-0">
+                                            {community.vendor.logo ? (
+                                                <Image src={community.vendor.logo} alt={community.vendor.shopName} width={32} height={32} />
+                                            ) : (
+                                                <div className="w-full h-full bg-orange-100 flex items-center justify-center text-orange-500 text-[10px] font-black">{community.vendor.shopName[0]}</div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">{community.vendor.shopName}</p>
+                                            <p className="text-white font-black">{community.name}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between px-2">
+                                <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
+                                    <Users size={14} />
+                                    {community._count.members} Members
+                                </div>
+                                <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest group-hover:translate-x-1 transition-transform">Join Now →</span>
+                            </div>
+                        </Link>
+                    </motion.div>
+                ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Popular right now */}
       {(popularProducts?.products.length ?? 0) > 0 && (
