@@ -55,165 +55,232 @@ export default function AdminPayoutsPage() {
   const totalPending = pendingVendors.reduce((s, v) => s + v.pendingPayout, 0);
 
   return (
-    <div className="space-y-7">
-      {/* Header */}
-      <div>
-        <p className="text-xs font-black text-orange-500 uppercase tracking-widest">Finance</p>
-        <h1 className="text-3xl font-black text-gray-900 tracking-tight mt-0.5">Payouts</h1>
-        <p className="text-gray-400 text-sm mt-0.5">Settle vendor earnings and track payment history</p>
+    <div className="space-y-10">
+      {/* Dynamic Header */}
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Financial Operations</p>
+          </div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Vendor Settlements</h1>
+          <p className="text-gray-500 text-sm font-medium mt-1">Disburse earnings to <span className="text-gray-900 font-bold">{pendingVendors.length} active partners</span> with pending balances.</p>
+        </div>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5">
-          <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 mb-3">
-            <Clock size={20} />
+      {/* High-Performance Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 transition-all group"
+        >
+          <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500 mb-4 group-hover:scale-110 transition-transform">
+            <Clock size={24} />
           </div>
-          <p className="text-2xl font-black text-gray-900">₹{totalPending.toFixed(0)}</p>
-          <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mt-0.5">Total Pending</p>
-          <p className="text-xs text-gray-400 mt-0.5">{pendingVendors.length} vendor{pendingVendors.length !== 1 ? 's' : ''}</p>
-        </div>
-        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
-          <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 mb-3">
-            <CheckCircle size={20} />
+          <p className="text-3xl font-black text-gray-900 tracking-tighter">₹{totalPending.toLocaleString('en-IN')}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-orange-600 mt-1">Pending Liquidity</p>
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-50">
+             <span className="text-xs font-bold text-gray-400">{pendingVendors.length} shop{pendingVendors.length !== 1 ? 's' : ''} awaiting</span>
           </div>
-          <p className="text-2xl font-black text-gray-900">{payoutHistory?.payouts.length ?? 0}</p>
-          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mt-0.5">Total Paid</p>
-          <p className="text-xs text-gray-400 mt-0.5">All-time payouts</p>
-        </div>
-        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5">
-          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 mb-3">
-            <IndianRupee size={20} />
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 transition-all group"
+        >
+          <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 mb-4 group-hover:scale-110 transition-transform">
+            <CheckCircle size={24} />
           </div>
-          <p className="text-2xl font-black text-gray-900">
-            ₹{(payoutHistory?.payouts.reduce((s, p) => s + p.amount, 0) ?? 0).toFixed(0)}
+          <p className="text-3xl font-black text-gray-900 tracking-tighter">{payoutHistory?.payouts.length ?? 0}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mt-1">Successful Payouts</p>
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-50">
+             <span className="text-xs font-bold text-gray-400">Total processed instances</span>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 transition-all group"
+        >
+          <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 mb-4 group-hover:scale-110 transition-transform">
+            <IndianRupee size={24} />
+          </div>
+          <p className="text-3xl font-black text-gray-900 tracking-tighter">
+            ₹{(payoutHistory?.payouts.reduce((s, p) => s + p.amount, 0) ?? 0).toLocaleString('en-IN')}
           </p>
-          <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mt-0.5">Total Settled</p>
-          <p className="text-xs text-gray-400 mt-0.5">All-time disbursed</p>
-        </div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mt-1">Disbursed Volume</p>
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-50">
+             <span className="text-xs font-bold text-gray-400">All-time settled amount</span>
+          </div>
+        </motion.div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left: Pending Vendors + Form */}
-        <div className="space-y-5">
-          {/* Pending vendor cards */}
-          <div>
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Pending Payouts</p>
-            {pendingVendors.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center">
-                <CheckCircle size={28} className="mx-auto text-emerald-300 mb-2" />
-                <p className="text-sm font-bold text-gray-400">All settled!</p>
-                <p className="text-xs text-gray-300 mt-1">No pending payouts right now</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {pendingVendors.map(v => (
-                  <button
-                    key={v.id}
-                    onClick={() => handleVendorSelect(v.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border-2 text-left transition-all ${
-                      selectedVendorId === v.id
-                        ? 'border-orange-400 bg-orange-50'
-                        : 'border-gray-100 bg-white hover:border-orange-200'
-                    }`}
-                  >
-                    <div className="w-9 h-9 bg-orange-100 rounded-xl flex items-center justify-center text-orange-500 font-black text-sm flex-shrink-0">
-                      {v.shopName.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-black text-gray-900 text-sm truncate">{v.shopName}</p>
-                      <p className="text-xs text-gray-400 truncate">{v.city}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="font-black text-amber-600 text-sm">₹{v.pendingPayout.toFixed(0)}</p>
-                      <p className="text-[9px] text-gray-400">pending</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+        {/* Settlement Pipeline */}
+        <div className="xl:col-span-4 space-y-6">
+          <div className="flex items-center justify-between">
+             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Payment Pipeline</p>
+             <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-[9px] font-black rounded-md uppercase tracking-widest">{pendingVendors.length} Action Items</span>
           </div>
 
-          {/* Bank details if vendor selected */}
-          {selectedVendor && (selectedVendor.bankAccount || selectedVendor.ifscCode) && (
-            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 flex items-center gap-1.5">
-                🏦 Bank Details
-              </p>
-              {selectedVendor.bankAccount && (
-                <p className="text-xs font-mono text-gray-700">{selectedVendor.bankAccount}</p>
-              )}
-              {selectedVendor.ifscCode && (
-                <p className="text-xs font-mono text-gray-500">{selectedVendor.ifscCode}</p>
-              )}
+          {pendingVendors.length === 0 ? (
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 p-10 text-center shadow-sm">
+              <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-500">
+                <CheckCircle size={32} />
+              </div>
+              <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight leading-none">Vault Balanced</h3>
+              <p className="text-gray-400 text-xs mt-2 font-medium">No pending settlements detected in the system.</p>
             </div>
+          ) : (
+            <div className="space-y-3">
+              {pendingVendors.map((v, i) => (
+                <motion.button
+                  key={v.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  onClick={() => handleVendorSelect(v.id)}
+                  className={`w-full group flex items-center gap-4 p-4 rounded-[1.75rem] border-2 transition-all duration-300 text-left ${
+                    selectedVendorId === v.id
+                      ? 'border-orange-500 bg-white shadow-xl shadow-gray-200/50 scale-[1.02]'
+                      : 'border-white bg-white shadow-sm hover:border-orange-200'
+                  }`}
+                >
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm transition-colors ${
+                    selectedVendorId === v.id ? 'bg-orange-500 text-white' : 'bg-gray-50 text-gray-400'
+                  }`}>
+                    {v.shopName.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-gray-900 text-sm truncate uppercase tracking-tight">{v.shopName}</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">{v.city}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-gray-900 text-sm">₹{v.pendingPayout.toLocaleString('en-IN')}</p>
+                    <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest mt-0.5">Due Now</p>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          )}
+
+          {/* Secure Bank Terminal */}
+          {selectedVendor && (selectedVendor.bankAccount || selectedVendor.ifscCode) && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-gray-950 text-white rounded-[2rem] p-6 shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 p-8 opacity-10">
+                 <Store size={80} />
+              </div>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4 flex items-center gap-2">
+                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                 Secure Bank Details
+              </p>
+              <div className="space-y-4">
+                 {selectedVendor.bankAccount && (
+                   <div>
+                      <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Account Number</p>
+                      <p className="text-lg font-black tracking-[0.2em] text-blue-400 font-mono">{selectedVendor.bankAccount}</p>
+                   </div>
+                 )}
+                 {selectedVendor.ifscCode && (
+                   <div>
+                      <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">IFSC Identifier</p>
+                      <p className="text-sm font-black tracking-widest font-mono text-gray-300">{selectedVendor.ifscCode}</p>
+                   </div>
+                 )}
+              </div>
+            </motion.div>
           )}
         </div>
 
-        {/* Right: Payout Form */}
-        <div className="lg:col-span-2 space-y-5">
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-50">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">New Payout</p>
-              <h2 className="font-black text-gray-900 text-lg mt-0.5">Process Payment</h2>
+        {/* Transaction Terminal */}
+        <div className="xl:col-span-8 space-y-8">
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden"
+          >
+            <div className="px-10 py-8 border-b border-gray-50 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Action Module</p>
+                <h2 className="text-2xl font-black text-gray-900 tracking-tight mt-1">Disbursement Terminal</h2>
+              </div>
+              <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300">
+                 <Send size={20} />
+              </div>
             </div>
-            <div className="p-6 space-y-5">
-              {/* Vendor select */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase tracking-widest text-gray-400">Vendor</label>
-                <div className="relative">
-                  <Store size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <select
-                    value={selectedVendorId}
-                    onChange={e => handleVendorSelect(e.target.value)}
-                    required
-                    className="w-full pl-10 pr-10 py-3 text-sm font-bold border-2 border-transparent bg-gray-50 rounded-xl focus:outline-none focus:border-orange-400 focus:bg-white outline-none transition-all appearance-none"
-                  >
-                    <option value="">— Select a vendor —</option>
-                    {pendingVendors.map(v => (
-                      <option key={v.id} value={v.id}>{v.shopName} (₹{v.pendingPayout.toFixed(2)} pending)</option>
-                    ))}
-                  </select>
-                  <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+
+            <form onSubmit={handleSubmit} className="p-10 space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Vendor Field */}
+                <div className="space-y-2.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-1">Selection Authority</label>
+                  <div className="relative group">
+                    <Store size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+                    <select
+                      value={selectedVendorId}
+                      onChange={e => handleVendorSelect(e.target.value)}
+                      required
+                      className="w-full h-16 pl-14 pr-12 text-sm font-black uppercase tracking-wider border-2 border-gray-50 bg-gray-50 rounded-2xl focus:outline-none focus:border-orange-400 focus:bg-white outline-none transition-all appearance-none"
+                    >
+                      <option value="">— Choose Vendor —</option>
+                      {pendingVendors.map(v => (
+                        <option key={v.id} value={v.id}>{v.shopName} (₹{v.pendingPayout.toLocaleString()})</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none group-focus-within:rotate-180 transition-transform" />
+                  </div>
+                </div>
+
+                {/* Amount Field */}
+                <div className="space-y-2.5">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-1">Settlement Volume (INR)</label>
+                  <div className="relative group">
+                    <IndianRupee size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+                    <input
+                      type="number"
+                      step="0.01"
+                      min={0.01}
+                      value={amountInput}
+                      onChange={e => setAmountInput(e.target.value)}
+                      required
+                      placeholder="0.00"
+                      className="w-full h-16 pl-14 pr-6 text-xl font-black tracking-tight border-2 border-gray-50 bg-gray-50 rounded-2xl focus:outline-none focus:border-orange-400 focus:bg-white outline-none transition-all"
+                    />
+                  </div>
+                  {selectedVendor && (
+                    <motion.p 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-[10px] text-gray-400 font-bold flex items-center gap-1.5 ml-1"
+                    >
+                      <AlertTriangle size={12} className="text-amber-500" />
+                      Pending Liability: <span className="text-gray-900">₹{selectedVendor.pendingPayout.toLocaleString()}</span>
+                    </motion.p>
+                  )}
                 </div>
               </div>
 
-              {/* Amount */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase tracking-widest text-gray-400">Amount (₹)</label>
-                <div className="relative">
-                  <IndianRupee size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="number"
-                    step="0.01"
-                    min={0.01}
-                    value={amountInput}
-                    onChange={e => setAmountInput(e.target.value)}
-                    required
-                    placeholder="0.00"
-                    className="w-full pl-10 pr-4 py-3 text-sm font-bold border-2 border-transparent bg-gray-50 rounded-xl focus:outline-none focus:border-orange-400 focus:bg-white outline-none transition-all"
-                  />
-                </div>
-                {selectedVendor && (
-                  <p className="text-[10px] text-gray-400 flex items-center gap-1">
-                    <AlertTriangle size={9} className="text-amber-500" />
-                    Full pending amount: <strong className="text-amber-600">₹{selectedVendor.pendingPayout.toFixed(2)}</strong>
-                  </p>
-                )}
-              </div>
-
-              {/* UTR */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase tracking-widest text-gray-400">UTR / Transaction ID</label>
-                <div className="relative">
-                  <Hash size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              {/* UTR Identifier */}
+              <div className="space-y-2.5">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-1">Universal Transaction Reference (UTR)</label>
+                <div className="relative group">
+                  <Hash size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
                   <input
                     type="text"
                     value={utrNumber}
                     onChange={e => setUtrNumber(e.target.value)}
                     required
-                    placeholder="e.g. UTR0987654321"
-                    className="w-full pl-10 pr-4 py-3 text-sm font-bold border-2 border-transparent bg-gray-50 rounded-xl focus:outline-none focus:border-orange-400 focus:bg-white outline-none transition-all font-mono"
+                    placeholder="Enter official bank reference code..."
+                    className="w-full h-16 pl-14 pr-6 text-sm font-black tracking-widest border-2 border-gray-50 bg-gray-50 rounded-2xl focus:outline-none focus:border-orange-400 focus:bg-white outline-none transition-all font-mono"
                   />
                 </div>
               </div>
@@ -221,51 +288,60 @@ export default function AdminPayoutsPage() {
               <button
                 type="submit"
                 disabled={processing || !selectedVendorId || !utrNumber || !amountInput}
-                className="w-full h-12 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white font-black text-sm rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-500/20 hover:-translate-y-0.5 disabled:hover:translate-y-0"
+                className="w-full h-16 bg-gray-950 text-white font-black text-xs uppercase tracking-[0.2em] rounded-[1.5rem] flex items-center justify-center gap-3 transition-all shadow-2xl shadow-gray-950/20 hover:bg-orange-600 disabled:opacity-20 active:scale-95"
               >
-                {processing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                Confirm Payout
+                {processing ? <Loader2 size={20} className="animate-spin text-white" /> : <CheckCircle size={20} />}
+                Authorize Disbursement
               </button>
-            </div>
-          </form>
-        </div>
-      </div>
+            </form>
+          </motion.div>
 
-      {/* Payout History */}
-      <div>
-        <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Payout History</p>
-        {historyLoading ? (
-          <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin text-orange-500" /></div>
-        ) : !payoutHistory?.payouts.length ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-400">
-            <p className="font-bold text-sm">No payouts processed yet</p>
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="divide-y divide-gray-50">
-              {payoutHistory.payouts.map(payout => (
-                <div key={payout.id} className="flex items-center gap-4 px-5 py-4">
-                  <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <CheckCircle size={18} className="text-emerald-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-black text-gray-900 text-sm">{payout.vendor.shopName}</p>
-                    <p className="text-xs text-gray-400 font-mono mt-0.5 truncate">{payout.utrNumber}</p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="font-black text-emerald-600 text-sm">₹{payout.amount.toFixed(2)}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
-                      {new Date(payout.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </p>
-                  </div>
-                  <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full flex-shrink-0">
-                    {payout.status}
-                  </span>
-                </div>
-              ))}
+          {/* Ledger History */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between px-2">
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Transaction Ledger</p>
+               <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Real-time History</span>
             </div>
+
+            {historyLoading ? (
+              <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-orange-500" /></div>
+            ) : !payoutHistory?.payouts.length ? (
+              <div className="bg-white rounded-[3rem] p-12 text-center border border-gray-50">
+                <p className="text-gray-300 font-black uppercase tracking-widest text-xs">No historical records found</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {payoutHistory.payouts.map((payout, i) => (
+                  <motion.div 
+                    key={payout.id} 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="flex items-center gap-6 px-6 py-5 bg-white rounded-[2rem] border border-gray-50 shadow-sm hover:shadow-md transition-all group"
+                  >
+                    <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center flex-shrink-0 text-emerald-500 group-hover:scale-105 transition-transform">
+                      <CheckCircle size={20} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                         <p className="font-black text-gray-900 text-sm truncate uppercase tracking-tight">{payout.vendor.shopName}</p>
+                         <span className="w-1 h-1 rounded-full bg-gray-200" />
+                         <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{payout.status}</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 font-mono tracking-wider truncate">{payout.utrNumber}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-black text-gray-900 text-base">₹{payout.amount.toLocaleString('en-IN')}</p>
+                      <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mt-1">
+                        {new Date(payout.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

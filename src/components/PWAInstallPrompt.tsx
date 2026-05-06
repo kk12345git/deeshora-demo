@@ -10,30 +10,47 @@ export default function PWAInstallPrompt() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    // Check if user has already dismissed the prompt
+    const isDismissed = localStorage.getItem('pwa-prompt-dismissed');
+    if (isDismissed) return;
+
     const handler = (e: any) => {
-      // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
-      // Stash the event so it can be triggered later.
       setDeferredPrompt(e);
-      // Update UI to notify the user they can install the PWA
       setIsVisible(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
+    const handleAppInstalled = () => {
+      setIsVisible(false);
+      setDeferredPrompt(null);
+      localStorage.setItem('pwa-prompt-dismissed', 'true');
+    };
 
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
   }, []);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
-    // Show the install prompt
     deferredPrompt.prompt();
-    // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice;
-    console.log(`User response to the install prompt: ${outcome}`);
-    // We've used the prompt, and can't use it again, throw it away
+    if (outcome === 'accepted') {
+      localStorage.setItem('pwa-prompt-dismissed', 'true');
+    }
     setDeferredPrompt(null);
     setIsVisible(false);
+  };
+
+  const handleDismiss = () => {
+    setIsVisible(false);
+    // Don't show again for 7 days or permanently? 
+    // Let's go with permanently for now as requested.
+    localStorage.setItem('pwa-prompt-dismissed', 'true');
   };
 
   if (!isVisible) return null;
@@ -52,7 +69,7 @@ export default function PWAInstallPrompt() {
           </div>
           
           <button 
-            onClick={() => setIsVisible(false)}
+            onClick={handleDismiss}
             className="absolute top-3 right-3 text-white/50 hover:text-white transition-colors"
           >
             <X size={18} />

@@ -47,28 +47,31 @@ export default function AdminAnalyticsPage() {
   const maxMonthlyRevenue = Math.max(...(vendorData?.monthlyBreakdown.map((m: any) => Number(m.revenue)) ?? [1]), 1);
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-10">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
         <div>
-          <p className="text-xs font-black text-orange-500 uppercase tracking-widest flex items-center gap-1.5">
-            <BarChart2 size={12} /> Reports
-          </p>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight mt-0.5">Analytics</h1>
-          <p className="text-gray-400 text-sm mt-0.5">Sales performance across all vendors</p>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-[9px] font-black rounded-md uppercase tracking-widest">Financials</span>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Market Intelligence</p>
+          </div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Platform Insights</h1>
+          <p className="text-gray-500 text-sm font-medium mt-1">Detailed analysis of marketplace growth and vendor performance.</p>
         </div>
 
         {/* Period Selector */}
-        <div className="flex items-center gap-1 bg-gray-100 rounded-2xl p-1">
+        <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-[1.5rem] border border-gray-100 shadow-sm">
           {PERIOD_OPTIONS.map(p => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                period === p ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20' : 'text-gray-500 hover:text-gray-700'
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all uppercase tracking-wider ${
+                period === p 
+                  ? 'bg-gray-950 text-white shadow-xl shadow-gray-950/20' 
+                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <Calendar size={11} />
+              <Calendar size={12} className={period === p ? 'text-blue-400' : ''} />
               {PERIOD_LABELS[p]}
             </button>
           ))}
@@ -77,123 +80,162 @@ export default function AdminAnalyticsPage() {
 
       {/* Platform Summary Cards */}
       {isPlatformLoading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array(4).fill(0).map((_, i) => <div key={i} className="h-28 bg-gray-100 rounded-2xl animate-pulse" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array(4).fill(0).map((_, i) => <div key={i} className="h-32 bg-gray-100 rounded-[2rem] animate-pulse" />)}
         </div>
       ) : platformData && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
-            title="Platform Revenue" value={`₹${platformData.totalRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-            sub={`${PERIOD_LABELS[period]}`} icon={<IndianRupee size={20} />}
-            colorBg="bg-orange-100" colorText="text-orange-600"
+            title="Gross Merchandise Value" 
+            value={`₹${platformData.totalRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+            sub={`Volume for ${PERIOD_LABELS[period]}`} 
+            icon={<ShoppingCart size={22} />}
+            colorBg="bg-blue-500" colorText="text-white"
           />
           <StatCard
-            title="Commission Earned" value={`₹${platformData.platformCommission.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-            sub="Platform's cut" icon={<TrendingUp size={20} />}
-            colorBg="bg-emerald-100" colorText="text-emerald-600"
+            title="Platform Commission" 
+            value={`₹${platformData.platformCommission.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+            sub="Net earnings" 
+            icon={<IndianRupee size={22} />}
+            colorBg="bg-emerald-500" colorText="text-white"
           />
           <StatCard
-            title="Total Orders" value={platformData.totalOrders.toString()}
-            sub="Paid orders" icon={<ShoppingCart size={20} />}
-            colorBg="bg-purple-100" colorText="text-purple-600"
+            title="Total Order Count" 
+            value={platformData.totalOrders.toString()}
+            sub="Successful transactions" 
+            icon={<Package size={22} />}
+            colorBg="bg-purple-500" colorText="text-white"
           />
           <StatCard
-            title="New Customers" value={platformData.newUsers.toString()}
-            sub={`${platformData.newVendors} new vendors`} icon={<Users size={20} />}
-            colorBg="bg-blue-100" colorText="text-blue-600"
+            title="Customer Growth" 
+            value={platformData.newUsers.toString()}
+            sub={`${platformData.newVendors} vendors joined`} 
+            icon={<Users size={22} />}
+            colorBg="bg-orange-500" colorText="text-white"
           />
         </div>
       )}
 
-      {/* Revenue Chart + Top Vendors */}
-      <div className="grid lg:grid-cols-3 gap-5">
-        {/* Monthly Revenue Chart */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
+      {/* Primary Insights Grid */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Revenue Trend Chart */}
+        <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-8 group overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-12 opacity-[0.02] group-hover:rotate-12 transition-transform pointer-events-none">
+            <TrendingUp size={240} />
+          </div>
+
+          <div className="flex items-center justify-between mb-10 relative z-10">
             <div>
-              <p className="text-xs font-black uppercase tracking-widest text-gray-400 flex items-center gap-1.5">
-                <TrendingUp size={12} /> Revenue Trend
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 flex items-center gap-2">
+                <TrendingUp size={12} /> Revenue Flow
               </p>
-              <p className="text-lg font-black text-gray-900 mt-1">{PERIOD_LABELS[period]}</p>
+              <h2 className="text-2xl font-black text-gray-900 mt-1">Growth Trajectory</h2>
             </div>
           </div>
+
           {isVendorLoading ? (
-            <div className="h-40 bg-gray-50 rounded-xl animate-pulse" />
+            <div className="h-56 bg-gray-50 rounded-[1.5rem] animate-pulse" />
           ) : (
-            <div className="flex items-end gap-3 h-40">
+            <div className="flex items-end gap-5 h-56 relative z-10">
               {vendorData?.monthlyBreakdown.map((m: any, i: number) => {
                 const rev = Number(m.revenue);
-                const pct = Math.max((rev / maxMonthlyRevenue) * 100, rev > 0 ? 6 : 2);
+                const pct = Math.max((rev / maxMonthlyRevenue) * 100, rev > 0 ? 8 : 2);
                 const isLatest = i === vendorData.monthlyBreakdown.length - 1;
                 return (
-                  <div key={m.month} className="flex-1 flex flex-col items-center gap-1.5 group relative">
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-[10px] font-black px-2 py-1 rounded-lg whitespace-nowrap z-10">
-                      ₹{Math.round(rev).toLocaleString('en-IN')}<br />
-                      <span className="text-gray-400">{m.orders} orders</span>
+                  <div key={m.month} className="flex-1 flex flex-col items-center gap-3 group/bar relative">
+                    <div className="absolute -top-14 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-all bg-gray-950 text-white text-[10px] font-black px-3 py-2 rounded-xl whitespace-nowrap z-20 shadow-2xl -translate-y-2 group-hover/bar:translate-y-0 text-center">
+                      <p className="text-blue-400">₹{Math.round(rev).toLocaleString('en-IN')}</p>
+                      <p className="text-gray-500">{m.orders} Orders</p>
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-950" />
                     </div>
-                    <div
-                      className={`w-full rounded-t-xl transition-all duration-700 ${isLatest ? 'bg-orange-500' : 'bg-orange-200 group-hover:bg-orange-400'}`}
-                      style={{ height: `${pct}%` }}
-                    />
-                    <span className={`text-[10px] font-black uppercase ${isLatest ? 'text-orange-500' : 'text-gray-400'}`}>
+                    
+                    <div className="w-full relative flex flex-col justify-end h-full">
+                      <motion.div
+                        initial={{ height: 0 }}
+                        animate={{ height: `${pct}%` }}
+                        transition={{ duration: 1, delay: i * 0.1, ease: [0.19, 1, 0.22, 1] }}
+                        className={`w-full rounded-t-[1rem] transition-all duration-300 relative overflow-hidden ${
+                          isLatest 
+                            ? 'bg-gradient-to-t from-blue-600 to-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.3)]' 
+                            : 'bg-blue-50 group-hover/bar:bg-blue-100'
+                        }`}
+                      >
+                        {isLatest && <div className="absolute inset-0 bg-white/20 animate-pulse" />}
+                      </motion.div>
+                    </div>
+                    
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${isLatest ? 'text-blue-600' : 'text-gray-400'}`}>
                       {new Date(m.month + '-02').toLocaleString('default', { month: 'short' })}
                     </span>
                   </div>
                 );
               })}
-              {(!vendorData?.monthlyBreakdown || vendorData.monthlyBreakdown.length === 0) && (
-                <div className="flex-1 flex items-center justify-center text-gray-300 text-sm font-bold">
-                  No data for this period
-                </div>
-              )}
             </div>
           )}
         </div>
 
-        {/* Top Vendors Leaderboard */}
-        <div className="bg-gradient-to-br from-gray-950 to-gray-900 rounded-2xl p-5 text-white">
-          <p className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-1.5">
-            <Award size={12} /> Top Performers
-          </p>
+        {/* High Performers Leaderboard */}
+        <div className="bg-gray-950 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-gray-950/20 relative overflow-hidden group">
+          <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/10 rounded-full blur-[80px] group-hover:bg-blue-600/20 transition-all" />
+          
+          <div className="flex items-center justify-between mb-8 relative z-10">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Leaderboard</p>
+            <Award size={16} className="text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
+          </div>
+
           {isPlatformLoading ? (
-            <div className="space-y-3">{Array(5).fill(0).map((_, i) => <div key={i} className="h-10 bg-white/5 rounded-xl animate-pulse" />)}</div>
+            <div className="space-y-4">{Array(5).fill(0).map((_, i) => <div key={i} className="h-14 bg-white/5 rounded-2xl animate-pulse" />)}</div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3 relative z-10">
               {platformData?.topVendors.map((v: any, i: number) => (
-                <div key={v.vendorId} className="flex items-center gap-3 bg-white/5 px-3 py-2.5 rounded-xl">
-                  <span className={`w-6 h-6 rounded-lg font-black text-xs flex items-center justify-center flex-shrink-0 ${
-                    i === 0 ? 'bg-amber-400 text-white' : i === 1 ? 'bg-gray-400 text-white' : i === 2 ? 'bg-orange-800 text-white' : 'bg-white/10 text-gray-400'
-                  }`}>{i + 1}</span>
-                  <span className="text-sm font-bold flex-1 truncate text-gray-200">{v.shopName}</span>
-                  <span className="text-xs font-black text-emerald-400">₹{Number(v._sum?.total ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
-                </div>
+                <motion.div 
+                  key={v.vendorId}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="flex items-center gap-4 bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] px-4 py-3.5 rounded-2xl transition-all group/v"
+                >
+                  <div className={`w-8 h-8 rounded-xl font-black text-xs flex items-center justify-center flex-shrink-0 shadow-lg ${
+                    i === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 
+                    i === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white' : 
+                    i === 2 ? 'bg-gradient-to-br from-orange-800 to-red-950 text-white' : 'bg-white/10 text-gray-400'
+                  }`}>
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-black truncate text-gray-100 group-hover/v:text-white transition-colors uppercase tracking-tight">{v.shopName}</p>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{v._count?.orders ?? 0} Transactions</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-black text-blue-400 tracking-tighter">₹{Math.round(Number(v._sum?.total ?? 0)).toLocaleString('en-IN')}</p>
+                  </div>
+                </motion.div>
               ))}
-              {(!platformData?.topVendors || platformData.topVendors.length === 0) && (
-                <p className="text-gray-500 text-sm text-center py-4">No sales data yet</p>
-              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Per-Vendor Breakdown Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-50 flex items-center gap-3">
-          <Store size={16} className="text-orange-500" />
-          <div>
-            <p className="font-black text-gray-900">Vendor Performance Breakdown</p>
-            <p className="text-xs text-gray-400 mt-0.5">{PERIOD_LABELS[period]} — sorted by revenue</p>
+      {/* Detailed Breakdown */}
+      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden group">
+        <div className="px-8 py-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500">
+                <Store size={20} />
+             </div>
+             <div>
+                <h3 className="font-black text-gray-900 tracking-tight">Partner Performance Breakdown</h3>
+                <p className="text-xs text-gray-400 font-medium">Comparative analysis of active marketplace vendors.</p>
+             </div>
+          </div>
+          <div className="px-4 py-2 bg-gray-50 rounded-xl border border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+            {PERIOD_LABELS[period]}
           </div>
         </div>
 
         {isVendorLoading ? (
-          <div className="p-6 space-y-3">
-            {Array(4).fill(0).map((_, i) => <div key={i} className="h-14 bg-gray-50 rounded-xl animate-pulse" />)}
-          </div>
-        ) : (vendorData?.vendorStats.length ?? 0) === 0 ? (
-          <div className="py-16 text-center">
-            <BarChart2 size={32} className="mx-auto text-gray-200 mb-3" />
-            <p className="font-bold text-gray-400">No sales data for this period</p>
+          <div className="p-8 space-y-4">
+            {Array(4).fill(0).map((_, i) => <div key={i} className="h-16 bg-gray-50 rounded-[1.5rem] animate-pulse" />)}
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
@@ -201,96 +243,101 @@ export default function AdminAnalyticsPage() {
               const isExpanded = expandedVendor === vendor.vendorId;
               const barPct = Math.max((vendor.revenue / maxRevenue) * 100, vendor.revenue > 0 ? 3 : 0);
               return (
-                <div key={vendor.vendorId}>
+                <div key={vendor.vendorId} className={`transition-all ${isExpanded ? 'bg-blue-50/30' : 'hover:bg-gray-50/50'}`}>
                   <button
                     onClick={() => setExpandedVendor(isExpanded ? null : vendor.vendorId)}
-                    className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50/50 transition-colors text-left"
+                    className="w-full flex items-center gap-6 px-8 py-6 text-left group/row"
                   >
-                    {/* Rank */}
-                    <span className={`w-7 h-7 rounded-lg font-black text-xs flex items-center justify-center flex-shrink-0 ${
-                      i === 0 ? 'bg-amber-400 text-white' : i === 1 ? 'bg-gray-300 text-white' : i === 2 ? 'bg-orange-700 text-white' : 'bg-gray-100 text-gray-500'
+                    <span className={`w-8 h-8 rounded-xl font-black text-xs flex items-center justify-center flex-shrink-0 transition-transform group-hover/row:scale-110 ${
+                      i === 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-400'
                     }`}>#{i + 1}</span>
 
-                    {/* Shop name + revenue bar */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="font-black text-sm text-gray-900 truncate">{vendor.shopName}</span>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-black text-sm text-gray-900 uppercase tracking-tight truncate">{vendor.shopName}</span>
                       </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-orange-400 rounded-full transition-all duration-700"
-                          style={{ width: `${barPct}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Stats */}
-                    <div className="hidden sm:flex items-center gap-6 flex-shrink-0">
-                      <div className="text-right">
-                        <p className="font-black text-gray-900 text-sm">₹{vendor.revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
-                        <p className="text-[9px] text-gray-400 uppercase tracking-widest">Revenue</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-black text-gray-900 text-sm">{vendor.orders}</p>
-                        <p className="text-[9px] text-gray-400 uppercase tracking-widest">Orders</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-black text-emerald-600 text-sm">₹{vendor.vendorEarnings.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
-                        <p className="text-[9px] text-gray-400 uppercase tracking-widest">Earnings</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-black text-orange-500 text-sm">₹{vendor.commission.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
-                        <p className="text-[9px] text-gray-400 uppercase tracking-widest">Commission</p>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden w-full max-w-md shadow-inner">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${barPct}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                          className="h-full bg-blue-500 rounded-full relative"
+                        >
+                           <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                        </motion.div>
                       </div>
                     </div>
 
-                    {isExpanded ? <ChevronUp size={16} className="text-gray-400 flex-shrink-0" /> : <ChevronDown size={16} className="text-gray-400 flex-shrink-0" />}
+                    <div className="hidden xl:grid grid-cols-4 gap-8 flex-shrink-0 pr-8 border-r border-gray-100">
+                      <div className="text-right min-w-[100px]">
+                        <p className="font-black text-gray-900 text-base tracking-tighter">₹{Math.round(vendor.revenue).toLocaleString('en-IN')}</p>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Revenue</p>
+                      </div>
+                      <div className="text-right min-w-[60px]">
+                        <p className="font-black text-gray-900 text-base tracking-tighter">{vendor.orders}</p>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Orders</p>
+                      </div>
+                      <div className="text-right min-w-[100px]">
+                        <p className="font-black text-emerald-600 text-base tracking-tighter">₹{Math.round(vendor.vendorEarnings).toLocaleString('en-IN')}</p>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Net Profit</p>
+                      </div>
+                      <div className="text-right min-w-[100px]">
+                        <p className="font-black text-blue-600 text-base tracking-tighter">₹{Math.round(vendor.commission).toLocaleString('en-IN')}</p>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Our Cut</p>
+                      </div>
+                    </div>
+
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isExpanded ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-50 text-gray-300'}`}>
+                       <ChevronDown size={20} className={`transition-transform duration-500 ${isExpanded ? 'rotate-180' : ''}`} />
+                    </div>
                   </button>
 
-                  {/* Expanded: Top Products */}
-                  {isExpanded && (
-                    <div className="px-6 pb-5 bg-gray-50/50 animate-in slide-in-from-top-2 duration-200">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Top Products ({PERIOD_LABELS[period]})</p>
-                      {vendor.topProducts.length === 0 ? (
-                        <p className="text-xs text-gray-400">No product data</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {vendor.topProducts.map((p: any, pi: number) => (
-                            <div key={pi} className="flex items-center gap-2 bg-white border border-gray-100 rounded-xl px-3 py-2 shadow-sm">
-                              <Package size={13} className="text-orange-400 flex-shrink-0" />
-                              <div>
-                                <p className="text-xs font-black text-gray-800">{p.name}</p>
-                                <p className="text-[10px] text-gray-400">₹{p.revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })} · {p.qty} sold</p>
-                              </div>
-                            </div>
-                          ))}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-8 pb-8 pt-2">
+                           <div className="bg-white rounded-3xl border border-blue-100 p-6 shadow-xl shadow-blue-500/5">
+                              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 mb-6 flex items-center gap-2">
+                                 <Package size={14} /> Product Velocity Breakdown
+                              </p>
+                              {vendor.topProducts.length === 0 ? (
+                                <div className="py-8 text-center text-gray-400 font-bold text-sm">No transaction data available.</div>
+                              ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                                  {vendor.topProducts.map((p: any, pi: number) => (
+                                    <div key={pi} className="flex items-center gap-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] p-4 group/p hover:bg-white hover:border-blue-200 transition-all">
+                                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-500 shadow-sm group-hover/p:scale-110 transition-transform">
+                                        <Package size={20} />
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-black text-gray-900 truncate uppercase tracking-tight">{p.name}</p>
+                                        <div className="flex items-center gap-3 mt-1">
+                                          <p className="text-[10px] font-black text-blue-600">₹{Math.round(p.revenue).toLocaleString('en-IN')}</p>
+                                          <span className="w-1 h-1 rounded-full bg-gray-300" />
+                                          <p className="text-[10px] font-bold text-gray-400">{p.qty} Sold</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                           </div>
                         </div>
-                      )}
-
-                      {/* Mobile stats */}
-                      <div className="sm:hidden grid grid-cols-2 gap-3 mt-4">
-                        <div className="bg-white rounded-xl p-3 border border-gray-100">
-                          <p className="font-black text-gray-900">₹{vendor.revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
-                          <p className="text-[9px] text-gray-400 uppercase tracking-widest">Revenue</p>
-                        </div>
-                        <div className="bg-white rounded-xl p-3 border border-gray-100">
-                          <p className="font-black text-gray-900">{vendor.orders}</p>
-                          <p className="text-[9px] text-gray-400 uppercase tracking-widest">Orders</p>
-                        </div>
-                        <div className="bg-white rounded-xl p-3 border border-gray-100">
-                          <p className="font-black text-emerald-600">₹{vendor.vendorEarnings.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
-                          <p className="text-[9px] text-gray-400 uppercase tracking-widest">Earnings</p>
-                        </div>
-                        <div className="bg-white rounded-xl p-3 border border-gray-100">
-                          <p className="font-black text-orange-500">₹{vendor.commission.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
-                          <p className="text-[9px] text-gray-400 uppercase tracking-widest">Commission</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
+    </div>
           </div>
         )}
       </div>

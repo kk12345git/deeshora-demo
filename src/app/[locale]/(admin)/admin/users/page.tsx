@@ -67,78 +67,99 @@ export default function AdminUsersPage() {
   const { data, isLoading, refetch } = trpc.admin.users.useQuery(queryInput);
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+    <div className="space-y-10">
+      {/* Dynamic Header */}
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
         <div>
-          <p className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em] mb-1">Directory</p>
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Users & Roles</h1>
-          <p className="text-gray-400 text-sm font-medium mt-1">Manage platform access and permissions</p>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Platform Directory</p>
+          </div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Identity Management</h1>
+          <p className="text-gray-500 text-sm font-medium mt-1">Supervising platform access for <span className="text-gray-900 font-bold">{data?.users.length || 0} active accounts</span>.</p>
         </div>
         
-        <div className="relative w-full sm:w-80">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="relative w-full xl:w-96 group">
+          <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
           <input 
             type="search" 
-            placeholder="Search name or email..." 
+            placeholder="Search by identity name or email..." 
             value={search} 
             onChange={e => setSearch(e.target.value)} 
-            className="w-full pl-12 pr-4 py-3.5 bg-white border-2 border-gray-100 rounded-2xl focus:border-orange-500 outline-none font-bold text-sm transition-all shadow-sm" 
+            className="w-full h-16 pl-14 pr-6 bg-white border border-gray-100 rounded-[1.5rem] shadow-sm focus:ring-4 focus:ring-orange-500/5 focus:border-orange-400 outline-none font-bold text-sm transition-all" 
           />
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-2 p-1.5 bg-gray-100 rounded-[1.5rem] w-fit">
-        {roleTabs.map(tab => (
-          <button 
-            key={tab} 
-            onClick={() => setActiveTab(tab)}
-            className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
-              activeTab === tab 
-              ? 'bg-white text-gray-900 shadow-sm' 
-              : 'text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+      {/* Global Filter Navigation */}
+      <div className="flex items-center justify-between">
+         <div className="flex flex-wrap gap-2 p-1.5 bg-white/50 backdrop-blur-md border border-gray-100 rounded-[1.75rem] shadow-sm">
+           {roleTabs.map(tab => (
+             <button 
+               key={tab} 
+               onClick={() => setActiveTab(tab)}
+               className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${
+                 activeTab === tab 
+                 ? 'bg-gray-950 text-white shadow-xl shadow-gray-950/20 scale-[1.02]' 
+                 : 'text-gray-400 hover:text-gray-900'
+               }`}
+             >
+               {tab}
+             </button>
+           ))}
+         </div>
+         <div className="hidden md:flex items-center gap-2 text-[10px] font-black text-gray-300 uppercase tracking-widest">
+            <Shield size={14} className="text-orange-500/50" />
+            Access Protocol Alpha
+         </div>
       </div>
 
-      {/* Table Section */}
-      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl shadow-gray-200/50 overflow-hidden">
+      {/* Identity Catalog */}
+      <div className="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden">
         {isLoading ? (
-          <div className="py-24 text-center">
-            <Loader2 className="animate-spin text-orange-500 w-12 h-12 mx-auto mb-4" />
-            <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Accessing Records...</p>
+          <div className="flex flex-col items-center justify-center py-32 gap-4">
+             <div className="relative">
+                <Loader2 className="w-14 h-14 animate-spin text-orange-500" />
+                <div className="absolute inset-0 blur-2xl bg-orange-500/20 animate-pulse" />
+             </div>
+             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Decrypting User Records...</p>
           </div>
         ) : !data?.users.length ? (
-          <div className="py-24 text-center">
-            <Users size={48} className="text-gray-100 mx-auto mb-4" />
-            <p className="font-black text-gray-400 uppercase tracking-widest text-xs">No users found</p>
+          <div className="py-32 text-center">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-200">
+               <Users size={40} />
+            </div>
+            <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">No Matches Found</h3>
+            <p className="text-gray-400 text-sm mt-2 max-w-xs mx-auto font-medium"> Broaden your search criteria or invite new members to the platform.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-gray-50">
-                  <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">User Profile</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Account Status</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Activity</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Registration</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                <tr className="border-b border-gray-50 bg-gray-50/50">
+                  <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">User Profile</th>
+                  <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Access Credentials</th>
+                  <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Operational Load</th>
+                  <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Identity Timeline</th>
+                  <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-right">Terminal Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {data.users.map(user => {
+                {data.users.map((user, i) => {
                   const config = ROLE_CONFIG[user.role as UserRole] || ROLE_CONFIG.CUSTOMER;
                   const Icon = config.icon;
                   
                   return (
-                    <tr key={user.id} className="group hover:bg-gray-50/50 transition-colors">
-                      <td className="px-8 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className="relative w-12 h-12 rounded-2xl overflow-hidden ring-4 ring-gray-50 ring-offset-0">
+                    <motion.tr 
+                      key={user.id} 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="group hover:bg-orange-50/20 transition-colors"
+                    >
+                      <td className="px-10 py-6">
+                        <div className="flex items-center gap-5">
+                          <div className="relative w-14 h-14 rounded-[1.25rem] overflow-hidden shadow-inner border border-gray-100 group-hover:scale-110 transition-transform duration-500">
                             <Image 
                               src={user.avatar || '/default-avatar.png'} 
                               alt={user.name} 
@@ -147,49 +168,50 @@ export default function AdminUsersPage() {
                             />
                           </div>
                           <div>
-                            <p className="text-sm font-black text-gray-900 group-hover:text-orange-600 transition-colors">{user.name}</p>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{user.email}</p>
+                            <p className="text-base font-black text-gray-950 uppercase tracking-tight leading-none">{user.name}</p>
+                            <p className="text-[11px] font-bold text-gray-400 mt-1.5 tracking-tight">{user.email}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
-                        <div className="flex items-center gap-3">
+                      <td className="px-10 py-6">
+                        <div className="flex items-center gap-4">
                           <RoleSelect userId={user.id} currentRole={user.role as UserRole} refetch={refetch} />
-                          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl ${config.bg} ${config.text}`}>
+                          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${config.bg} ${config.text} border border-current opacity-70`}>
                             <Icon size={12} />
                             <span className="text-[9px] font-black uppercase tracking-widest">{config.label}</span>
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-5 text-center">
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-gray-600 rounded-xl">
-                          <ShoppingBag size={12} />
-                          <span className="text-[10px] font-black uppercase">{user._count.orders} Orders</span>
+                      <td className="px-10 py-6 text-center">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-900 rounded-2xl border border-gray-100 group-hover:bg-white transition-colors">
+                          <ShoppingBag size={14} className="text-orange-500" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">{user._count.orders} Activities</span>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
-                        <p className="text-xs font-bold text-gray-800">{new Date(user.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Joined Date</p>
+                      <td className="px-10 py-6">
+                        <div className="flex flex-col">
+                           <span className="text-xs font-black text-gray-900">{new Date(user.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                           <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest mt-1">Origin Verified</span>
+                        </div>
                       </td>
-                      <td className="px-8 py-5 text-right">
-                        {user.role !== 'VENDOR' && (
+                      <td className="px-10 py-6 text-right">
+                        {user.role !== 'VENDOR' ? (
                           <button 
                             onClick={() => {
                               setSelectedForVendor({ id: user.id, name: user.name, email: user.email });
                               setVendorModalOpen(true);
                             }}
-                            className="inline-flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-orange-500 transition-colors"
+                            className="inline-flex items-center gap-2 h-10 px-4 bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all"
                           >
-                            Add as Vendor <ArrowUpRight size={12} />
+                            Upgrade Tier <ArrowUpRight size={14} />
                           </button>
-                        )}
-                        {user.role === 'VENDOR' && (
-                          <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center justify-end gap-1">
-                            Market Tier <ChevronRight size={12} />
+                        ) : (
+                          <div className="inline-flex items-center gap-2 h-10 px-4 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
+                            Verified Hub <CheckCircle size={14} />
                           </div>
                         )}
                       </td>
-                    </tr>
+                    </motion.tr>
                   )
                 })}
               </tbody>

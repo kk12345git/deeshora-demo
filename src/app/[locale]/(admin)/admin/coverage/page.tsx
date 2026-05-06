@@ -1,22 +1,21 @@
-// src/app/(admin)/admin/coverage/page.tsx
-'use client';
-
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import {
   MapPin, Plus, Trash2, CheckCircle, Clock, Edit3, Save, X,
   Loader2, ToggleLeft, ToggleRight, EyeOff, Eye, AlertTriangle,
+  Globe, ShieldCheck, Layers, ChevronRight, Navigation
 } from 'lucide-react';
 import type { ServiceArea } from '@prisma/client';
 import dynamic from 'next/dynamic';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const CoverageMap = dynamic(() => import('@/components/admin/CoverageMap'), {
   ssr: false,
   loading: () => (
-    <div className="h-[400px] w-full bg-gray-50 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-200">
-      <div className="flex flex-col items-center gap-2">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
-        <p className="text-sm font-bold text-gray-400">Loading Map...</p>
+    <div className="h-[400px] w-full bg-gray-50 rounded-3xl flex items-center justify-center border-2 border-dashed border-gray-200">
+      <div className="flex flex-col items-center gap-3">
+        <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Initalizing Geospatial Node...</p>
       </div>
     </div>
   )
@@ -41,7 +40,6 @@ export default function CoveragePage() {
     onSuccess: () => { utils.admin.getAllServiceAreas.invalidate(); utils.admin.getServiceAreas.invalidate(); setDeleteConfirm(null); },
   });
 
-  // Quick toggles (no modal needed)
   const toggleServiceable = (area: ServiceArea) =>
     updateArea.mutate({ id: area.id, isServiceable: !area.isServiceable });
   const toggleActive = (area: ServiceArea) =>
@@ -80,300 +78,379 @@ export default function CoveragePage() {
   };
 
   const isSaving = createArea.isPending || updateArea.isPending;
-
-  // Group by zone
   const zones = Array.from(new Set(areas.map(a => a.zone)));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Coverage Areas</h1>
-          <p className="text-gray-400 text-sm mt-1">Control which localities customers can select for delivery.</p>
-        </div>
-        <button
-          onClick={startNew}
-          className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-black text-sm px-5 py-3 rounded-2xl transition-all shadow-lg shadow-orange-500/20"
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8">
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
         >
-          <Plus size={18} /> Add Locality
-        </button>
-      </div>
+          <div className="flex items-center gap-2 mb-2">
+             <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]" />
+             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Logistics Grid</p>
+          </div>
+          <h1 className="text-5xl font-black text-gray-900 tracking-tight leading-none uppercase">Coverage Areas</h1>
+          <p className="text-gray-400 font-bold mt-3 text-sm flex items-center gap-2">
+            <Globe size={14} className="text-emerald-500" />
+            Managing <span className="text-gray-900 font-black">geospatial availability</span> and delivery locality nodes.
+          </p>
+        </motion.div>
 
-      {/* Map Overview */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-            <MapPin size={16} className="text-orange-500" />
-            Coverage Map
-          </h2>
-          <p className="text-[10px] font-bold text-gray-400">Click a marker to see locality details</p>
-        </div>
-        <CoverageMap areas={areas} />
+        <motion.button
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          onClick={startNew}
+          className="h-16 px-8 bg-gray-950 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-2xl active:scale-95"
+        >
+          <Plus size={16} /> Deploy New Node
+        </motion.button>
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {[
-          { label: 'Live Now',     value: liveCount,   color: 'emerald', icon: <CheckCircle size={20} /> },
-          { label: 'Coming Soon',  value: soonCount,   color: 'orange',  icon: <Clock size={20} /> },
-          { label: 'Hidden',       value: hiddenCount, color: 'gray',    icon: <EyeOff size={20} /> },
-        ].map(({ label, value, color, icon }) => (
-          <div key={label} className={`bg-${color}-50 border border-${color}-100 rounded-2xl p-5 flex items-center gap-4`}>
-            <div className={`w-11 h-11 bg-${color}-100 rounded-xl flex items-center justify-center text-${color}-600`}>{icon}</div>
+          { label: 'Operational Nodes', value: liveCount,   color: 'emerald', icon: <CheckCircle size={22} />, desc: 'Live fulfillment active' },
+          { label: 'Pending Deployment', value: soonCount,   color: 'orange',  icon: <Clock size={22} />, desc: 'Expansion in progress' },
+          { label: 'Restricted Zones', value: hiddenCount, color: 'gray',    icon: <EyeOff size={22} />, desc: 'Access disabled' },
+        ].map(({ label, value, color, icon, desc }, i) => (
+          <motion.div 
+            key={label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm flex items-center gap-6 group hover:shadow-xl hover:shadow-gray-100/50 transition-all cursor-default"
+          >
+            <div className={`w-14 h-14 bg-${color}-50 rounded-2xl flex items-center justify-center text-${color}-600 group-hover:scale-110 transition-transform`}>{icon}</div>
             <div>
-              <p className="text-2xl font-black text-gray-900">{value}</p>
-              <p className={`text-xs font-bold text-${color}-600 uppercase tracking-widest`}>{label}</p>
+              <p className="text-3xl font-black text-gray-900 tracking-tighter">{value}</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{label}</p>
+              <p className={`text-[8px] font-black text-${color}-500/50 uppercase tracking-[0.2em] mt-1`}>{desc}</p>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
-      {/* Add / Edit Form */}
-      {editing && (
-        <div className="bg-white rounded-2xl border-2 border-orange-300 shadow-xl p-6 space-y-4 animate-in slide-in-from-top duration-300">
-          <div className="flex items-center justify-between">
-            <h2 className="font-black text-gray-900 text-lg">
-              {editing.isNew ? '➕ Add New Locality' : `✏️ Edit: ${editing.label}`}
-            </h2>
-            <button onClick={() => setEditing(null)} className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-colors">
-              <X size={16} />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Display Label *" placeholder="e.g. Kathivakkam">
-              <input
-                value={editing.label ?? ''}
-                onChange={e => setEditing(p => ({ ...p, label: e.target.value }))}
-                placeholder="e.g. Kathivakkam"
-                className="input-style"
-              />
-            </Field>
-            <Field label="DB Value * (unique key)" placeholder="e.g. Kathivakkam">
-              <input
-                value={editing.value ?? ''}
-                onChange={e => setEditing(p => ({ ...p, value: e.target.value }))}
-                placeholder="e.g. Kathivakkam"
-                disabled={!editing.isNew}
-                className={`input-style ${!editing.isNew ? 'opacity-50 cursor-not-allowed' : ''}`}
-              />
-              {editing.isNew && <p className="text-[10px] text-gray-400 mt-1">Cannot be changed after creation.</p>}
-            </Field>
-            <Field label="Zone / Parent Area">
-              <input
-                value={editing.zone ?? ''}
-                onChange={e => setEditing(p => ({ ...p, zone: e.target.value }))}
-                placeholder="e.g. Thiruvottriyur"
-                className="input-style"
-              />
-            </Field>
-            <Field label="Pincode (optional)">
-              <input
-                value={editing.pincode ?? ''}
-                onChange={e => setEditing(p => ({ ...p, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) }))}
-                placeholder="e.g. 600019"
-                className="input-style"
-              />
-            </Field>
-            <Field label="Sort Order (lower = first)">
-              <input
-                type="number"
-                value={editing.sortOrder ?? 0}
-                onChange={e => setEditing(p => ({ ...p, sortOrder: parseInt(e.target.value) || 0 }))}
-                className="input-style"
-              />
-            </Field>
-            <Field label="Status">
-              <div className="flex gap-3 mt-1">
-                {[true, false].map(val => (
-                  <button
-                    key={String(val)}
-                    onClick={() => setEditing(p => ({ ...p, isServiceable: val }))}
-                    className={`flex-1 py-3 rounded-xl border-2 text-xs font-black uppercase tracking-widest transition-all ${
-                      editing.isServiceable === val
-                        ? val ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-orange-400 bg-orange-50 text-orange-700'
-                        : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200'
-                    }`}
-                  >
-                    {val ? '✅ Live Now' : '⏳ Coming Soon'}
-                  </button>
-                ))}
-              </div>
-            </Field>
-          </div>
-
-          <div className="pt-2">
-            <Field label="Locality Center (Click on map below to set)">
-              <div className="space-y-3">
-                <div className="flex items-center gap-4 text-xs">
-                   <div className="bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 flex-1">
-                     <span className="text-gray-400 font-bold mr-2 uppercase tracking-tighter">Lat:</span>
-                     <span className="font-mono text-gray-700">{(editing.coordinates as any)?.lat?.toFixed(6) || 'Not set'}</span>
-                   </div>
-                   <div className="bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 flex-1">
-                     <span className="text-gray-400 font-bold mr-2 uppercase tracking-tighter">Lng:</span>
-                     <span className="font-mono text-gray-700">{(editing.coordinates as any)?.lng?.toFixed(6) || 'Not set'}</span>
-                   </div>
-                </div>
-                <CoverageMap 
-                  center={editing.coordinates ? [(editing.coordinates as any).lat, (editing.coordinates as any).lng] : undefined}
-                  onLocationSelect={(lat, lng) => setEditing(p => ({ ...p, coordinates: { lat, lng } }))} 
-                />
-              </div>
-            </Field>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={handleSave}
-              disabled={isSaving || !editing.label || !editing.value}
-              className="btn-primary flex-1 h-11 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-              {editing.isNew ? 'Create Locality' : 'Save Changes'}
-            </button>
-            <button onClick={() => setEditing(null)} className="px-5 h-11 rounded-xl border-2 border-gray-200 text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors">
-              Cancel
-            </button>
+      {/* Map Overview */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="space-y-4"
+      >
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.4em] flex items-center gap-3">
+            <Navigation size={16} className="text-orange-500" />
+            Global Positional Audit
+          </h2>
+          <div className="flex items-center gap-2 text-[8px] font-black text-gray-400 uppercase tracking-widest">
+             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+             Interactive Radar Active
           </div>
         </div>
-      )}
+        <div className="p-2 bg-white rounded-[4rem] border border-gray-100 shadow-2xl shadow-gray-200/40">
+           <CoverageMap areas={areas} />
+        </div>
+      </motion.div>
+
+      {/* Add / Edit Form */}
+      <AnimatePresence>
+        {editing && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-gray-950 rounded-[4rem] p-10 space-y-10 shadow-2xl relative">
+              <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
+                 <ShieldCheck size={160} className="text-orange-500" />
+              </div>
+
+              <div className="flex items-center justify-between relative z-10">
+                <div>
+                  <h2 className="text-2xl font-black text-white tracking-tight uppercase">
+                    {editing.isNew ? 'Initialize Locality Node' : `Audit Terminal: ${editing.label}`}
+                  </h2>
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mt-1">Configuring Geospatial parameters</p>
+                </div>
+                <button onClick={() => setEditing(null)} className="w-12 h-12 bg-white/5 hover:bg-white/10 rounded-2xl flex items-center justify-center text-white transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-10 relative z-10">
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    <Field label="Identity Label" dark>
+                      <input
+                        value={editing.label ?? ''}
+                        onChange={e => setEditing(p => ({ ...p, label: e.target.value }))}
+                        className="w-full h-16 px-6 bg-white/5 border-2 border-transparent rounded-2xl font-black text-white focus:border-orange-500 outline-none transition-all placeholder:text-gray-700 uppercase"
+                        placeholder="e.g. Kathivakkam"
+                      />
+                    </Field>
+                    <Field label="System Value (Permanent)" dark>
+                      <input
+                        value={editing.value ?? ''}
+                        onChange={e => setEditing(p => ({ ...p, value: e.target.value }))}
+                        disabled={!editing.isNew}
+                        className="w-full h-16 px-6 bg-white/5 border-2 border-transparent rounded-2xl font-mono text-xs font-black text-emerald-400 focus:border-emerald-500 outline-none transition-all placeholder:text-gray-700 uppercase disabled:opacity-20"
+                        placeholder="e.g. kathivakkam_node"
+                      />
+                    </Field>
+                    <Field label="Zone Partition" dark>
+                      <input
+                        value={editing.zone ?? ''}
+                        onChange={e => setEditing(p => ({ ...p, zone: e.target.value }))}
+                        className="w-full h-16 px-6 bg-white/5 border-2 border-transparent rounded-2xl font-black text-white focus:border-orange-500 outline-none transition-all placeholder:text-gray-700 uppercase"
+                        placeholder="e.g. North Chennai"
+                      />
+                    </Field>
+                    <Field label="Network Pincode" dark>
+                      <input
+                        value={editing.pincode ?? ''}
+                        onChange={e => setEditing(p => ({ ...p, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) }))}
+                        className="w-full h-16 px-6 bg-white/5 border-2 border-transparent rounded-2xl font-black text-white focus:border-orange-500 outline-none transition-all placeholder:text-gray-700"
+                        placeholder="600019"
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    <Field label="Priority sequence" dark>
+                      <input
+                        type="number"
+                        value={editing.sortOrder ?? 0}
+                        onChange={e => setEditing(p => ({ ...p, sortOrder: parseInt(e.target.value) || 0 }))}
+                        className="w-full h-16 px-6 bg-white/5 border-2 border-transparent rounded-2xl font-black text-white focus:border-orange-500 outline-none transition-all"
+                      />
+                    </Field>
+                    <Field label="Deployment State" dark>
+                      <div className="flex gap-3 h-16">
+                        {[true, false].map(val => (
+                          <button
+                            key={String(val)}
+                            onClick={() => setEditing(p => ({ ...p, isServiceable: val }))}
+                            className={`flex-1 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${
+                              editing.isServiceable === val
+                                ? val ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
+                                : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                            }`}
+                          >
+                            {val ? 'Live Node' : 'Coming Soon'}
+                          </button>
+                        ))}
+                      </div>
+                    </Field>
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <button
+                      onClick={handleSave}
+                      disabled={isSaving || !editing.label || !editing.value}
+                      className="flex-1 h-20 bg-orange-600 hover:bg-orange-700 text-white rounded-[1.75rem] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-2xl active:scale-95 disabled:opacity-20"
+                    >
+                      {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                      {editing.isNew ? 'Deploy Locality' : 'Commit Audit'}
+                    </button>
+                    <button onClick={() => setEditing(null)} className="px-10 h-20 rounded-[1.75rem] bg-white/5 text-white font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">
+                      Abort
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between px-2">
+                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Positional Terminal</p>
+                     <div className="flex gap-4">
+                        <div className="text-[10px] font-mono text-emerald-400/60">
+                           LAT: {(editing.coordinates as any)?.lat?.toFixed(6) || 'NULL'}
+                        </div>
+                        <div className="text-[10px] font-mono text-emerald-400/60">
+                           LNG: {(editing.coordinates as any)?.lng?.toFixed(6) || 'NULL'}
+                        </div>
+                     </div>
+                  </div>
+                  <div className="p-2 bg-white/5 rounded-[3rem] border border-white/5">
+                     <CoverageMap 
+                       center={editing.coordinates ? [(editing.coordinates as any).lat, (editing.coordinates as any).lng] : undefined}
+                       onLocationSelect={(lat, lng) => setEditing(p => ({ ...p, coordinates: { lat, lng } }))} 
+                     />
+                  </div>
+                  <div className="flex items-center gap-3 text-orange-500/40 px-6 py-4 bg-orange-500/5 rounded-2xl border border-orange-500/10">
+                     <AlertTriangle size={18} />
+                     <p className="text-[9px] font-black uppercase tracking-[0.2em] leading-relaxed">System warning: updating positional coordinates will immediately affect vendor discovery radar for this locality.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Areas Table by Zone */}
       {isLoading ? (
-        <div className="flex justify-center py-16"><Loader2 className="w-10 h-10 animate-spin text-orange-500" /></div>
+        <div className="flex flex-col items-center justify-center py-40 gap-4">
+           <Loader2 className="w-12 h-12 animate-spin text-orange-500" />
+           <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em]">Deciphering Zone partitions...</p>
+        </div>
       ) : (
-        <div className="space-y-6">
-          {zones.map(zone => {
+        <div className="space-y-10">
+          {zones.map((zone, zi) => {
             const zoneAreas = areas.filter(a => a.zone === zone);
             return (
-              <div key={zone} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <motion.div 
+                key={zone} 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: zi * 0.1 }}
+                className="bg-white rounded-[3.5rem] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden"
+              >
                 {/* Zone Header */}
-                <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-50 bg-gray-50/50">
-                  <MapPin size={16} className="text-orange-500" />
-                  <h3 className="font-black text-gray-800 text-sm uppercase tracking-widest">{zone}</h3>
-                  <span className="ml-auto text-xs text-gray-400 font-bold">{zoneAreas.length} localities</span>
+                <div className="flex items-center gap-4 px-10 py-8 border-b border-gray-50 bg-gray-50/30">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100">
+                    <Layers size={18} className="text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-gray-900 text-lg uppercase tracking-tight">{zone}</h3>
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{zoneAreas.length} LOCALITIES INTEGRATED</p>
+                  </div>
                 </div>
 
                 {/* Table */}
                 <div className="divide-y divide-gray-50">
                   {zoneAreas.map(area => (
-                    <div key={area.id} className={`flex items-center gap-4 px-6 py-4 transition-colors ${!area.isActive ? 'opacity-50 bg-gray-50' : 'hover:bg-gray-50/50'}`}>
+                    <div key={area.id} className={`flex items-center gap-8 px-10 py-8 transition-all group ${!area.isActive ? 'opacity-40 bg-gray-50/50' : 'hover:bg-gray-50/80'}`}>
                       {/* Status pill */}
-                      <div className="flex-shrink-0">
-                        {!area.isActive ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
-                            <EyeOff size={9} /> Hidden
-                          </span>
-                        ) : area.isServiceable ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
-                            <CheckCircle size={9} /> Live
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-orange-700 bg-orange-100 px-2.5 py-1 rounded-full">
-                            <Clock size={9} /> Soon
-                          </span>
-                        )}
+                      <div className="w-24 flex-shrink-0">
+                        <AnimatePresence mode="wait">
+                          {!area.isActive ? (
+                            <motion.span key="hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200">
+                              <EyeOff size={10} /> HIDE
+                            </motion.span>
+                          ) : area.isServiceable ? (
+                            <motion.span key="live" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+                              <CheckCircle size={10} /> LIVE
+                            </motion.span>
+                          ) : (
+                            <motion.span key="soon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-orange-600 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100">
+                              <Clock size={10} /> SOON
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
                       </div>
 
                       {/* Label + meta */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-gray-800 text-sm">{area.label}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          key: <code className="font-mono text-gray-500">{area.value}</code>
-                          {area.pincode && <> · {area.pincode}</>}
-                          {' '}· order: {area.sortOrder}
-                        </p>
+                        <p className="font-black text-gray-950 text-base uppercase tracking-tight group-hover:text-orange-600 transition-colors">{area.label}</p>
+                        <div className="flex items-center gap-3 mt-1.5">
+                           <code className="text-[10px] font-mono font-black text-gray-300 bg-gray-50 px-2 py-0.5 rounded border border-gray-100 uppercase tracking-tighter">IDX_{area.value}</code>
+                           <span className="w-1 h-1 rounded-full bg-gray-200" />
+                           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                             {area.pincode || 'NO_ZIP'} · SEQ_{area.sortOrder}
+                           </p>
+                        </div>
                       </div>
 
                       {/* Action buttons */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Toggle serviceable */}
+                      <div className="flex items-center gap-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
                         <button
                           onClick={() => toggleServiceable(area)}
-                          title={area.isServiceable ? 'Mark as Coming Soon' : 'Mark as Live'}
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                          className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
                             area.isServiceable
-                              ? 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'
-                              : 'bg-orange-100 text-orange-600 hover:bg-orange-200'
+                              ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white'
+                              : 'bg-orange-50 text-orange-600 hover:bg-orange-600 hover:text-white'
                           }`}
                         >
-                          {area.isServiceable ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                          {area.isServiceable ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
                         </button>
 
-                        {/* Toggle visibility */}
                         <button
                           onClick={() => toggleActive(area)}
-                          title={area.isActive ? 'Hide from customers' : 'Show to customers'}
-                          className="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center transition-all"
+                          className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-400 hover:bg-gray-950 hover:text-white flex items-center justify-center transition-all"
                         >
-                          {area.isActive ? <Eye size={15} /> : <EyeOff size={15} />}
+                          {area.isActive ? <Eye size={18} /> : <EyeOff size={18} />}
                         </button>
 
-                        {/* Edit */}
                         <button
                           onClick={() => setEditing({ ...area })}
-                          className="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 hover:bg-orange-100 hover:text-orange-600 flex items-center justify-center transition-all"
+                          className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-400 hover:bg-orange-600 hover:text-white flex items-center justify-center transition-all"
                         >
-                          <Edit3 size={15} />
+                          <Edit3 size={18} />
                         </button>
 
-                        {/* Delete */}
                         {deleteConfirm === area.id ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-2 bg-red-50 p-1.5 rounded-2xl border border-red-100">
                             <button
                               onClick={() => deleteArea.mutate({ id: area.id })}
                               disabled={deleteArea.isPending}
-                              className="text-xs font-black text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
+                              className="text-[9px] font-black text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl transition-all uppercase tracking-widest shadow-lg shadow-red-600/20"
                             >
-                              {deleteArea.isPending ? <Loader2 size={12} className="animate-spin" /> : 'Confirm'}
+                              Confirm
                             </button>
-                            <button
-                              onClick={() => setDeleteConfirm(null)}
-                              className="text-xs font-bold text-gray-400 hover:text-gray-600 px-2 py-1.5"
-                            >
-                              Cancel
-                            </button>
+                            <button onClick={() => setDeleteConfirm(null)} className="p-2 text-gray-400 hover:text-gray-900"><X size={16} /></button>
                           </div>
                         ) : (
                           <button
                             onClick={() => setDeleteConfirm(area.id)}
-                            className="w-9 h-9 rounded-xl bg-gray-100 text-gray-400 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition-all"
+                            className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-400 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all"
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={18} />
                           </button>
                         )}
                       </div>
+                      
+                      <ChevronRight size={18} className="text-gray-100 group-hover:text-orange-500 transition-colors ml-4" />
                     </div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
       )}
 
       {/* Info box */}
-      <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex items-start gap-4">
-        <AlertTriangle size={20} className="text-blue-500 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-blue-700 space-y-1">
-          <p className="font-black">How this works</p>
-          <p>• <strong>Live</strong> — shown as selectable options in onboarding &amp; profile</p>
-          <p>• <strong>Coming Soon</strong> — shown as greyed-out tiles with &quot;Coming soon&quot; label</p>
-          <p>• <strong>Hidden</strong> — completely invisible to customers</p>
-          <p>• The <strong>DB Value</strong> field is what gets saved in the user&apos;s profile — don&apos;t change it if users have already selected it.</p>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-gray-950 rounded-[3rem] p-10 flex flex-col md:flex-row items-start gap-8 relative overflow-hidden"
+      >
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-500/10 to-transparent pointer-events-none" />
+        <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-blue-400 shrink-0 border border-white/5">
+           <AlertTriangle size={32} />
         </div>
-      </div>
+        <div className="space-y-6 relative z-10">
+          <div>
+            <h4 className="text-lg font-black text-white uppercase tracking-tight">Geospatial Rulebook</h4>
+            <p className="text-gray-500 text-sm mt-1 uppercase tracking-widest font-black">Fulfillment Logic Hierarchy</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+             <InfoItem label="Operational Node" desc="Indicates active fulfillment capability. Visible to all customers in selection matrices." color="text-emerald-400" />
+             <InfoItem label="Latency Node" desc="Expansion target. Visible as 'Coming Soon' to build regional anticipation." color="text-orange-400" />
+             <InfoItem label="Stealth Node" desc="Internal testing or deprecated zones. Completely invisible to end-users." color="text-gray-500" />
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }
 
-// Reusable field wrapper
-function Field({ label, children, placeholder }: { label: string; children: React.ReactNode; placeholder?: string }) {
+function InfoItem({ label, desc, color }: { label: string, desc: string, color: string }) {
   return (
-    <div className="space-y-1.5">
-      <label className="text-xs font-black uppercase tracking-widest text-gray-500">{label}</label>
+    <div className="space-y-2">
+       <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${color}`}>{label}</p>
+       <p className="text-xs text-gray-400 leading-relaxed font-medium">{desc}</p>
+    </div>
+  );
+}
+
+function Field({ label, children, dark }: { label: string; children: React.ReactNode; dark?: boolean }) {
+  return (
+    <div className="space-y-3">
+      <label className={`text-[9px] font-black uppercase tracking-[0.3em] ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{label}</label>
       {children}
     </div>
   );
