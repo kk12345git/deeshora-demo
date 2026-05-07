@@ -2,7 +2,11 @@
 'use client';
 
 import { trpc } from '@/lib/trpc';
-import { Check, X, Loader2, IndianRupee, CreditCard, User, Store, AlertCircle } from 'lucide-react';
+import { 
+  Check, X, Loader2, IndianRupee, CreditCard, User, Store, AlertCircle, 
+  CheckCircle, Users, Shield 
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 export default function AdminPaymentsPage() {
@@ -220,7 +224,6 @@ export default function AdminPaymentsPage() {
           )}
         </div>
       </section>
-    </div>
     </div>
   );
 }

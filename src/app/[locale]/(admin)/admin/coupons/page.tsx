@@ -10,6 +10,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const INITIAL_FORM = {
   code: '', type: 'FIXED' as DiscountType, value: '', minOrder: '', maxUses: '', expiresAt: '',
@@ -364,7 +365,6 @@ export default function AdminCouponsPage() {
           </div>
         )}
       </div>
-    </div>
     </div>
   );
 }

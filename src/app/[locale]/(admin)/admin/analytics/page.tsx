@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart2, TrendingUp, Store, ShoppingCart, IndianRupee,
   Users, Package, Award, Loader2, Calendar, ChevronDown, ChevronUp
@@ -334,10 +335,6 @@ export default function AdminAnalyticsPage() {
                 </div>
               );
             })}
-          </div>
-        )}
-      </div>
-    </div>
           </div>
         )}
       </div>

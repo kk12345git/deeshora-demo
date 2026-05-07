@@ -138,9 +138,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-orange-500 tracking-wider">
                 <Store size={12} />
                 {product.vendor.shopName}
-                {product.vendor.plan === 'PREMIUM' && (
-                    <CheckCircle2 size={12} className="text-blue-500 fill-blue-500/10" />
-                )}
+                <CheckCircle2 size={12} className="text-blue-500 fill-blue-500/10" />
             </div>
             <div className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-50 rounded-lg">
                 <Star size={10} className="text-yellow-400 fill-current" />

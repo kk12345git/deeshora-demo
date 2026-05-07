@@ -12,7 +12,9 @@ import {
 } from 'lucide-react';
 import { OrderStatusBadge } from '@/components/customer/OrderStatus';
 import toast from 'react-hot-toast';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── Pure SVG sparkline (no library needed) ───────────────────────────────────
@@ -110,34 +112,32 @@ export default function VendorDashboardPage() {
   const { data: stats, refetch: refetchStats } = trpc.order.vendorStats.useQuery(undefined, { enabled: !!vendorProfile });
   const { data: recentOrders, refetch: refetchOrders } = trpc.order.vendorOrders.useQuery({ limit: 5 }, { enabled: !!vendorProfile });
 
-  const [utr, setUtr] = useState('');
-  const initiateSub = trpc.vendor.initiateSubscription.useMutation();
-  const submitSubUtr = trpc.vendor.submitSubscriptionUtr.useMutation({
-    onSuccess: () => {
-      toast.success('UTR submitted for verification! Your shop will be upgraded once verified.');
-      setShowUpgradeModal(false);
-      refetchProfile();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const { data: subStatus, isLoading: isLoadingSub } = trpc.vendor.getSubscriptionStatus.useQuery();
+  const initiateSub = trpc.vendor.initiateSubscription.useMutation({
+    onSuccess: (data) => {
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      }
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      toast.error(err.message || 'Failed to initiate subscription');
+    }
   });
 
-  const handlePhonePeUpgrade = async () => {
-    try {
-      const res = await initiateSub.mutateAsync({ provider: 'PHONEPE' });
-      if (res.redirectUrl) {
-        window.location.href = res.redirectUrl;
-      } else {
-        toast.error('Failed to initiate PhonePe payment');
-      }
-    } catch (err: any) {
-      toast.error(err.message || 'Payment initiation failed');
+  // Handle payment status from URL
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'PAYMENT_SUCCESS') {
+      toast.success('Subscription active! Welcome to Premium.');
+      refetchProfile();
+    } else if (paymentStatus === 'PAYMENT_ERROR' || paymentStatus === 'ERROR') {
+      toast.error('Payment failed. Please try again.');
     }
-  };
-
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const adminUpiId = 'deeshware15@okicici';
-  const upiUrl = `upi://pay?pa=${adminUpiId}&pn=Deeshora%20Admin&am=700&cu=INR&tn=Vendor_Subscription_${vendorProfile?.id?.slice(-6)}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiUrl)}`;
+  }, [searchParams, refetchProfile]);
 
   const handleNewOrder = useCallback((data: any) => {
     setNewBell(true);
@@ -234,53 +234,58 @@ export default function VendorDashboardPage() {
         )}
 
         {/* Subscription Status Card */}
-        <div className={`relative overflow-hidden p-8 rounded-[2.5rem] border shadow-xl shadow-gray-200/20 transition-all ${vendorProfile?.plan === 'PREMIUM' ? 'bg-indigo-900 border-indigo-800 text-white' : 'bg-white border-gray-100'}`}>
+        <div className={`relative overflow-hidden p-8 rounded-[2.5rem] border shadow-xl shadow-gray-200/20 transition-all ${
+          subStatus?.isExpired 
+            ? 'bg-red-50 border-red-100 text-red-900' 
+            : 'bg-indigo-900 border-indigo-800 text-white'
+        }`}>
           <div className="relative z-10 flex flex-col h-full justify-between">
             <div className="flex justify-between items-start">
               <div>
-                <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${vendorProfile?.plan === 'PREMIUM' ? 'text-indigo-400' : 'text-orange-500'}`}>
-                  Current Plan
-                </p>
-                <h3 className="text-3xl font-black mt-1 tracking-tighter uppercase">
-                  {vendorProfile?.plan === 'PREMIUM' ? 'Premium Launch' : 'Free Trial'}
+                <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                  subStatus?.isExpired 
+                    ? 'bg-red-500 text-white border-red-600' 
+                    : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                }`}>
+                  {subStatus?.isExpired ? 'Expired' : 'Premium Active'}
+                </div>
+                <h3 className="text-2xl font-black mt-4 tracking-tight uppercase">
+                  {subStatus?.isExpired ? 'Plan Expired' : 'Business Plan'}
                 </h3>
               </div>
-              <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${vendorProfile?.plan === 'PREMIUM' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-orange-50 text-orange-600 border border-orange-100'}`}>
-                {vendorProfile?.plan === 'PREMIUM' ? 'Active' : 'Restricted'}
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center gap-6">
-              <div className="flex-1">
-                <p className={`text-xs font-bold ${vendorProfile?.plan === 'PREMIUM' ? 'text-indigo-200' : 'text-gray-400'}`}>
-                  Product Limit:
-                </p>
-                <p className="text-lg font-black mt-0.5">
-                  {vendorProfile?.plan === 'PREMIUM' ? 'Unlimited' : `${vendorProfile?._count.products ?? 0} / 3 Items`}
-                </p>
-              </div>
-              {vendorProfile?.plan === 'PREMIUM' && vendorProfile.planExpiresAt && (
-                <div className="flex-1 border-l border-indigo-800 pl-6">
-                  <p className="text-xs font-bold text-indigo-200">Renew in:</p>
-                  <p className="text-lg font-black mt-0.5">
-                    {Math.ceil((new Date(vendorProfile.planExpiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} Days
-                  </p>
+              {!subStatus?.isExpired && (
+                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                  <Star className="text-amber-400 fill-amber-400" size={24} />
                 </div>
               )}
             </div>
 
-            {vendorProfile?.plan === 'TRIAL' && (
+            <div className="mt-6 flex items-center gap-6">
+              <div className="flex-1">
+                <p className={`text-xs font-bold ${subStatus?.isExpired ? 'text-red-700' : 'text-indigo-200'}`}>
+                  {subStatus?.isExpired ? 'Status:' : 'Next Billing:'}
+                </p>
+                <p className="text-lg font-black mt-0.5">
+                  {subStatus?.isExpired ? 'Payment Required' : `${subStatus?.daysRemaining} Days Left`}
+                </p>
+              </div>
               <button 
                 onClick={() => setShowUpgradeModal(true)}
-                className="mt-6 w-full py-4 bg-orange-500 hover:bg-orange-600 text-white font-black text-sm uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2"
+                className={`px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-tight transition-all active:scale-95 ${
+                  subStatus?.isExpired
+                    ? 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/30'
+                    : 'bg-white text-indigo-900 hover:bg-indigo-50'
+                }`}
               >
-                <IndianRupee size={16} /> Upgrade to sell more
+                {subStatus?.isExpired ? 'Renew Now' : 'Manage'}
               </button>
-            )}
+            </div>
           </div>
-          {vendorProfile?.plan === 'PREMIUM' && (
-            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl" />
-          )}
+          
+          {/* Animated Background Element */}
+          <div className={`absolute -bottom-10 -right-10 w-40 h-40 rounded-full blur-3xl opacity-50 ${
+            subStatus?.isExpired ? 'bg-red-500' : 'bg-indigo-500'
+          }`} />
         </div>
       </div>
       <div className="grid lg:grid-cols-2 gap-4">
@@ -601,104 +606,115 @@ export default function VendorDashboardPage() {
           </div>
       </div>
 
-      {/* Upgrade Modal */}
+      {/* Real-Time Subscription Modal */}
       <AnimatePresence>
         {showUpgradeModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowUpgradeModal(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
+              onClick={() => !subStatus?.isExpired && setShowUpgradeModal(false)}
+              className="absolute inset-0 bg-gray-900/80 backdrop-blur-xl"
             />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[3rem] overflow-hidden shadow-2xl"
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl overflow-hidden"
             >
               <div className="p-10 text-center">
-                <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                  <Zap size={40} fill="currentColor" />
+                <div className="w-20 h-20 bg-indigo-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <Zap size={40} className="text-indigo-600 fill-indigo-600" />
                 </div>
-                <h3 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">Premium Launch Package</h3>
-                <p className="text-gray-500 font-medium mt-3 px-4">
-                  Unlock unlimited product uploads, featured status, and a &quot;Verified Seller&quot; badge for your shop.
-                </p>
+                <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase italic">Premium Access</h2>
+                <p className="text-gray-500 font-bold mt-2">Unlock unlimited products and local delivery insights</p>
 
-                <div className="mt-8 bg-gray-50 rounded-3xl p-6 border border-gray-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-black uppercase text-gray-400 tracking-widest">Subscription Fee</span>
-                    <span className="text-3xl font-black text-gray-900">₹700<span className="text-sm text-gray-400">/mo</span></span>
+                <div className="mt-10 p-8 bg-gray-50 rounded-[2rem] border border-gray-100">
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="text-xs font-black uppercase text-gray-400">Monthly Plan</span>
+                    <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">Most Popular</span>
+                  </div>
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-2xl font-black text-gray-400">₹</span>
+                    <span className="text-6xl font-black text-gray-900 tracking-tighter">700</span>
+                    <span className="text-sm font-bold text-gray-400">/mo</span>
                   </div>
                   
-                  {/* QR Code Section */}
-                  <div className="bg-white p-4 rounded-2xl border border-gray-100 flex flex-col items-center gap-2 mb-4">
-                    <img src={qrUrl} alt="UPI QR" className="w-32 h-32" />
-                    <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Scan to Pay Admin</p>
-                    <p className="text-[11px] font-black text-gray-900">{adminUpiId}</p>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-200 space-y-2 text-left">
-                    <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
-                      <CheckCircle size={14} className="text-emerald-500" /> Unlimited Product Uploads
+                  <div className="mt-8 space-y-4 text-left">
+                    <div className="flex items-center gap-3 text-sm font-bold text-gray-600">
+                      <CheckCircle size={18} className="text-indigo-500" />
+                      <span>Unlimited Product Listings</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
-                      <CheckCircle size={14} className="text-emerald-500" /> Blue Checkmark Verified Badge
+                    <div className="flex items-center gap-3 text-sm font-bold text-gray-600">
+                      <CheckCircle size={18} className="text-indigo-500" />
+                      <span>Real-Time Order Tracking</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm font-bold text-gray-600">
+                      <CheckCircle size={18} className="text-indigo-500" />
+                      <span>Direct Customer Settlements</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-8 space-y-4">
+                <button
+                  onClick={() => initiateSub.mutate({})}
+                  disabled={initiateSub.isPending}
+                  className="w-full mt-8 bg-indigo-600 text-white py-6 rounded-[2rem] font-black text-lg uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-500/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                >
+                  {initiateSub.isPending ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <>
+                      <span>Pay & Activate Now</span>
+                      <ArrowRight size={20} />
+                    </>
+                  )}
+                </button>
+                
+                {!subStatus?.isExpired && (
                   <button
-                    disabled={initiateSub.isPending}
-                    onClick={handlePhonePeUpgrade}
-                    className="w-full py-4 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black text-sm uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2"
-                  >
-                    {initiateSub.isPending 
-                      ? <Loader2 size={18} className="animate-spin" /> 
-                      : <><Zap size={18} fill="currentColor" /> Pay via PhonePe (Instant)</>}
-                  </button>
-
-                  <div className="relative py-4">
-                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
-                    <div className="relative flex justify-center text-[10px] uppercase font-black text-gray-400 bg-white px-4">OR MANUAL VERIFICATION</div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      placeholder="Enter 12-digit UTR Number"
-                      value={utr}
-                      onChange={(e) => setUtr(e.target.value.replace(/\D/g, '').slice(0, 12))}
-                      className="w-full h-14 bg-gray-50 border-2 border-gray-100 rounded-2xl px-6 font-mono font-bold text-center focus:border-indigo-500 outline-none transition-all"
-                    />
-                    <button
-                      disabled={submitSubUtr.isPending || utr.length < 12}
-                      onClick={() => submitSubUtr.mutate({ utrNumber: utr })}
-                      className="w-full py-4 bg-gray-900 hover:bg-black disabled:opacity-50 text-white font-black text-sm uppercase tracking-widest rounded-2xl transition-all"
-                    >
-                      {submitSubUtr.isPending ? <Loader2 size={18} className="animate-spin" /> : 'Confirm Manual Payment'}
-                    </button>
-                  </div>
-
-                  <button 
                     onClick={() => setShowUpgradeModal(false)}
-                    className="w-full py-4 text-gray-400 font-bold text-xs uppercase tracking-widest hover:text-gray-600 transition-colors"
+                    className="mt-6 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-600"
                   >
-                    Maybe Later
+                    Cancel
                   </button>
-                </div>
-
-                <p className="mt-6 text-[10px] text-gray-400 font-medium uppercase tracking-tight">
-                  By upgrading, you agree to the Vendor Terms of Service.
-                </p>
+                )}
+              </div>
+              
+              <div className="bg-gray-900 p-4 text-center">
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Secure Payment via PhonePe</p>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
+      {/* Blocking Overlay for Expired Accounts */}
+      {subStatus?.isExpired && !showUpgradeModal && (
+        <div className="fixed inset-0 z-[90] bg-gray-900/60 backdrop-blur-md flex items-center justify-center p-6">
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="bg-white p-10 rounded-[3rem] shadow-2xl max-w-md text-center border-t-8 border-red-500"
+          >
+            <div className="w-20 h-20 bg-red-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
+              <Clock size={40} className="text-red-600" />
+            </div>
+            <h2 className="text-2xl font-black text-gray-900 uppercase">Subscription Expired</h2>
+            <p className="text-gray-500 font-bold mt-4">
+              Your business plan has expired. To continue receiving orders and managing your shop, please renew your subscription.
+            </p>
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              className="w-full mt-8 bg-red-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-red-700 shadow-xl shadow-red-500/20 transition-all"
+            >
+              Renew Subscription
+            </button>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

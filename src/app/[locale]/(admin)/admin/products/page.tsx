@@ -5,8 +5,9 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Search, Trash2, Edit, Loader2, Store, Tag, Package, ChevronRight } from "lucide-react";
+import { Plus, Search, Trash2, Edit, Loader2, Store, Tag, Package, ChevronRight, MapPin } from "lucide-react";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
 
 export default function AdminProductsPage() {
   const [search, setSearch] = useState("");
@@ -210,7 +211,6 @@ export default function AdminProductsPage() {
           })}
         </div>
       )}
-    </div>
     </div>
   );
 }

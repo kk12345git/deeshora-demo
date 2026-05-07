@@ -8,6 +8,7 @@ import {
   Hash, Send, Store, ChevronDown,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
 
 export default function AdminPayoutsPage() {
   const { data: vendorsData, refetch: refetchVendors } = trpc.admin.vendors.useQuery({});
@@ -55,7 +56,7 @@ export default function AdminPayoutsPage() {
   const totalPending = pendingVendors.reduce((s, v) => s + v.pendingPayout, 0);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       {/* Dynamic Header */}
       <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
         <div>

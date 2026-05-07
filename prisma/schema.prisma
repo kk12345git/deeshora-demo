@@ -151,7 +151,7 @@ model Vendor {
   status          VendorStatus @default(PENDING)
   commissionRate  Float        @default(0.15)
   // Subscription Details
-  plan            VendorPlan   @default(TRIAL)
+  plan            VendorPlan   @default(PREMIUM)
   planExpiresAt   DateTime?
   isVerified      Boolean      @default(false)
   razorpaySubscriptionId String? // Added for real-time subscription
@@ -522,4 +522,23 @@ model CommunityPost {
   createdAt   DateTime @default(now())
 
   community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  type       String   // e.g., "ORDER", "VENDOR", "USER", "SYSTEM", "PAYMENT"
+  action     String   // e.g., "STATUS_UPDATE", "CREATE", "DELETE", "APPROVAL", "PAYOUT"
+  entityId   String?  // ID of the object being acted upon
+  entityType String?  // Type of the object (e.g., "Order", "Vendor")
+  actorId    String?  // ID of the user who performed the action
+  actorName  String?  // Name of the user who performed the action
+  message    String?  // Human readable description
+  metadata   Json?    // Additional structured data
+  createdAt  DateTime @default(now())
+
+  @@index([type])
+  @@index([action])
+  @@index([entityId])
+  @@index([actorId])
+  @@index([createdAt])
 }

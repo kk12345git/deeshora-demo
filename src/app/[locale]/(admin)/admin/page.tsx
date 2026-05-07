@@ -1,11 +1,13 @@
 // src/app/(admin)/admin/page.tsx
 export const dynamic = 'force-dynamic';
 import { api } from "@/lib/trpc-server";
-import { Users, Store, ShoppingCart, IndianRupee, AlertTriangle, ArrowRight, TrendingUp, Clock, CheckCircle } from "lucide-react";
+import { Users, Store, ShoppingCart, IndianRupee, AlertTriangle, ArrowRight, TrendingUp, Clock, CheckCircle, Activity } from "lucide-react";
 import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
 
 export default async function AdminDashboardPage() {
   const stats = await api.admin.stats();
+  const activities = await api.admin.activities({ limit: 5 });
   const maxRevenue = Math.max(...stats.monthlyRevenue.map(r => r.revenue), 1);
 
   return (
@@ -36,10 +38,7 @@ export default async function AdminDashboardPage() {
 
       {/* Critical Alerts */}
       {stats.pendingVendors > 0 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
+        <div className="animate-in fade-in zoom-in-95 duration-500">
           <Link
             href="/admin/vendors"
             className="flex items-center gap-5 bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200 p-5 rounded-[2rem] hover:shadow-xl hover:shadow-amber-500/10 transition-all group relative overflow-hidden"
@@ -60,7 +59,7 @@ export default async function AdminDashboardPage() {
               Review Now <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
-        </motion.div>
+        </div>
       )}
 
       {/* Stat Cards */}
@@ -99,11 +98,10 @@ export default async function AdminDashboardPage() {
             link: "/admin/analytics",
           },
         ].map((card, i) => (
-          <motion.div
+          <div
             key={card.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
+            className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both"
+            style={{ animationDelay: `${i * 100}ms` }}
           >
             <Link
               href={card.link}
@@ -118,7 +116,7 @@ export default async function AdminDashboardPage() {
                 <p className="text-xs text-gray-500 font-medium mt-0.5">{card.sub}</p>
               </div>
             </Link>
-          </motion.div>
+          </div>
         ))}
       </div>
 
@@ -154,18 +152,19 @@ export default async function AdminDashboardPage() {
                   </div>
                   
                   <div className="w-full relative flex flex-col justify-end h-full">
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: `${pct}%` }}
-                      transition={{ duration: 1, delay: i * 0.1, ease: [0.19, 1, 0.22, 1] }}
-                      className={`w-full rounded-t-[1rem] transition-all duration-300 relative overflow-hidden ${
+                    <div
+                      className={`w-full rounded-t-[1rem] transition-all duration-700 relative overflow-hidden animate-in slide-in-from-bottom-full ${
                         isLatest 
                           ? 'bg-gradient-to-t from-orange-600 to-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.3)]' 
                           : 'bg-orange-100 group-hover/bar:bg-orange-200'
                       }`}
+                      style={{ 
+                        height: `${pct}%`,
+                        animationDelay: `${i * 100}ms`
+                      }}
                     >
                       {isLatest && <div className="absolute inset-0 bg-white/20 animate-pulse" />}
-                    </motion.div>
+                    </div>
                   </div>
                   
                   <span className={`text-[10px] font-black uppercase tracking-widest ${isLatest ? 'text-orange-500' : 'text-gray-400'}`}>
@@ -191,11 +190,10 @@ export default async function AdminDashboardPage() {
                 { label: "Service Areas", href: "/admin/coverage", icon: <CheckCircle size={16} /> },
                 { label: "Platform Users", href: "/admin/users", icon: <Users size={16} /> },
               ].map((link, i) => (
-                <motion.div
+                <div
                   key={link.href}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 + 0.5 }}
+                  className="animate-in fade-in slide-in-from-right-4 duration-700 fill-mode-both"
+                  style={{ animationDelay: `${i * 100 + 500}ms` }}
                 >
                   <Link
                     href={link.href}
@@ -214,7 +212,7 @@ export default async function AdminDashboardPage() {
                     )}
                     <ArrowRight size={14} className="opacity-40 group-hover/btn:opacity-100 group-hover/btn:translate-x-1 transition-all" />
                   </Link>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
@@ -224,26 +222,38 @@ export default async function AdminDashboardPage() {
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Recent Logs</p>
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
              </div>
-             <div className="space-y-4">
-                <div className="flex gap-3">
-                   <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <ShoppingCart size={14} className="text-blue-500" />
-                   </div>
-                   <div className="min-w-0">
-                      <p className="text-xs font-bold text-gray-800">New Order Received</p>
-                      <p className="text-[10px] text-gray-400 truncate">System processed a transaction for ₹2,450</p>
-                   </div>
-                </div>
-                <div className="flex gap-3">
-                   <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <CheckCircle size={14} className="text-emerald-500" />
-                   </div>
-                   <div className="min-w-0">
-                      <p className="text-xs font-bold text-gray-800">Vendor Approved</p>
-                      <p className="text-[10px] text-gray-400 truncate">"Organic Farms" joined the marketplace</p>
-                   </div>
-                </div>
-             </div>
+              <div className="space-y-5">
+                {activities.length === 0 ? (
+                  <p className="text-[10px] text-gray-400 italic text-center py-4">No recent activities logged.</p>
+                ) : (
+                  activities.map((log) => (
+                    <div key={log.id} className="flex gap-4 group/log items-start">
+                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                         log.type === 'ORDER' ? 'bg-blue-50 text-blue-500' :
+                         log.type === 'VENDOR' ? 'bg-purple-50 text-purple-500' :
+                         'bg-gray-50 text-gray-500'
+                       }`}>
+                          {log.type === 'ORDER' ? <ShoppingCart size={16} /> :
+                           log.type === 'VENDOR' ? <Store size={16} /> :
+                           <Activity size={16} />}
+                       </div>
+                       <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-black text-gray-900 group-hover/log:text-orange-600 transition-colors line-clamp-1 uppercase tracking-tight">{log.message}</p>
+                          <p className="text-[9px] font-bold text-gray-400 flex items-center gap-1.5 mt-0.5">
+                            <Clock size={10} /> {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}
+                          </p>
+                       </div>
+                    </div>
+                  ))
+                )}
+                
+                <Link 
+                  href="/admin/activity"
+                  className="flex items-center justify-center w-full py-2 bg-gray-50 hover:bg-orange-50 text-gray-400 hover:text-orange-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                >
+                  View Audit Trail
+                </Link>
+              </div>
           </div>
         </div>
       </div>

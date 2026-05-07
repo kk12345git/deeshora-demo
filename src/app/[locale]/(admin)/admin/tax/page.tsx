@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { 
@@ -266,5 +268,5 @@ export default function AdminTaxPage() {
     </div>
   );
 }
-  );
-}
+
+

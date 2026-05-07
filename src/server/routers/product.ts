@@ -4,6 +4,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure, vendorProcedure 
 import { TRPCError } from '@trpc/server';
 import { uploadImage } from '@/lib/cloudinary';
 import slugify from 'slugify';
+import { logActivity } from '@/lib/activity';
 
 // M4: Max 2MB per base64 image (base64 has ~33% overhead, so 2MB raw ≈ 2.7MB base64)
 const MAX_IMAGE_BASE64_BYTES = 2.7 * 1024 * 1024;
@@ -464,17 +465,13 @@ export const productRouter = createTRPCRouter({
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Your vendor account is pending approval. You can add products once the admin approves your account.' });
       }
 
-      // Check product limits for TRIAL plan
-      if (ctx.vendor.plan === 'TRIAL') {
-        const productCount = await ctx.prisma.product.count({
-          where: { vendorId: ctx.vendor.id }
+      // Real-time subscription enforcement
+      const isExpired = ctx.vendor.planExpiresAt ? new Date() > new Date(ctx.vendor.planExpiresAt) : true;
+      if (ctx.vendor.plan === 'PREMIUM' && isExpired) {
+        throw new TRPCError({ 
+          code: 'FORBIDDEN', 
+          message: 'Your premium subscription has expired. Please renew to add more products.' 
         });
-        if (productCount >= 3) {
-          throw new TRPCError({ 
-            code: 'FORBIDDEN', 
-            message: 'Trial limit reached! You can only add 3 products on the FREE plan. Upgrade to the Premium Launch Package (₹700/mo) for unlimited uploads.' 
-          });
-        }
       }
 
       const imageUrls = await Promise.all(
@@ -506,6 +503,18 @@ export const productRouter = createTRPCRouter({
           lowStockThreshold: input.lowStockThreshold,
         },
       });
+
+      await logActivity({
+        type: 'PRODUCT',
+        action: 'CREATE',
+        entityId: product.id,
+        entityType: 'Product',
+        actorId: ctx.vendor.userId,
+        actorName: ctx.vendor.shopName,
+        message: `Vendor ${ctx.vendor.shopName} added a new product: ${product.name}`,
+        metadata: { name: product.name, price: product.price },
+      });
+
       return product;
     }),
 
@@ -537,10 +546,23 @@ export const productRouter = createTRPCRouter({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found or you do not own it.' });
       }
 
-      return ctx.prisma.product.update({
+      const updated = await ctx.prisma.product.update({
         where: { id },
         data: updateData,
       });
+
+      await logActivity({
+        type: 'PRODUCT',
+        action: 'UPDATE',
+        entityId: id,
+        entityType: 'Product',
+        actorId: ctx.vendor.userId,
+        actorName: ctx.vendor.shopName,
+        message: `Vendor ${ctx.vendor.shopName} updated product: ${updated.name}`,
+        metadata: updateData,
+      });
+
+      return updated;
     }),
 
 
@@ -554,6 +576,17 @@ export const productRouter = createTRPCRouter({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found or you do not own it.' });
       }
       await ctx.prisma.product.delete({ where: { id: input.id } });
+
+      await logActivity({
+        type: 'PRODUCT',
+        action: 'DELETE',
+        entityId: input.id,
+        entityType: 'Product',
+        actorId: ctx.vendor.userId,
+        actorName: ctx.vendor.shopName,
+        message: `Vendor ${ctx.vendor.shopName} deleted product: ${product.name}`,
+      });
+
       return { success: true };
     }),
 

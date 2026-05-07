@@ -4,6 +4,7 @@ import { createTRPCRouter, protectedProcedure, vendorProcedure } from '@/server/
 import { TRPCError } from '@trpc/server';
 import { pusherServer, CHANNELS, EVENTS } from '@/lib/pusher';
 import { OrderStatus } from '@prisma/client';
+import { logActivity } from '@/lib/activity';
 
 
 import { initiatePayment } from '@/lib/payments';
@@ -207,6 +208,17 @@ export const orderRouter = createTRPCRouter({
             console.error('[Order] Pusher notify failed for vendor:', vendor.id, pusherErr);
             // Non-fatal — vendor will see order on next refresh
           }
+
+          await logActivity({
+            type: 'ORDER',
+            action: 'CREATE',
+            entityId: order.id,
+            entityType: 'Order',
+            actorId: user.id,
+            actorName: user.name,
+            message: `User ${user.name} placed a new order #${order.id.slice(-6)} from ${vendor.shopName}`,
+            metadata: { total: order.total, vendor: vendor.shopName },
+          });
 
           createdOrders.push(order);
         }
@@ -490,6 +502,17 @@ export const orderRouter = createTRPCRouter({
             });
           }
         }
+
+        await logActivity({
+          type: 'ORDER',
+          action: 'STATUS_UPDATE',
+          entityId: orderId,
+          entityType: 'Order',
+          actorId: ctx.vendor.userId,
+          actorName: ctx.vendor.shopName,
+          message: `Order #${orderId.slice(-6)} status updated to ${status} by vendor`,
+          metadata: { status },
+        });
 
         return updated;
       });

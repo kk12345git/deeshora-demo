@@ -1,11 +1,8 @@
-// src/server/routers/vendor.ts
 import { z } from 'zod';
-import { razorpay } from '@/lib/razorpay';
-import crypto from 'crypto';
 import { createTRPCRouter, protectedProcedure, vendorProcedure, publicProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { uploadImage } from '@/lib/cloudinary';
-import { initiatePayment } from '@/lib/payments';
+import { initiatePhonePePayment } from '@/lib/payments/phonepe';
 
 
 export const vendorRouter = createTRPCRouter({
@@ -153,78 +150,71 @@ export const vendorRouter = createTRPCRouter({
     }),
 
 
-  // ─── Real Subscription Integration (₹700/month) ───────────────────────
-  
+  // App is real-time live process - subscription system
   initiateSubscription: vendorProcedure
-    .input(z.object({ provider: z.enum(['PHONEPE', 'MANUAL_UPI']) }))
-    .mutation(async ({ ctx, input }) => {
-      try {
-        return await initiatePayment(input.provider, {
-          orderId: `SUB_${ctx.vendor.id.slice(-6)}_${Date.now()}`,
-          amount: 700,
-          customerName: ctx.user.name,
-          customerEmail: ctx.user.email,
-          customerPhone: ctx.vendor.phone,
-          callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/vendor/dashboard`,
-        });
-      } catch (error) {
-        console.error('[Vendor] Subscription initiation failed:', error);
+    .input(z.object({ planId: z.string().optional() }))
+    .mutation(async ({ ctx }) => {
+      const vendor = await ctx.prisma.vendor.findUnique({
+        where: { id: ctx.vendor.id },
+      });
+
+      if (!vendor) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Vendor not found' });
+      }
+
+      // 1. Create a payment request for ₹700
+      const paymentRes = await initiatePhonePePayment({
+        orderId: `SUB_${vendor.id.slice(-6)}_${Date.now()}`,
+        amount: 700,
+        customerEmail: vendor.email,
+        customerPhone: vendor.phone,
+        customerName: vendor.shopName,
+        callbackUrl: '', // Hardcoded in implementation
+      });
+
+      if (!paymentRes.success || !paymentRes.redirectUrl) {
         throw new TRPCError({ 
           code: 'INTERNAL_SERVER_ERROR', 
-          message: 'Failed to initiate payment. Please try again.' 
+          message: paymentRes.message || 'Failed to initiate PhonePe payment' 
         });
       }
-    }),
 
-  submitSubscriptionUtr: vendorProcedure
-    .input(z.object({ utrNumber: z.string().min(12, 'UTR must be at least 12 digits') }))
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.prisma.vendor.update({
+      // 2. Mark as pending approval/verification and store transaction ID
+      await ctx.prisma.vendor.update({
         where: { id: ctx.vendor.id },
         data: {
           subscriptionStatus: 'PENDING_APPROVAL',
-          subscriptionUtr: input.utrNumber,
-          subscriptionMethod: 'MANUAL_UPI',
+          subscriptionMethod: 'PHONEPE',
+          lastPaymentId: paymentRes.paymentId, // Store the merchantTransactionId
         }
       });
+
+      return {
+        redirectUrl: paymentRes.redirectUrl,
+      };
     }),
 
-  verifySubscriptionPayment: vendorProcedure
-    .input(z.object({
-      razorpay_order_id: z.string(),
-      razorpay_payment_id: z.string(),
-      razorpay_signature: z.string(),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = input;
-      
-      // 1. Verify Signature
-      const secret = process.env.RAZORPAY_KEY_SECRET || '';
-      const generated_signature = crypto
-        .createHmac('sha256', secret)
-        .update(razorpay_order_id + "|" + razorpay_payment_id)
-        .digest('hex');
-
-      if (generated_signature !== razorpay_signature) {
-        throw new TRPCError({ 
-          code: 'BAD_REQUEST', 
-          message: 'Payment verification failed. Invalid signature.' 
-        });
+  getSubscriptionStatus: vendorProcedure.query(async ({ ctx }) => {
+    const vendor = await ctx.prisma.vendor.findUnique({
+      where: { id: ctx.vendor.id },
+      select: {
+        plan: true,
+        planExpiresAt: true,
+        subscriptionStatus: true,
       }
+    });
 
-      // 2. Update Vendor Status
-      const expiry = new Date();
-      expiry.setDate(expiry.getDate() + 30); // 30 days from now
+    if (!vendor) return null;
 
-      return ctx.prisma.vendor.update({
-        where: { id: ctx.vendor.id },
-        data: {
-          plan: 'PREMIUM',
-          planExpiresAt: expiry,
-          isVerified: true,
-          razorpaySubscriptionId: razorpay_order_id, // We store the order ID as sub ID for now
-          lastPaymentId: razorpay_payment_id,
-        },
-      });
-    }),
+    const isExpired = vendor.planExpiresAt ? new Date() > new Date(vendor.planExpiresAt) : true;
+    const daysRemaining = vendor.planExpiresAt 
+      ? Math.max(0, Math.ceil((new Date(vendor.planExpiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+      : 0;
+
+    return {
+      ...vendor,
+      isExpired: vendor.plan === 'TRIAL' ? false : isExpired,
+      daysRemaining,
+    };
+  }),
 });

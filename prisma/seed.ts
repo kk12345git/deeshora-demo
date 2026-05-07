@@ -136,6 +136,38 @@ async function main() {
     update: { name: 'Fresh Mart Inner Circle' },
   });
   console.log('✅ Seeded 1 community.');
+  
+  // ── Seed Sample Activity Logs ────────────────────────────────────────
+  console.log('📜 Seeding initial activity logs...');
+  const activities = [
+    {
+      type: 'SYSTEM',
+      action: 'INITIALIZATION',
+      message: 'Deeshora Platform Monitoring System Initialized.',
+      metadata: { version: '2.0.0', environment: 'production' },
+    },
+    {
+      type: 'VENDOR',
+      action: 'APPROVAL',
+      actorName: 'System Admin',
+      message: 'Vendor "Fresh Mart & More" was automatically approved by system seed.',
+      entityId: vendor.id,
+      entityType: 'Vendor',
+    },
+    {
+      type: 'PRODUCT',
+      action: 'CREATE',
+      actorName: 'Karthik S',
+      message: 'New digital product "Smart Kitchen Masterclass" added to inventory.',
+      entityId: groceryCat.id, // Just for seed reference
+      entityType: 'Product',
+    }
+  ];
+
+  for (const log of activities) {
+    await prisma.activityLog.create({ data: log });
+  }
+  console.log('✅ Seeded activity logs.');
 }
 
 main()

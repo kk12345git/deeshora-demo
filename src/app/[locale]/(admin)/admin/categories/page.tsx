@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { Plus, Edit, Trash2, Loader2, Tag, Percent, Image as ImageIcon, Check, X } from "lucide-react";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import { motion } from "framer-motion";
 
 export default function AdminCategoriesPage() {
   const [isEditing, setIsEditing] = useState<string | null>(null);

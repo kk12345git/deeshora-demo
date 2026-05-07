@@ -6,10 +6,11 @@ import { UserRole } from '@prisma/client';
 import { 
   Loader2, Users, Search, Shield, 
   Store, User, Clock, ShoppingBag, 
-  ChevronRight, ArrowUpRight 
+  ChevronRight, ArrowUpRight, CheckCircle, Trash2
 } from 'lucide-react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
 import { CreateVendorModal } from '@/components/admin/CreateVendorModal';
 
 const roleTabs: (UserRole | 'ALL')[] = ['ALL', 'CUSTOMER', 'VENDOR', 'ADMIN', 'DELIVERY'];
@@ -65,6 +66,14 @@ export default function AdminUsersPage() {
     search: search || undefined,
   };
   const { data, isLoading, refetch } = trpc.admin.users.useQuery(queryInput);
+
+  const deleteUser = trpc.admin.deleteUser.useMutation({
+    onSuccess: () => {
+      toast.success('Account deleted permanently.');
+      refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   return (
     <div className="space-y-10">
@@ -195,21 +204,35 @@ export default function AdminUsersPage() {
                         </div>
                       </td>
                       <td className="px-10 py-6 text-right">
-                        {user.role !== 'VENDOR' ? (
-                          <button 
+                        <div className="flex items-center justify-end gap-3">
+                          {user.role !== 'VENDOR' ? (
+                            <button 
+                              onClick={() => {
+                                setSelectedForVendor({ id: user.id, name: user.name, email: user.email });
+                                setVendorModalOpen(true);
+                              }}
+                              className="inline-flex items-center gap-2 h-10 px-4 bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all"
+                            >
+                              Upgrade <ArrowUpRight size={14} />
+                            </button>
+                          ) : (
+                            <div className="inline-flex items-center gap-2 h-10 px-4 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
+                              Partner <CheckCircle size={14} />
+                            </div>
+                          )}
+                          
+                          <button
                             onClick={() => {
-                              setSelectedForVendor({ id: user.id, name: user.name, email: user.email });
-                              setVendorModalOpen(true);
+                              if (confirm('Are you sure you want to delete this account? This cannot be undone.')) {
+                                deleteUser.mutate({ userId: user.id });
+                              }
                             }}
-                            className="inline-flex items-center gap-2 h-10 px-4 bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all"
+                            className="w-10 h-10 flex items-center justify-center bg-gray-50 text-gray-300 hover:bg-rose-50 hover:text-rose-600 rounded-xl transition-all"
                           >
-                            Upgrade Tier <ArrowUpRight size={14} />
+                            <Loader2 size={16} className={deleteUser.isPending ? 'animate-spin' : 'hidden'} />
+                            <Trash2 size={16} className={deleteUser.isPending ? 'hidden' : ''} />
                           </button>
-                        ) : (
-                          <div className="inline-flex items-center gap-2 h-10 px-4 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
-                            Verified Hub <CheckCircle size={14} />
-                          </div>
-                        )}
+                        </div>
                       </td>
                     </motion.tr>
                   )

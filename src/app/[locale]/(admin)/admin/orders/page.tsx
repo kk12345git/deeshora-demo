@@ -8,7 +8,7 @@ import { OrderStatusBadge } from '@/components/customer/OrderStatus';
 import {
   Loader2, Search, ShoppingCart, ChevronDown, ChevronRight,
   User, MapPin, Package, IndianRupee, Clock, ChevronLeft,
-  AlertTriangle, RefreshCw,
+  AlertTriangle, RefreshCw, CheckCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -64,7 +64,6 @@ export default function AdminOrdersPage() {
   });
 
   return (
-    <div className="space-y-6">
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
@@ -248,7 +247,7 @@ export default function AdminOrdersPage() {
                              <div className="flex gap-2">
                                 <MapPin size={12} className="text-gray-300 mt-0.5 flex-shrink-0" />
                                 <p className="text-xs font-bold text-gray-700 leading-relaxed">
-                                   {order.city} Marketplace Fulfillment
+                                   {order.vendor.city} Marketplace Fulfillment
                                 </p>
                              </div>
                           </div>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 
-export default function SignInPage() {
+export default function SignInPage({ params: { locale } }: { params: { locale: string } }) {
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col relative overflow-hidden">
       {/* Cinematic Background Elements */}
@@ -43,6 +43,9 @@ export default function SignInPage() {
           <div className="glass-card shadow-2xl border-white/5 overflow-hidden">
             <div className="p-1">
               <SignIn 
+                path={`/${locale}/sign-in`}
+                routing="path"
+                signUpUrl={`/${locale}/sign-up`}
                 appearance={{
                   elements: {
                     rootBox: "w-full",

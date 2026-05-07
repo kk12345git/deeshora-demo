@@ -11,7 +11,9 @@ import {
 } from 'lucide-react';
 import { getWhatsAppUrl } from '@/lib/whatsapp';
 import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
 import { CreateVendorModal } from '@/components/admin/CreateVendorModal';
+import { EditVendorModal } from '@/components/admin/EditVendorModal';
 
 const TAB_ALL = 'ALL' as const;
 type Tab = VendorStatus | typeof TAB_ALL;
@@ -40,6 +42,8 @@ export default function AdminVendorsPage() {
   const [commissionInputs, setCommissionInputs] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingVendor, setEditingVendor] = useState<any>(null);
 
   const queryInput = activeTab === TAB_ALL ? {} : { status: activeTab };
   const { data, isLoading, refetch } = trpc.admin.vendors.useQuery(queryInput);
@@ -70,7 +74,6 @@ export default function AdminVendorsPage() {
   };
 
   return (
-    <>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
@@ -328,6 +331,15 @@ export default function AdminVendorsPage() {
                             </div>
                             <div className="space-y-2">
                               <button
+                                onClick={() => {
+                                  setEditingVendor(vendor);
+                                  setIsEditModalOpen(true);
+                                }}
+                                className="w-full flex items-center justify-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-black text-xs px-3 py-2.5 rounded-xl border border-indigo-200 transition-all"
+                              >
+                                Edit Profile
+                              </button>
+                              <button
                                 onClick={() => handleAction(vendor.id, 'SUSPENDED')}
                                 disabled={updateStatus.isPending}
                                 className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-black text-xs px-3 py-2.5 rounded-xl border border-red-200 transition-all"
@@ -365,19 +377,24 @@ export default function AdminVendorsPage() {
                     </div>
                   </div>
                 )}
-              </div>
+              </motion.div>
             );
           })}
         </div>
       )}
-    </div>
-
       <CreateVendorModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={() => refetch()}
       />
-    </>
+
+      <EditVendorModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        vendor={editingVendor}
+        onSuccess={() => refetch()}
+      />
+    </div>
   );
 }
 

@@ -4,6 +4,7 @@ import { TRPCError } from '@trpc/server';
 import { VendorStatus, UserRole, OrderStatus, Prisma } from '@prisma/client';
 import { uploadImage } from '@/lib/cloudinary';
 import slugify from 'slugify';
+import { logActivity } from '@/lib/activity';
 
 
 export const adminRouter = createTRPCRouter({
@@ -52,6 +53,16 @@ export const adminRouter = createTRPCRouter({
       monthlyRevenue: monthlyRevenueData,
     };
   }),
+
+
+  activities: adminProcedure
+    .input(z.object({ limit: z.number().min(1).max(200).default(50) }))
+    .query(async ({ ctx, input }) => {
+      return ctx.prisma.activityLog.findMany({
+        take: input.limit,
+        orderBy: { createdAt: 'desc' },
+      });
+    }),
 
 
   /**
@@ -230,13 +241,60 @@ export const adminRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.prisma.vendor.update({
+      const vendor = await ctx.prisma.vendor.update({
         where: { id: input.vendorId },
         data: {
           status: input.status,
           commissionRate: input.commissionRate,
         },
       });
+
+      await logActivity({
+        type: 'VENDOR',
+        action: input.status === 'APPROVED' ? 'APPROVAL' : 'STATUS_UPDATE',
+        entityId: vendor.id,
+        entityType: 'Vendor',
+        actorId: ctx.user.id,
+        actorName: ctx.user.name,
+        message: `Vendor ${vendor.shopName} status updated to ${input.status}`,
+        metadata: { status: input.status, commissionRate: input.commissionRate },
+      });
+
+      return vendor;
+    }),
+
+
+  updateVendor: adminProcedure
+    .input(z.object({
+      id: z.string(),
+      shopName: z.string().optional(),
+      description: z.string().optional(),
+      phone: z.string().optional(),
+      email: z.string().optional(),
+      city: z.string().optional(),
+      address: z.string().optional(),
+      category: z.string().optional(),
+      commissionRate: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      const vendor = await ctx.prisma.vendor.update({
+        where: { id },
+        data,
+      });
+
+      await logActivity({
+        type: 'VENDOR',
+        action: 'UPDATE',
+        entityId: id,
+        entityType: 'Vendor',
+        actorId: ctx.user.id,
+        actorName: ctx.user.name,
+        message: `Admin updated vendor details for ${vendor.shopName}`,
+        metadata: data,
+      });
+
+      return vendor;
     }),
 
 
@@ -321,8 +379,8 @@ export const adminRouter = createTRPCRouter({
         where: { status: status as any },
         include: {
           user: { select: { name: true, email: true } },
-          vendor: { select: { shopName: true } },
-          items: { take: 3, select: { name: true } },
+          vendor: { select: { shopName: true, city: true } },
+          items: { take: 3, select: { name: true, price: true } },
         },
         cursor: cursor ? { id: cursor } : undefined,
         orderBy: { createdAt: 'desc' },
@@ -730,7 +788,43 @@ export const adminRouter = createTRPCRouter({
         console.error('[Admin] Pusher notify failed for order:', orderId, pusherErr);
       }
 
+      await logActivity({
+        type: 'ORDER',
+        action: 'STATUS_UPDATE',
+        entityId: orderId,
+        entityType: 'Order',
+        actorId: ctx.user.id,
+        actorName: ctx.user.name,
+        message: `Order #${orderId.slice(-6)} status updated to ${status}`,
+        metadata: { status },
+      });
+
       return updated;
+    }),
+
+
+  deleteUser: adminProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.userId === ctx.user.id) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot delete your own admin account.' });
+      }
+
+      const user = await ctx.prisma.user.delete({
+        where: { id: input.userId },
+      });
+
+      await logActivity({
+        type: 'USER',
+        action: 'DELETE',
+        entityId: input.userId,
+        entityType: 'User',
+        actorId: ctx.user.id,
+        actorName: ctx.user.name,
+        message: `Admin deleted user account for ${user.name} (${user.email})`,
+      });
+
+      return { success: true };
     }),
 
   /** GST and Tax Reporting */
