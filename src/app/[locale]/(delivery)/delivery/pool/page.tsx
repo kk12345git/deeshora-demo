@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/navigation";
 import { trpc } from "@/lib/trpc";
 import { Package, MapPin, Phone, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";

@@ -4,7 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2, Package, ClipboardList, User, IndianRupee } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 

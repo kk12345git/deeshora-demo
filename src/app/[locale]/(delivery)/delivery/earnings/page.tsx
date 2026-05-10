@@ -6,7 +6,7 @@ import {
   PackageCheck, ArrowRight, Loader2,
   Wallet, ChevronRight
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/navigation";
 
 export default function EarningsPage() {
   const { data: stats, isLoading: statsLoading } = trpc.delivery.getStats.useQuery();

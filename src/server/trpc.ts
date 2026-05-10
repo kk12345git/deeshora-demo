@@ -119,6 +119,20 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
           console.error('[tRPC] Failed to sync Clerk metadata for existing admin:', e);
         }
       }
+    } else if (user.role === 'DELIVERY_PARTNER') {
+      // Sync DELIVERY_PARTNER role to Clerk
+      const { sessionClaims } = await auth();
+      if (sessionClaims?.metadata?.role !== 'DELIVERY_PARTNER') {
+        try {
+          const clerk = await clerkClient();
+          await clerk.users.updateUserMetadata(userId, {
+            publicMetadata: { role: 'DELIVERY_PARTNER' },
+          });
+          console.log(`[tRPC] Synced DELIVERY_PARTNER role to Clerk for ${user.email}`);
+        } catch (e) {
+          console.error('[tRPC] Failed to sync Clerk metadata for delivery partner:', e);
+        }
+      }
     }
   }
 

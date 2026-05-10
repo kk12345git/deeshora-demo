@@ -21,6 +21,12 @@ export default clerkMiddleware((auth, req) => {
   if (isProtectedRoute(req)) {
     auth().protect();
   }
+  
+  // HACK: Skip next-intl for API and tRPC routes to prevent HTML redirects on JSON requests
+  if (req.nextUrl.pathname.startsWith('/api') || req.nextUrl.pathname.startsWith('/trpc')) {
+    return;
+  }
+
   return intlMiddleware(req);
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/navigation";
 import { trpc } from "@/lib/trpc";
 import { 
   Package, MapPin, Phone, ExternalLink, 
@@ -101,12 +101,12 @@ export default function MyTasksPage() {
            </div>
            <h3 className="text-lg font-bold text-gray-200 mb-2">No active deliveries</h3>
            <p className="text-sm text-gray-500 mb-6">Claim an order from the pool to get started.</p>
-           <a 
+           <Link 
             href="/delivery/pool"
             className={`inline-flex items-center gap-2 text-blue-500 text-sm font-black uppercase tracking-widest hover:text-blue-400 transition-colors ${!stats?.isOnline ? 'pointer-events-none opacity-50' : ''}`}
            >
               Go to Pool <ExternalLink size={14} />
-           </a>
+           </Link>
         </div>
       ) : (
         <div className="grid gap-6">
