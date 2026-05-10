@@ -129,7 +129,7 @@ export default function VendorRegisterPage() {
                       <div className="relative w-32 h-32 bg-gray-50 rounded-full border-2 border-dashed border-gray-200 overflow-hidden group">
                          {logoBase64 ? (
                             <>
-                               <img src={logoBase64} alt="Preview" className="w-full h-full object-cover" />
+                               <Image src={logoBase64} alt="Preview" fill className="object-cover" unoptimized />
                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                   <label className="cursor-pointer bg-white/20 backdrop-blur-md p-3 rounded-full text-white hover:scale-110 transition-transform">
                                      <Camera size={20} />

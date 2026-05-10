@@ -3,6 +3,7 @@
 import { useUser, SignOutButton } from "@clerk/nextjs";
 import { trpc } from "@/lib/trpc";
 import { User, Mail, Shield, LogOut, PackageCheck, IndianRupee, Award, Loader2 } from "lucide-react";
+import Image from "next/image";
 
 export default function DeliveryProfilePage() {
   const { user } = useUser();
@@ -41,8 +42,8 @@ export default function DeliveryProfilePage() {
       <div className="bg-gray-900/50 border border-gray-800 rounded-[2.5rem] p-8 text-center relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
         
-        <div className="w-24 h-24 rounded-3xl bg-gray-800 border-4 border-gray-950 mx-auto mb-6 overflow-hidden shadow-2xl">
-          {user?.imageUrl && <img src={user.imageUrl} alt="Avatar" className="w-full h-full object-cover" />}
+        <div className="w-24 h-24 rounded-3xl bg-gray-800 border-4 border-gray-950 mx-auto mb-6 overflow-hidden shadow-2xl relative">
+          {user?.imageUrl && <Image src={user.imageUrl} alt="Avatar" fill className="object-cover" />}
         </div>
         
         <h2 className="text-2xl font-black text-white italic capitalize mb-1">{user?.fullName}</h2>

@@ -16,6 +16,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 // ─── Pure SVG sparkline (no library needed) ───────────────────────────────────
 function Sparkline({ data, color = '#f97316' }: { data: number[]; color?: string }) {
@@ -194,7 +195,8 @@ export default function VendorDashboardPage() {
         <div className="flex items-center gap-5">
            {vendorProfile?.logo ? (
               <div className="relative w-20 h-20 rounded-[2rem] overflow-hidden border-2 border-orange-500/10 shadow-xl">
-                 <img src={vendorProfile.logo} alt="Shop Logo" className="object-cover w-full h-full" />
+                                   <Image src={vendorProfile.logo} alt="Shop Logo" fill className="object-cover" />
+
               </div>
            ) : (
               <div className="w-20 h-20 bg-orange-500 rounded-[2rem] flex items-center justify-center text-white text-3xl font-black shadow-xl">

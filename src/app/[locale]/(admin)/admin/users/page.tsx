@@ -148,6 +148,7 @@ export default function AdminUsersPage() {
                 <tr className="border-b border-gray-50 bg-gray-50/50">
                   <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">User Profile</th>
                   <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Access Credentials</th>
+                  <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Operational Status</th>
                   <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Operational Load</th>
                   <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Identity Timeline</th>
                   <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-right">Terminal Action</th>
@@ -190,6 +191,18 @@ export default function AdminUsersPage() {
                             <span className="text-[9px] font-black uppercase tracking-widest">{config.label}</span>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-10 py-6">
+                        {user.role === 'DELIVERY' ? (
+                          <div className="flex items-center gap-3">
+                             <div className={`w-2.5 h-2.5 rounded-full ${user.isDeliveryOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                             <span className="text-[10px] font-black uppercase tracking-widest text-gray-700">
+                                {user.isDeliveryOnline ? 'Online' : 'Offline'}
+                             </span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">N/A</span>
+                        )}
                       </td>
                       <td className="px-10 py-6 text-center">
                         <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-900 rounded-2xl border border-gray-100 group-hover:bg-white transition-colors">

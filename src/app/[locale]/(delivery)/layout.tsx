@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { Loader2, Package, ClipboardList, User, IndianRupee } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 
 export default function DeliveryLayout({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -46,8 +47,8 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
              </div>
              <h1 className="text-xl font-bold tracking-tight">Delivery Hub</h1>
           </div>
-          <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 overflow-hidden">
-             {user.imageUrl && <img src={user.imageUrl} alt="Profile" className="w-full h-full object-cover" />}
+          <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 overflow-hidden relative">
+             {user.imageUrl && <Image src={user.imageUrl} alt="Profile" fill className="object-cover" />}
           </div>
         </div>
       </header>

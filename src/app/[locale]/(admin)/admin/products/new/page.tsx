@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import toast from "react-hot-toast";
 import { Upload, X, Loader2, Store } from "lucide-react";
+import Image from "next/image";
 
 export default function AdminNewProductPage() {
   const router = useRouter();
@@ -106,7 +107,7 @@ export default function AdminNewProductPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
             {images.map((src, index) => (
               <div key={index} className="relative aspect-square group">
-                <img src={src} className="w-full h-full object-cover rounded-2xl border-2 border-white shadow-md transition-transform group-hover:scale-[1.02]" />
+                <Image src={src} alt="Product Preview" fill className="w-full h-full object-cover rounded-2xl border-2 border-white shadow-md transition-transform group-hover:scale-[1.02]" unoptimized />
                 <button type="button" onClick={() => removeImage(index)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
                   <X size={14} />
                 </button>

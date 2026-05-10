@@ -14,11 +14,12 @@ interface OrderMapProps {
   orderId: string;
 }
 
+const PICKUP: [number, number] = [13.16, 80.30];
+const DROP: [number, number] = [13.17, 80.31];
+
 export default function OrderMap({ status, orderId }: OrderMapProps) {
   // For the demo, we generate mock coordinates based on the order ID
   // In a real app, these would come from the order data
-  const pickup: [number, number] = [13.16, 80.30];
-  const drop: [number, number] = [13.17, 80.31];
   const [driverPos, setDriverPos] = useState<[number, number] | undefined>(undefined);
 
   useEffect(() => {
@@ -29,8 +30,8 @@ export default function OrderMap({ status, orderId }: OrderMapProps) {
         progress += 0.01;
         if (progress > 1) progress = 1;
         
-        const lat = pickup[0] + (drop[0] - pickup[0]) * progress;
-        const lng = pickup[1] + (drop[1] - pickup[1]) * progress;
+        const lat = PICKUP[0] + (DROP[0] - PICKUP[0]) * progress;
+        const lng = PICKUP[1] + (DROP[1] - PICKUP[1]) * progress;
         setDriverPos([lat, lng]);
 
         if (progress >= 1) clearInterval(interval);
@@ -42,8 +43,8 @@ export default function OrderMap({ status, orderId }: OrderMapProps) {
   return (
     <div className="relative">
       <DeliveryMap 
-        pickup={pickup}
-        drop={drop}
+        pickup={PICKUP}
+        drop={DROP}
         driver={status === 'OUT_FOR_DELIVERY' ? driverPos : undefined}
       />
       

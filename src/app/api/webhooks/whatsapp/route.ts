@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DeeshoraBot } from '@/lib/whatsapp-bot';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 // This is the endpoint WhatsApp will call
 export async function POST(req: Request) {

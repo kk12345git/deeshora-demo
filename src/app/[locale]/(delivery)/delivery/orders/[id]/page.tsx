@@ -182,7 +182,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                   <div className="flex items-center gap-4">
                      <div className="w-12 h-12 bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center">
                         {item.image ? (
-                           <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                           <Image src={item.image} alt={item.name} width={48} height={48} className="w-full h-full object-cover" />
                         ) : (
                            <Package size={20} className="text-gray-600" />
                         )}

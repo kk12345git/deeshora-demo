@@ -20,7 +20,7 @@ export default function EarningsCard({ todayEarnings, completedToday, totalEarni
       
       <div className="flex justify-between items-start mb-6 relative z-10">
         <div>
-          <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Today's Earnings</h3>
+          <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Today&apos;s Earnings</h3>
           <div className="flex items-baseline gap-1">
             <span className="text-sm font-bold text-gray-400">₹</span>
             <span className="text-4xl font-black text-gray-100 tracking-tighter">{todayEarnings}</span>

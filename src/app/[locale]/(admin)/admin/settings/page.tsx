@@ -36,11 +36,17 @@ export default function AdminSettingsPage() {
     const platform_fixed_fee = formData.get('platform_fixed_fee') as string;
 
 
+    const whatsapp_access_token = formData.get('whatsapp_access_token') as string;
+    const whatsapp_phone_id = formData.get('whatsapp_phone_id') as string;
+
+
     updateConfigMutation.mutate({ key: 'delivery_fee', value: delivery_fee });
     updateConfigMutation.mutate({ key: 'free_delivery_above', value: free_delivery_above });
     updateConfigMutation.mutate({ key: 'business_whatsapp', value: business_whatsapp });
     updateConfigMutation.mutate({ key: 'delivery_partners', value: delivery_partners });
     updateConfigMutation.mutate({ key: 'platform_fixed_fee', value: platform_fixed_fee });
+    updateConfigMutation.mutate({ key: 'whatsapp_access_token', value: whatsapp_access_token });
+    updateConfigMutation.mutate({ key: 'whatsapp_phone_id', value: whatsapp_phone_id });
   };
 
 
@@ -185,12 +191,30 @@ export default function AdminSettingsPage() {
                   defaultValue={deliveryPartners} 
                   className="w-full p-6 bg-gray-50 border-2 border-transparent rounded-[1.5rem] font-black text-sm focus:border-orange-400 focus:bg-white outline-none transition-all resize-none" 
                   placeholder="919876543210, 911234567890" 
-                  rows={4} 
+                  rows={2} 
                 />
-                <div className="flex items-center gap-2 text-gray-400">
-                   <AlertCircle size={14} className="text-orange-500" />
-                   <p className="text-[10px] font-black uppercase tracking-widest">Forwarding order payloads after location handshake.</p>
-                </div>
+              </div>
+
+              <div className="pt-6 border-t border-gray-100 space-y-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">API Infrastructure</p>
+                
+                <SettingsField label="WhatsApp Access Token" icon={<Zap size={14} />}>
+                  <input 
+                    type="password" 
+                    name="whatsapp_access_token" 
+                    defaultValue={config?.find((c: any) => c.key === 'whatsapp_access_token')?.value || ''} 
+                    className="w-full h-14 px-5 bg-gray-50 border-2 border-transparent rounded-2xl font-mono text-xs focus:border-orange-400 focus:bg-white outline-none transition-all" 
+                  />
+                </SettingsField>
+
+                <SettingsField label="WhatsApp Phone ID" icon={<MessageSquare size={14} />}>
+                  <input 
+                    type="text" 
+                    name="whatsapp_phone_id" 
+                    defaultValue={config?.find((c: any) => c.key === 'whatsapp_phone_id')?.value || ''} 
+                    className="w-full h-14 px-5 bg-gray-50 border-2 border-transparent rounded-2xl font-bold text-sm focus:border-orange-400 focus:bg-white outline-none transition-all" 
+                  />
+                </SettingsField>
               </div>
             </div>
           </motion.div>
