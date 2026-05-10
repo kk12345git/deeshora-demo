@@ -282,6 +282,14 @@ export const adminRouter = createTRPCRouter({
         },
       });
 
+      // Trigger Pusher for Admin dashboard refresh
+      try {
+        const { pusherServer, CHANNELS, EVENTS } = await import('@/lib/pusher');
+        await pusherServer.trigger(CHANNELS.ADMIN, EVENTS.VENDOR_APPROVED, { vendorId: vendor.id, status: vendor.status });
+      } catch (err) {
+        console.error('[Admin] Pusher trigger failed:', err);
+      }
+
       await logActivity({
         type: 'VENDOR',
         action: input.status === 'APPROVED' ? 'APPROVAL' : 'STATUS_UPDATE',
@@ -294,6 +302,7 @@ export const adminRouter = createTRPCRouter({
       });
 
       return vendor;
+
     }),
 
 
@@ -310,6 +319,14 @@ export const adminRouter = createTRPCRouter({
         },
       });
 
+      // Trigger Pusher for Admin dashboard refresh
+      try {
+        const { pusherServer, CHANNELS, EVENTS } = await import('@/lib/pusher');
+        await pusherServer.trigger(CHANNELS.ADMIN, EVENTS.NEW_PAYMENT_VERIFICATION, { vendorId: vendor.id });
+      } catch (err) {
+        console.error('[Admin] Pusher trigger failed:', err);
+      }
+
       await logActivity({
         type: 'VENDOR',
         action: 'SUBSCRIPTION',
@@ -319,6 +336,7 @@ export const adminRouter = createTRPCRouter({
         actorName: ctx.user.name,
         message: `Admin manually confirmed ₹700 admission payment for ${vendor.shopName}`,
       });
+
 
       return vendor;
     }),

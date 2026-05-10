@@ -91,7 +91,17 @@ export async function POST(req: Request) {
         role: role,
       },
     });
+
+    // Trigger Pusher for Admin dashboard refresh
+    try {
+      const { pusherServer, CHANNELS, EVENTS } = await import('@/lib/pusher');
+      await pusherServer.trigger(CHANNELS.ADMIN, 'user-created', { name, email });
+    } catch (err) {
+      console.error('[ClerkWebhook] Pusher trigger failed:', err);
+    }
+
     return NextResponse.json({ message: 'User created' }, { status: 201 });
+
   }
 
 
