@@ -14,12 +14,13 @@ export const adminRouter = createTRPCRouter({
     let onlinePartners = 0;
 
     try {
-      totalUsers = await ctx.prisma.user.count({ where: { role: 'CUSTOMER' } });
+      totalUsers = await ctx.prisma.user.count();
       totalDeliveryPartners = await ctx.prisma.user.count({ where: { role: 'DELIVERY_PARTNER' } });
       onlinePartners = await ctx.prisma.user.count({ where: { role: 'DELIVERY_PARTNER', isDeliveryOnline: true } });
     } catch (e) {
-      console.error('[AdminStats] User/Partner counts failed (likely Enum mismatch):', e);
+      console.error('[AdminStats] Counts failed:', e);
     }
+
 
     const totalVendors = await ctx.prisma.vendor.count({ where: { status: 'APPROVED' } });
     const pendingVendors = await ctx.prisma.vendor.count({ where: { status: 'PENDING' } });

@@ -1,244 +1,148 @@
-// prisma/schema.prisma
-
-
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // For Prisma Migrate
-}
-
-
 generator client {
   provider = "prisma-client-js"
 }
 
-
-// ENUMS
-enum UserRole {
-  CUSTOMER
-  VENDOR
-  ADMIN
-  DELIVERY_PARTNER
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-
-enum VendorStatus {
-  PENDING
-  APPROVED
-  SUSPENDED
-}
-
-
-enum VendorPlan {
-  TRIAL
-  PREMIUM
-}
-
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PREPARING
-  READY
-  OUT_FOR_DELIVERY
-  DELIVERED
-  CANCELLED
-  REFUNDED
-}
-
-
-enum PaymentStatus {
-  PENDING
-  PAID
-  FAILED
-  REFUNDED
-}
-
-
-enum PaymentMethod {
-  COD
-  RAZORPAY
-  ONLINE
-  UPI
-  PHONEPE
-  MANUAL_UPI
-}
-
-
-enum SubscriptionStatus {
-  NONE
-  PENDING_APPROVAL
-  ACTIVE
-  EXPIRED
-}
-
-
-enum ProductType {
-  PHYSICAL
-  DIGITAL
-  COMMUNITY_ACCESS
-}
-
-
-// MODELS
 model User {
-  id          String   @id @default(cuid())
-  clerkId     String   @unique
-  email       String   @unique
-  name        String
-  phone       String?
-  avatar      String?
-  role        UserRole @default(CUSTOMER)
-  // Customer onboarding fields
-  area        String?  // e.g., "Thiruvottriyur"
-  pincode     String?
-  landmark    String?
-  isOnboarded      Boolean  @default(false)
-  isDeliveryOnline Boolean  @default(false) // Added for delivery partner status
-  createdAt        DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  addresses Address[]
-  orders    Order[]
-  vendor    Vendor?
-  cart      Cart?
-  reviews   Review[]
-  deliveries Order[] @relation("DeliveryPartner")
-  notifications Notification[]
-
-  // Referral System
-  referralCode String? @unique
-  referredById String?
-  referredBy   User?   @relation("UserReferral", fields: [referredById], references: [id])
-  referrals    User[]  @relation("UserReferral")
+  id                   String            @id @default(cuid())
+  clerkId              String            @unique
+  email                String            @unique
+  name                 String
+  phone                String?
+  avatar               String?
+  role                 UserRole          @default(CUSTOMER)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  area                 String?
+  isOnboarded          Boolean           @default(false)
+  landmark             String?
+  pincode              String?
+  referralCode         String?           @unique
+  referredById         String?
+  isDeliveryOnline     Boolean           @default(false)
+  addresses            Address[]
+  cart                 Cart?
   communityMemberships CommunityMember[]
+  notifications        Notification[]
+  deliveries           Order[]           @relation("DeliveryPartner")
+  orders               Order[]
+  reviews              Review[]
+  referredBy           User?             @relation("UserReferral", fields: [referredById], references: [id])
+  referrals            User[]            @relation("UserReferral")
+  vendor               Vendor?
 }
-
 
 model Address {
-  id        String   @id @default(cuid())
-  userId    String
-  label     String   @default("Home")
-  line1     String
-  line2     String?
-  city      String
-  state     String
-  pincode   String
-  isDefault Boolean  @default(false)
-  coordinates Json?    // Added for precise delivery location
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders Order[]
-
+  id          String   @id @default(cuid())
+  userId      String
+  label       String   @default("Home")
+  line1       String
+  line2       String?
+  city        String
+  state       String
+  pincode     String
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  coordinates Json?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders      Order[]
 
   @@index([userId])
 }
 
-
 model Vendor {
-  id              String       @id @default(cuid())
-  userId          String       @unique
-  shopName        String
-  description     String?
-  logo            String?
-  coverImage      String?
-  phone           String
-  email           String
-  city            String
-  address         String
-  categories      String[] // e.g., ["Groceries", "Electronics"]
-  status          VendorStatus @default(PENDING)
-  commissionRate  Float        @default(0.15)
-  // Subscription Details
-  plan            VendorPlan   @default(PREMIUM)
-  planExpiresAt   DateTime?
-  isVerified      Boolean      @default(false)
-  razorpaySubscriptionId String? // Added for real-time subscription
-  lastPaymentId   String?       // Added to track last payment
-  subscriptionStatus SubscriptionStatus @default(NONE)
-  subscriptionUtr    String?
-  subscriptionMethod PaymentMethod?
-  subscriptionPaidAt DateTime?
-  // Bank & Financial Details
-  bankAccount     String?
-  bankAccountName String?      // Account holder name
-  bankName        String?      // e.g., "HDFC Bank"
-  ifscCode        String?
-  upiId           String?      // UPI ID for quick payouts
-  upiQrCode       String?      // QR code image URL for direct payments
-  // GST Details
-  gstNumber       String?      // GST registration number
-  totalEarnings   Float        @default(0)
-  pendingPayout   Float        @default(0)
-  coordinates     Json?        // Added for precise pickup location
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  products Product[]
-  orders   Order[]
-  payouts  Payout[]
-  community Community?
-
+  id                     String             @id @default(cuid())
+  userId                 String             @unique
+  shopName               String
+  description            String?
+  logo                   String?
+  coverImage             String?
+  phone                  String
+  email                  String
+  city                   String
+  address                String
+  status                 VendorStatus       @default(PENDING)
+  commissionRate         Float              @default(0.15)
+  bankAccount            String?
+  ifscCode               String?
+  totalEarnings          Float              @default(0)
+  pendingPayout          Float              @default(0)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  bankAccountName        String?
+  bankName               String?
+  gstNumber              String?
+  upiId                  String?
+  categories             String[]
+  isVerified             Boolean            @default(false)
+  plan                   VendorPlan         @default(PREMIUM)
+  planExpiresAt          DateTime?
+  lastPaymentId          String?
+  razorpaySubscriptionId String?
+  subscriptionMethod     PaymentMethod?
+  subscriptionPaidAt     DateTime?
+  subscriptionStatus     SubscriptionStatus @default(NONE)
+  subscriptionUtr        String?
+  coordinates            Json?
+  community              Community?
+  orders                 Order[]
+  payouts                Payout[]
+  products               Product[]
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([city])
   @@index([status])
 }
 
-
 model Category {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  slug        String    @unique
-  image       String?
-  description String?
-  isActive    Boolean   @default(true)
-  sortOrder   Int       @default(0)
-  commissionRate Float? // If set, overrides vendor default
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-
-  products Product[]
+  id             String    @id @default(cuid())
+  name           String    @unique
+  slug           String    @unique
+  image          String?
+  description    String?
+  isActive       Boolean   @default(true)
+  sortOrder      Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  commissionRate Float?
+  products       Product[]
 }
 
-
 model Product {
-  id           String   @id @default(cuid())
-  vendorId     String
-  categoryId   String
-  name         String
-  slug         String   @unique
-  description  String
-  price        Float
-  mrp          Float
-  stock        Int      @default(0)
-  unit         String   @default("piece") // e.g., "kg", "litre", "piece"
-  gstRate      Float    @default(0)       // e.g., 0, 0.05, 0.12, 0.18, 0.28
-  images       String[]
-  tags         String[] @default([])      // e.g., ["organic", "fresh", "local"] for search
-  isActive     Boolean  @default(true)
-  isFeatured   Boolean  @default(false)
-  rating       Float    @default(0)
-  reviewCount  Int      @default(0)
-  viewCount    Int      @default(0)       // used for trending / popularity ranking
-  commissionRate Float?                  // If set, overrides category and vendor default
-  lowStockThreshold Int   @default(5)      // Alert when stock hits this
-  type         ProductType @default(PHYSICAL)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-
-  vendor    Vendor     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  category  Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  cartItems CartItem[]
-  orderItems OrderItem[]
-  reviews   Review[]
-
+  id                String      @id @default(cuid())
+  vendorId          String
+  categoryId        String
+  name              String
+  slug              String      @unique
+  description       String
+  price             Float
+  mrp               Float
+  stock             Int         @default(0)
+  unit              String      @default("piece")
+  images            String[]
+  isActive          Boolean     @default(true)
+  isFeatured        Boolean     @default(false)
+  rating            Float       @default(0)
+  reviewCount       Int         @default(0)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  gstRate           Float       @default(0)
+  tags              String[]    @default([])
+  viewCount         Int         @default(0)
+  commissionRate    Float?
+  lowStockThreshold Int         @default(5)
+  type              ProductType @default(PHYSICAL)
+  cartItems         CartItem[]
+  orderItems        OrderItem[]
+  category          Category    @relation(fields: [categoryId], references: [id])
+  vendor            Vendor      @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  reviews           Review[]
 
   @@index([vendorId])
   @@index([categoryId])
@@ -251,69 +155,58 @@ model Product {
   @@index([createdAt])
 }
 
-
 model Cart {
   id        String     @id @default(cuid())
   userId    String     @unique
   updatedAt DateTime   @updatedAt
-
-
-  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items CartItem[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
 }
 
-
 model CartItem {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   cartId    String
   productId String
-  quantity  Int    @default(1)
-
-
-  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
+  quantity  Int     @default(1)
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, productId])
   @@index([cartId])
   @@index([productId])
 }
 
-
 model Order {
-  id              String        @id @default(cuid())
-  userId          String
-  vendorId        String
-  addressId       String
-  status          OrderStatus   @default(PENDING)
-  paymentStatus   PaymentStatus @default(PENDING)
-  paymentMethod   PaymentMethod @default(COD)
-  paymentId       String?
-  razorpayOrderId String?
-  utrNumber       String?       // Added for manual UPI verification
-  subtotal        Float
-  deliveryFee     Float         @default(0)
-  discount        Float         @default(0)
-  total           Float
-  commission      Float
-  vendorAmount    Float
-  notes           String?
-  couponId        String?
-  deliveredAt     DateTime?
+  id                String          @id @default(cuid())
+  userId            String
+  vendorId          String
+  addressId         String
+  status            OrderStatus     @default(PENDING)
+  paymentStatus     PaymentStatus   @default(PENDING)
+  paymentId         String?
+  razorpayOrderId   String?
+  subtotal          Float
+  deliveryFee       Float           @default(0)
+  discount          Float           @default(0)
+  total             Float
+  commission        Float
+  vendorAmount      Float
+  notes             String?
+  deliveredAt       DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  couponId          String?
+  assignedAt        DateTime?
   deliveryPartnerId String?
-  assignedAt      DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-
-  user           User            @relation(fields: [userId], references: [id], onDelete: Restrict)
-  vendor         Vendor          @relation(fields: [vendorId], references: [id], onDelete: Restrict)
-  deliveryPartner User?           @relation("DeliveryPartner", fields: [deliveryPartnerId], references: [id])
-  address        Address         @relation(fields: [addressId], references: [id], onDelete: Restrict)
-  coupon    Coupon?         @relation(fields: [couponId], references: [id], onDelete: SetNull)
-  items     OrderItem[]
-  timeline  OrderTimeline[]
-
+  paymentMethod     PaymentMethod   @default(COD)
+  utrNumber         String?
+  address           Address         @relation(fields: [addressId], references: [id])
+  coupon            Coupon?         @relation(fields: [couponId], references: [id])
+  deliveryPartner   User?           @relation("DeliveryPartner", fields: [deliveryPartnerId], references: [id])
+  user              User            @relation(fields: [userId], references: [id])
+  vendor            Vendor          @relation(fields: [vendorId], references: [id])
+  items             OrderItem[]
+  timeline          OrderTimeline[]
 
   @@index([userId])
   @@index([vendorId])
@@ -322,30 +215,25 @@ model Order {
   @@index([razorpayOrderId])
 }
 
-
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  productId String
-  name      String
-  image     String?
-  price     Float
-  mrp       Float
-  quantity  Int
-  total     Float
-  commission Float    @default(0)   // commission taken for this item
-  gstRate   Float   @default(0)   // snapshot of product's GST rate at order time
-  gstAmount Float   @default(0)   // computed: price * quantity * gstRate
-
-
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
-
+  id         String  @id @default(cuid())
+  orderId    String
+  productId  String
+  name       String
+  image      String?
+  price      Float
+  mrp        Float
+  quantity   Int
+  total      Float
+  gstAmount  Float   @default(0)
+  gstRate    Float   @default(0)
+  commission Float   @default(0)
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product    Product @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
 }
-
 
 model OrderTimeline {
   id        String      @id @default(cuid())
@@ -353,52 +241,40 @@ model OrderTimeline {
   status    OrderStatus
   message   String?
   createdAt DateTime    @default(now())
-
-
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
 }
 
-
 model Review {
-  id        String   @id @default(cuid())
-  productId String
-  userId    String
-  rating    Int
-  comment   String?
-  images    String[] @default([]) // Added for review photos
-  isVerified Boolean @default(false) // Verified purchase badge
-  createdAt DateTime @default(now())
-
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  id         String   @id @default(cuid())
+  productId  String
+  userId     String
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+  images     String[] @default([])
+  isVerified Boolean  @default(false)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([productId, userId])
   @@index([productId])
   @@index([userId])
 }
 
-
 model Payout {
   id          String       @id @default(cuid())
   vendorId    String
   amount      Float
-  status      PayoutStatus @default(PENDING)
   utrNumber   String?
   processedAt DateTime?
   createdAt   DateTime     @default(now())
-
-
-  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-
+  status      PayoutStatus @default(PENDING)
+  vendor      Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
   @@index([vendorId])
 }
-
 
 model SiteConfig {
   id    String @id @default(cuid())
@@ -406,69 +282,48 @@ model SiteConfig {
   value String
 }
 
-
 model ServiceArea {
   id            String   @id @default(cuid())
-  label         String              // Display name shown to customers
-  value         String   @unique    // Stored in user.area field
-  zone          String              // Parent zone (e.g. "Thiruvottriyur")
-  pincode       String?             // Primary pincode for auto-fill
-  isServiceable Boolean  @default(true)  // false = "Coming Soon"
-  isActive      Boolean  @default(true)  // false = hidden entirely
+  label         String
+  value         String   @unique
+  zone          String
+  pincode       String?
+  isServiceable Boolean  @default(true)
+  isActive      Boolean  @default(true)
   sortOrder     Int      @default(0)
-  coordinates   Json?               // Added for map polygons/center
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
+  coordinates   Json?
 
   @@index([zone])
   @@index([isServiceable])
 }
 
-
-enum DiscountType {
-  FIXED
-  PERCENT
-}
-
-
-enum PayoutStatus {
-  PENDING
-  COMPLETED
-  FAILED
-}
-
-
 model Coupon {
-  id          String       @id @default(cuid())
-  code        String       @unique
-  type        DiscountType
-  value       Float                         // rupees for FIXED, percentage for PERCENT
-  minOrder    Float        @default(0)      // minimum cart value to apply
-  maxUses     Int          @default(0)      // 0 = unlimited
-  usedCount   Int          @default(0)
-  expiresAt   DateTime?
-  isActive    Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-
-  orders Order[]
-
+  id        String       @id @default(cuid())
+  code      String       @unique
+  type      DiscountType
+  value     Float
+  minOrder  Float        @default(0)
+  maxUses   Int          @default(0)
+  usedCount Int          @default(0)
+  expiresAt DateTime?
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  orders    Order[]
 
   @@index([code])
   @@index([isActive])
 }
 
-
-// Search analytics — track what customers are searching for
 model SearchLog {
   id        String   @id @default(cuid())
   query     String
-  userId    String?  // nullable — guest searches are also tracked
-  results   Int      @default(0) // number of results returned
-  clicked   String?  // product ID that was clicked (if any)
-  city      String?  // city filter active during search
+  userId    String?
+  results   Int      @default(0)
+  clicked   String?
+  city      String?
   createdAt DateTime @default(now())
 
   @@index([query])
@@ -476,41 +331,39 @@ model SearchLog {
   @@index([userId])
 }
 
-
 model Notification {
   id        String   @id @default(cuid())
   userId    String
   title     String
   message   String
-  type      String   // e.g., "LOW_STOCK", "ORDER", "SYSTEM"
+  type      String
   isRead    Boolean  @default(false)
-  link      String?  // Optional link to action
+  link      String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
+
 model Community {
-  id          String   @id @default(cuid())
-  vendorId    String   @unique
+  id          String            @id @default(cuid())
+  vendorId    String            @unique
   name        String
   description String?
   image       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   vendor      Vendor            @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   members     CommunityMember[]
   posts       CommunityPost[]
 }
 
 model CommunityMember {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   communityId String
   userId      String
-  role        String   @default("MEMBER")
-  joinedAt    DateTime @default(now())
-
+  role        String    @default("MEMBER")
+  joinedAt    DateTime  @default(now())
   community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -518,26 +371,25 @@ model CommunityMember {
 }
 
 model CommunityPost {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   communityId String
   authorId    String
   content     String
   image       String?
-  createdAt   DateTime @default(now())
-
+  createdAt   DateTime  @default(now())
   community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
 }
 
 model ActivityLog {
   id         String   @id @default(cuid())
-  type       String   // e.g., "ORDER", "VENDOR", "USER", "SYSTEM", "PAYMENT"
-  action     String   // e.g., "STATUS_UPDATE", "CREATE", "DELETE", "APPROVAL", "PAYOUT"
-  entityId   String?  // ID of the object being acted upon
-  entityType String?  // Type of the object (e.g., "Order", "Vendor")
-  actorId    String?  // ID of the user who performed the action
-  actorName  String?  // Name of the user who performed the action
-  message    String?  // Human readable description
-  metadata   Json?    // Additional structured data
+  type       String
+  action     String
+  entityId   String?
+  entityType String?
+  actorId    String?
+  actorName  String?
+  message    String?
+  metadata   Json?
   createdAt  DateTime @default(now())
 
   @@index([type])
@@ -545,4 +397,73 @@ model ActivityLog {
   @@index([entityId])
   @@index([actorId])
   @@index([createdAt])
+}
+
+enum UserRole {
+  CUSTOMER
+  VENDOR
+  ADMIN
+  DELIVERY_PARTNER
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+}
+
+enum VendorPlan {
+  TRIAL
+  PREMIUM
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  COD
+  RAZORPAY
+  ONLINE
+  UPI
+  PHONEPE
+  MANUAL_UPI
+}
+
+enum SubscriptionStatus {
+  NONE
+  PENDING_APPROVAL
+  ACTIVE
+  EXPIRED
+}
+
+enum ProductType {
+  PHYSICAL
+  DIGITAL
+  COMMUNITY_ACCESS
+}
+
+enum DiscountType {
+  FIXED
+  PERCENT
+}
+
+enum PayoutStatus {
+  PENDING
+  COMPLETED
+  FAILED
 }
