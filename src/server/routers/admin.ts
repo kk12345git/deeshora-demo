@@ -285,7 +285,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.vendorId },
         data: { 
           status: 'APPROVED',
-          subscriptionStatus: 'PAID',
+          subscriptionStatus: 'ACTIVE',
           plan: 'PREMIUM',
           planExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
         },
@@ -293,7 +293,7 @@ export const adminRouter = createTRPCRouter({
 
       await logActivity({
         type: 'VENDOR',
-        action: 'PAYMENT_CONFIRMATION',
+        action: 'SUBSCRIPTION',
         entityId: vendor.id,
         entityType: 'Vendor',
         actorId: ctx.user.id,

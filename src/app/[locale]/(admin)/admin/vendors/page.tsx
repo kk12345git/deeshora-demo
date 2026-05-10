@@ -278,7 +278,7 @@ export default function AdminVendorsPage() {
                           <Detail icon={<Star size={13} />} label="Commission" value={`${(vendor.commissionRate * 100).toFixed(0)}%`} />
                           <Detail icon={<CreditCard size={13} />} label="Bank Acc." value={vendor.bankAccount ? `****${vendor.bankAccount.slice(-4)}` : '—'} />
                           {vendor.subscriptionUtr && <Detail icon={<CheckCircle size={13} />} label="Admission UTR" value={vendor.subscriptionUtr} highlight />}
-                          <Detail icon={<IndianRupee size={13} />} label="Adm. Fee" value={vendor.subscriptionStatus === 'PAID' ? 'PAID' : 'PENDING'} highlight={vendor.subscriptionStatus === 'PAID'} />
+                          <Detail icon={<IndianRupee size={13} />} label="Adm. Fee" value={vendor.subscriptionStatus === 'ACTIVE' ? 'PAID' : 'PENDING'} highlight={vendor.subscriptionStatus === 'ACTIVE'} />
                           {vendor.ifscCode && <Detail icon={<Building2 size={13} />} label="IFSC" value={vendor.ifscCode} />}
                         </div>
                       </div>
@@ -287,7 +287,7 @@ export default function AdminVendorsPage() {
                       <div className="space-y-3">
                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Actions</p>
                         
-                        {vendor.subscriptionStatus !== 'PAID' && (
+                        {vendor.subscriptionStatus !== 'ACTIVE' && (
                           <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 mb-3">
                             <div className="flex items-center gap-2 mb-2">
                               <div className="w-6 h-6 bg-indigo-500 rounded-lg flex items-center justify-center text-white">

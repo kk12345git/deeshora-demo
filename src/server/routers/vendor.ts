@@ -214,7 +214,7 @@ export const vendorRouter = createTRPCRouter({
         data: {
           subscriptionStatus: 'PENDING_APPROVAL',
           subscriptionUtr: input.utr,
-          subscriptionMethod: 'MANUAL',
+          subscriptionMethod: 'MANUAL_UPI',
         }
       });
     }),

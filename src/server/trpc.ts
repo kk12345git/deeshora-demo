@@ -3,7 +3,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import superjson from 'superjson';
 import prisma from '@/lib/prisma';
-import { User } from '@prisma/client';
+import { User, UserRole } from '@prisma/client';
 import { clerkClient } from '@clerk/nextjs/server';
 
 
@@ -189,7 +189,7 @@ export const vendorProcedure = protectedProcedure.use(async ({ ctx, next }) => {
  * Delivery procedure
  */
 export const deliveryProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  if (ctx.user.role !== 'DELIVERY_PARTNER' && ctx.user.role !== 'ADMIN') {
+  if (ctx.user.role !== UserRole.DELIVERY_PARTNER && ctx.user.role !== UserRole.ADMIN) {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not a delivery partner.' });
   }
   return next({ ctx });
