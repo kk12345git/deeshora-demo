@@ -6,8 +6,33 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 
 export default async function AdminDashboardPage() {
-  const stats = await api.admin.stats();
-  const activities = await api.admin.activities({ limit: 5 });
+  let stats;
+  let activities;
+  
+  try {
+    stats = await api.admin.stats();
+    activities = await api.admin.activities({ limit: 5 });
+  } catch (error: any) {
+    console.error('[AdminDashboard] Failed to fetch stats:', error);
+    
+    // If it's a 401 or 403, we should let the layout handle the redirect, 
+    // but we must not crash the component.
+    if (error.code === 'UNAUTHORIZED' || error.code === 'FORBIDDEN') {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center shadow-lg">
+            <AlertTriangle size={32} />
+          </div>
+          <h2 className="text-2xl font-black text-gray-900">Access Denied</h2>
+          <p className="text-gray-500 max-w-xs text-center font-medium">You don't have permission to access the Command Center. Please sign in as an administrator.</p>
+          <Link href="/" className="btn-primary px-8 py-3 rounded-2xl">Return Home</Link>
+        </div>
+      );
+    }
+    
+    throw error; // Let Next.js handle other fatal errors
+  }
+
   const maxRevenue = Math.max(...stats.monthlyRevenue.map(r => r.revenue), 1);
 
   return (

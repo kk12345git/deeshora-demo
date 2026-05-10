@@ -31,15 +31,21 @@ export const adminRouter = createTRPCRouter({
 
 
     // Monthly revenue for the last 6 months
-    const monthlyRevenueData = await ctx.prisma.$queryRaw<Array<{ month: string; revenue: number }>>`
-      SELECT
-        to_char(date_trunc('month', "createdAt"), 'YYYY-MM') as month,
-        SUM(commission) as revenue
-      FROM "Order"
-      WHERE "paymentStatus" = 'PAID' AND "createdAt" >= date_trunc('month', current_date - interval '5 months')
-      GROUP BY 1
-      ORDER BY 1;
-    `;
+    let monthlyRevenueData: Array<{ month: string; revenue: number }> = [];
+    try {
+      monthlyRevenueData = await ctx.prisma.$queryRaw<Array<{ month: string; revenue: number }>>`
+        SELECT
+          to_char(date_trunc('month', "createdAt"), 'YYYY-MM') as month,
+          CAST(SUM(commission) AS FLOAT8) as revenue
+        FROM "Order"
+        WHERE "paymentStatus" = 'PAID' AND "createdAt" >= date_trunc('month', current_date - interval '5 months')
+        GROUP BY 1
+        ORDER BY 1;
+      `;
+    } catch (e) {
+      console.error('[AdminStats] Raw query failed:', e);
+      // Fallback to empty array
+    }
 
 
     const totalDeliveryPartners = await ctx.prisma.user.count({ where: { role: 'DELIVERY_PARTNER' } });
@@ -136,8 +142,8 @@ export const adminRouter = createTRPCRouter({
       const monthlyBreakdown = await ctx.prisma.$queryRaw<Array<{ month: string; revenue: number; orders: number }>>`
         SELECT
           to_char(date_trunc('month', "createdAt"), 'YYYY-MM') as month,
-          SUM("total") as revenue,
-          COUNT(*) as orders
+          CAST(SUM("total") AS FLOAT8) as revenue,
+          CAST(COUNT(*) AS INTEGER) as orders
         FROM "Order"
         WHERE "paymentStatus" = 'PAID'
           AND "createdAt" >= ${since}

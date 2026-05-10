@@ -98,17 +98,28 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
     const isAdmin = isAdminByEmail || isAdminByRole;
 
     if (isAdmin) {
-      // Upgrade DB role if somehow not ADMIN yet
+      // 1. Upgrade DB role if somehow not ADMIN yet
       if (user.role !== 'ADMIN') {
         user = await prisma.user.update({
           where: { id: user.id },
           data: { role: 'ADMIN' },
         });
       }
+
+      // 2. Sync Clerk metadata if missing or wrong
+      const { sessionClaims } = await auth();
+      if (sessionClaims?.metadata?.role !== 'ADMIN') {
+        try {
+          const clerk = await clerkClient();
+          await clerk.users.updateUserMetadata(userId, {
+            publicMetadata: { role: 'ADMIN' },
+          });
+          console.log(`[tRPC] Synced ADMIN role to Clerk for ${user.email}`);
+        } catch (e) {
+          console.error('[tRPC] Failed to sync Clerk metadata for existing admin:', e);
+        }
+      }
     }
-    // VENDOR and DELIVERY roles in DB are trusted as-is — no automatic changes
-    // Promotion logic should be handled by webhooks or explicit sync buttons, 
-    // not by checking Clerk on every request.
   }
 
   return {
