@@ -23,7 +23,7 @@ export function RoleSwitcher() {
 
   const currentRole = pathname.startsWith('/admin') ? 'ADMIN' : 
                      pathname.startsWith('/vendor') ? 'VENDOR' :
-                     pathname.startsWith('/delivery') ? 'DELIVERY' : 'CUSTOMER';
+                     pathname.startsWith('/delivery') ? 'DELIVERY_PARTNER' : 'CUSTOMER';
 
   const roles = [
     { 
@@ -47,7 +47,7 @@ export function RoleSwitcher() {
       href: '/delivery', 
       icon: Truck, 
       color: 'bg-blue-500', 
-      active: currentRole === 'DELIVERY',
+      active: currentRole === 'DELIVERY_PARTNER',
       desc: 'Logistics & Tasks'
     },
     { 

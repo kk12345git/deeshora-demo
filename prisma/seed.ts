@@ -152,17 +152,6 @@ async function main() {
     update: { role: 'DELIVERY_PARTNER' },
   });
 
-  await prisma.deliveryPartner.upsert({
-    where: { userId: deliveryUser.id },
-    create: {
-      userId: deliveryUser.id,
-      name: 'Rider Rajesh',
-      phone: '918939318865',
-      vehicleType: 'BIKE',
-      vehicleNumber: 'TN 01 AB 1234',
-    },
-    update: { name: 'Rider Rajesh' },
-  });
   console.log('✅ Seeded delivery partner.');
 
   // ── Seed Sample Activity Logs ────────────────────────────────────────

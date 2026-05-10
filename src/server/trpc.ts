@@ -189,7 +189,7 @@ export const vendorProcedure = protectedProcedure.use(async ({ ctx, next }) => {
  * Delivery procedure
  */
 export const deliveryProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  if (ctx.user.role !== 'DELIVERY' && ctx.user.role !== 'ADMIN') {
+  if (ctx.user.role !== 'DELIVERY_PARTNER' && ctx.user.role !== 'ADMIN') {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not a delivery partner.' });
   }
   return next({ ctx });

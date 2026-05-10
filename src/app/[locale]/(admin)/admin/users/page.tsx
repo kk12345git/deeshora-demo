@@ -13,13 +13,13 @@ import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { CreateVendorModal } from '@/components/admin/CreateVendorModal';
 
-const roleTabs: (UserRole | 'ALL')[] = ['ALL', 'CUSTOMER', 'VENDOR', 'ADMIN', 'DELIVERY'];
+const roleTabs: (UserRole | 'ALL')[] = ['ALL', 'CUSTOMER', 'VENDOR', 'ADMIN', 'DELIVERY_PARTNER'];
 
 const ROLE_CONFIG: Record<UserRole, { label: string; bg: string; text: string; icon: any }> = {
   CUSTOMER: { label: 'Customer', bg: 'bg-blue-50', text: 'text-blue-700', icon: User },
   VENDOR:   { label: 'Vendor',   bg: 'bg-purple-50', text: 'text-purple-700', icon: Store },
   ADMIN:    { label: 'Admin',    bg: 'bg-gray-900', text: 'text-white', icon: Shield },
-  DELIVERY: { label: 'Delivery', bg: 'bg-emerald-50', text: 'text-emerald-700', icon: Clock },
+  DELIVERY_PARTNER: { label: 'Delivery', bg: 'bg-emerald-50', text: 'text-emerald-700', icon: Clock },
 };
 
 const RoleSelect = ({ userId, currentRole, refetch }: { userId: string, currentRole: UserRole, refetch: () => void }) => {
@@ -193,7 +193,7 @@ export default function AdminUsersPage() {
                         </div>
                       </td>
                       <td className="px-10 py-6">
-                        {user.role === 'DELIVERY' ? (
+                        {user.role === 'DELIVERY_PARTNER' ? (
                           <div className="flex items-center gap-3">
                              <div className={`w-2.5 h-2.5 rounded-full ${user.isDeliveryOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
                              <span className="text-[10px] font-black uppercase tracking-widest text-gray-700">
