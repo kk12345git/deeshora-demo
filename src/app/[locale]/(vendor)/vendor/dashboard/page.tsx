@@ -241,7 +241,7 @@ export default function VendorDashboardPage() {
             <div className="flex-1 text-center md:text-left">
               <h3 className="text-xl font-black text-indigo-900 uppercase tracking-tight">Admission Fee Required</h3>
               <p className="text-sm text-indigo-700 font-medium mt-1 leading-relaxed">
-                To complete your "Admission" and start selling, a one-time fee of ₹700 is required.
+                To complete your &quot;Admission&quot; and start selling, a one-time fee of ₹700 is required.
               </p>
             </div>
             <button 
