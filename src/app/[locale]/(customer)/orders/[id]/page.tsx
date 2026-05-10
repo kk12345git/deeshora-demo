@@ -220,7 +220,8 @@ export default function OrderTrackingPage() {
           console.warn("Location access denied or timed out");
         }
 
-        const message = `Hi Deeshora! 🌟\n\nI just placed an order!\nOrder ID: #${order.id.slice(-8).toUpperCase()}\nTotal: ₹${order.total.toFixed(0)}\n\nMy Delivery Location:\n${locationMsg}\n\nPlease confirm my order! Thank you! 🙏`;
+        const invoiceUrl = `${window.location.origin}/orders/${order.id}/invoice`;
+        const message = `Hi Deeshora! 🌟\n\nI just placed an order!\nOrder ID: #${order.id.slice(-8).toUpperCase()}\nTotal: ₹${order.total.toFixed(0)}\n\n📄 View Invoice: ${invoiceUrl}\n\nMy Delivery Location:\n${locationMsg}\n\nPlease confirm my order! Thank you! 🙏`;
         
         window.location.href = `https://wa.me/${businessNumber}?text=${encodeURIComponent(message)}`;
       };

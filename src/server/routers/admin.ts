@@ -542,7 +542,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
 
-  getConfig: adminProcedure.query(async ({ ctx }) => {
+  getConfig: protectedProcedure.query(async ({ ctx }) => {
     return ctx.prisma.siteConfig.findMany();
   }),
 

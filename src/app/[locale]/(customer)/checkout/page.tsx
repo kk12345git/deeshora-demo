@@ -4,14 +4,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { trpc } from '@/lib/trpc';
-import { useRouter } from "@/navigation";
+import { useRouter, Link } from "@/navigation";
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 import {
   Home, Plus, Loader2, Tag, X, CheckCircle, ShieldCheck,
   Banknote, ChevronRight, Check,
   ArrowRight, CreditCard, Star,
-  AlertCircle,
+  AlertCircle, FileText,
 } from 'lucide-react';
 
 type PaymentStep = 'SELECT' | 'DONE';
@@ -95,16 +95,12 @@ export default function CheckoutPage() {
         paymentMethod,
       });
 
-      if (paymentMethod === 'MANUAL_UPI') {
+      if (paymentMethod === 'MANUAL_UPI' || paymentMethod === 'PHONEPE') {
         clearCart();
         setPlacedOrderIds(result.orderIds);
+        // Auto-open invoice in new tab
+        window.open(`/orders/${result.orderIds[0]}/invoice?download=true`, '_blank');
         setShowUpiModal(true);
-      } else if (paymentMethod === 'PHONEPE') {
-        // We need to initiate PhonePe and redirect
-        // For now, let's just use the modal but we'll add redirect logic
-        clearCart();
-        setPlacedOrderIds(result.orderIds);
-        setShowUpiModal(true); 
       } else {
         clearCart();
         setPlacedOrderIds(result.orderIds);
@@ -143,16 +139,17 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-      {/* UPI QR Modal */}
-      {showUpiModal && placedOrderIds.length > 0 && (
-        <UpiModal 
-          orderId={placedOrderIds[0]} 
-          onClose={() => setShowUpiModal(false)} 
-        />
-      )}
-    </div>
-  );
-}
+        {/* UPI QR Modal */}
+        {showUpiModal && placedOrderIds.length > 0 && (
+          <UpiModal 
+            orderId={placedOrderIds[0]} 
+            onClose={() => setShowUpiModal(false)} 
+          />
+        )}
+      </div>
+    );
+  }
+
 
 // ─── UPI Payment Modal Component ───────────────────────────────────────────
 function UpiModal({ orderId, onClose }: { orderId: string; onClose: () => void }) {
@@ -209,6 +206,16 @@ function UpiModal({ orderId, onClose }: { orderId: string; onClose: () => void }
               <p className="font-black text-gray-900 text-center">{order.vendor.shopName}</p>
               <p className="text-[10px] font-bold text-orange-500 mt-1 text-center">{upiId}</p>
             </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Link 
+              href={`/orders/${orderId}/invoice`}
+              target="_blank"
+              className="flex-1 h-12 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-600 hover:bg-gray-100 transition-all"
+            >
+              <FileText size={14} /> View Order Invoice
+            </Link>
           </div>
 
           <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex items-center justify-between">
