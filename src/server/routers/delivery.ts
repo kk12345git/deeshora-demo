@@ -23,7 +23,7 @@ export const deliveryRouter = createTRPCRouter({
       },
       include: {
         user: { select: { name: true, phone: true } },
-        vendor: { select: { shopName: true, address: true, phone: true, city: true } },
+        vendor: { select: { shopName: true, address: true, phone: true, city: true, coordinates: true } },
         address: true,
       },
       orderBy: { createdAt: 'desc' },
@@ -39,7 +39,7 @@ export const deliveryRouter = createTRPCRouter({
       },
       include: {
         user: { select: { name: true, phone: true } },
-        vendor: { select: { shopName: true, address: true, phone: true, city: true } },
+        vendor: { select: { shopName: true, address: true, phone: true, city: true, coordinates: true } },
         address: true,
       },
       orderBy: { updatedAt: 'desc' },
@@ -254,7 +254,7 @@ export const deliveryRouter = createTRPCRouter({
         where: { id: input.orderId },
         include: {
           user: { select: { name: true, phone: true } },
-          vendor: { select: { shopName: true, address: true, phone: true, city: true } },
+          vendor: { select: { shopName: true, address: true, phone: true, city: true, coordinates: true } },
           address: true,
           items: {
             select: {
