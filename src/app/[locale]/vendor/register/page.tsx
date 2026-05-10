@@ -37,6 +37,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaE
 export default function VendorRegisterPage() {
   const router = useRouter();
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
+  const [upiQrBase64, setUpiQrBase64] = useState<string | null>(null);
   
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   
@@ -59,6 +60,15 @@ export default function VendorRegisterPage() {
       }
       const reader = new FileReader();
       reader.onloadend = () => setLogoBase64(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleUpiQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => setUpiQrBase64(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -87,6 +97,7 @@ export default function VendorRegisterPage() {
       bankName: data.bankName as string,
       ifscCode: data.ifscCode as string,
       upiId: data.upiId as string,
+      upiQrCode: upiQrBase64 || undefined,
       gstNumber: data.gstNumber as string,
     });
   };
@@ -253,6 +264,26 @@ export default function VendorRegisterPage() {
                       <div className="relative">
                          <Zap size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-400" />
                          <Input name="upiId" className="pl-12 border-orange-100 focus:border-orange-500" placeholder="yourname@okaxis" />
+                      </div>
+                   </FieldGroup>
+                   <FieldGroup label="UPI QR Scanner" hint="Upload your UPI QR code image so customers can pay you directly.">
+                      <div className="relative w-full h-12 px-4 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-between group overflow-hidden transition-all hover:bg-gray-100/50">
+                         {upiQrBase64 ? (
+                            <>
+                               <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                                  <CheckCircle size={14} /> QR Scanner Linked
+                               </span>
+                               <button type="button" onClick={() => setUpiQrBase64(null)} className="text-gray-400 hover:text-red-500 transition-colors">
+                                  <X size={14} />
+                               </button>
+                            </>
+                         ) : (
+                            <label className="absolute inset-0 flex items-center justify-center cursor-pointer">
+                               <Camera size={16} className="text-gray-400 mr-2" />
+                               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tap to upload QR Scanner</span>
+                               <input type="file" className="hidden" accept="image/*" onChange={handleUpiQrUpload} />
+                            </label>
+                         )}
                       </div>
                    </FieldGroup>
                    <FieldGroup label="GSTIN (Optional)" hint="Leave blank if not registered for GST.">

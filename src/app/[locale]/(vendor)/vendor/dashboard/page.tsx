@@ -116,8 +116,10 @@ export default function VendorDashboardPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'PHONEPE' | 'MANUAL'>('PHONEPE');
+  const [utr, setUtr] = useState('');
 
-  const { data: subStatus, isLoading: isLoadingSub } = trpc.vendor.getSubscriptionStatus.useQuery();
+  const { data: subStatus, isLoading: isLoadingSub, refetch: refetchSubStatus } = trpc.vendor.getSubscriptionStatus.useQuery();
   const initiateSub = trpc.vendor.initiateSubscription.useMutation({
     onSuccess: (data) => {
       if (data.redirectUrl) {
@@ -127,6 +129,16 @@ export default function VendorDashboardPage() {
     onError: (err) => {
       toast.error(err.message || 'Failed to initiate subscription');
     }
+  });
+
+  const submitManual = trpc.vendor.submitManualPayment.useMutation({
+    onSuccess: () => {
+      toast.success('Payment submitted! Admin will verify and approve your account.');
+      setShowUpgradeModal(false);
+      refetchSubStatus();
+      refetchProfile();
+    },
+    onError: (err) => toast.error(err.message),
   });
 
   // Handle payment status from URL
@@ -221,7 +233,27 @@ export default function VendorDashboardPage() {
 
       {/* Subscription & Approval Banner */}
       <div className="grid lg:grid-cols-1 xl:grid-cols-2 gap-6">
-        {vendorProfile?.status === 'PENDING' && (
+        {vendorProfile?.subscriptionStatus === 'NONE' && (
+          <div className="flex flex-col md:flex-row items-center gap-6 p-8 bg-indigo-50 border border-indigo-100 rounded-[2.5rem] shadow-sm">
+            <div className="w-16 h-16 bg-indigo-100 rounded-3xl flex items-center justify-center shrink-0">
+              <IndianRupee size={32} className="text-indigo-600" />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-xl font-black text-indigo-900 uppercase tracking-tight">Admission Fee Required</h3>
+              <p className="text-sm text-indigo-700 font-medium mt-1 leading-relaxed">
+                To complete your "Admission" and start selling, a one-time fee of ₹700 is required.
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowUpgradeModal(true)}
+              className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-indigo-700 transition-all flex items-center gap-2"
+            >
+              Pay Now <ArrowRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {vendorProfile?.status === 'PENDING' && vendorProfile?.subscriptionStatus !== 'NONE' && (
           <div className="flex flex-col md:flex-row items-center gap-6 p-8 bg-amber-50 border border-amber-100 rounded-[2.5rem] shadow-sm">
             <div className="w-16 h-16 bg-amber-100 rounded-3xl flex items-center justify-center shrink-0">
               <Clock size={32} className="text-amber-500 animate-pulse" />
@@ -231,6 +263,16 @@ export default function VendorDashboardPage() {
               <p className="text-sm text-amber-700 font-medium mt-1 leading-relaxed">
                 Your application is being verified. You can set up your catalog, but items go live once approved.
               </p>
+              <div className="mt-4 flex flex-wrap gap-4">
+                <div className="bg-white/50 px-4 py-2 rounded-xl border border-amber-200/50">
+                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Shop ID</p>
+                  <p className="text-sm font-black text-amber-900">{vendorProfile.id.slice(-8).toUpperCase()}</p>
+                </div>
+                <div className="bg-white/50 px-4 py-2 rounded-xl border border-amber-200/50">
+                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Adm. Status</p>
+                  <p className="text-sm font-black text-amber-900 capitalize">{vendorProfile.subscriptionStatus.replace('_', ' ')}</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -633,18 +675,84 @@ export default function VendorDashboardPage() {
                 <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase italic">Premium Access</h2>
                 <p className="text-gray-500 font-bold mt-2">Unlock unlimited products and local delivery insights</p>
 
-                <div className="mt-10 p-8 bg-gray-50 rounded-[2rem] border border-gray-100">
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="text-xs font-black uppercase text-gray-400">Monthly Plan</span>
-                    <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">Most Popular</span>
+                <div className="mt-8 space-y-6">
+                  {/* Payment Method Toggle */}
+                  <div className="flex p-1 bg-gray-100 rounded-2xl">
+                    <button 
+                      onClick={() => setPaymentMethod('PHONEPE')}
+                      className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'PHONEPE' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-400'}`}
+                    >
+                      Instant Pay
+                    </button>
+                    <button 
+                      onClick={() => setPaymentMethod('MANUAL')}
+                      className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'MANUAL' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-400'}`}
+                    >
+                      Scan QR
+                    </button>
                   </div>
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-2xl font-black text-gray-400">₹</span>
-                    <span className="text-6xl font-black text-gray-900 tracking-tighter">700</span>
-                    <span className="text-sm font-bold text-gray-400">/mo</span>
-                  </div>
-                  
-                  <div className="mt-8 space-y-4 text-left">
+
+                  {paymentMethod === 'PHONEPE' ? (
+                    <div className="p-8 bg-gray-50 rounded-[2rem] border border-gray-100">
+                      <div className="flex items-center justify-between mb-6">
+                        <span className="text-xs font-black uppercase text-gray-400">Monthly Plan</span>
+                        <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">Instant</span>
+                      </div>
+                      <div className="flex items-baseline justify-center gap-1">
+                        <span className="text-2xl font-black text-gray-400">₹</span>
+                        <span className="text-6xl font-black text-gray-900 tracking-tighter">700</span>
+                        <span className="text-sm font-bold text-gray-400">/mo</span>
+                      </div>
+                      <button
+                        onClick={() => initiateSub.mutate({})}
+                        disabled={initiateSub.isPending}
+                        className="w-full mt-8 bg-indigo-600 text-white py-6 rounded-[2rem] font-black text-lg uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-500/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                      >
+                        {initiateSub.isPending ? <Loader2 className="animate-spin" /> : <span>Pay via PhonePe</span>}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="p-4 bg-white border-2 border-dashed border-gray-100 rounded-[2rem] flex flex-col items-center">
+                        <div className="relative w-48 h-48 mb-4">
+                          {/* 
+                              IMPORTANT: Place the provided QR code image in:
+                              public/images/assets/subscription-qr.png
+                          */}
+                          <Image 
+                            src="/images/assets/subscription-qr.png" 
+                            alt="Subscription QR" 
+                            fill 
+                            className="object-contain"
+                          />
+                        </div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Scan to pay ₹700</p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block text-left ml-2">Submit Transaction ID (UTR)</label>
+                        <input 
+                          type="text"
+                          value={utr}
+                          onChange={(e) => setUtr(e.target.value)}
+                          placeholder="e.g. 412345678901"
+                          className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-gray-100 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/5 outline-none font-bold text-sm transition-all"
+                        />
+                        <button
+                          onClick={() => {
+                            if (!utr) return toast.error('Please enter UTR number');
+                            submitManual.mutate({ utr });
+                          }}
+                          disabled={submitManual.isPending}
+                          className="w-full bg-gray-900 text-white py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-indigo-600 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                        >
+                          {submitManual.isPending ? <Loader2 className="animate-spin" size={18} /> : <span>Confirm Payment</span>}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-4 text-left px-4">
                     <div className="flex items-center gap-3 text-sm font-bold text-gray-600">
                       <CheckCircle size={18} className="text-indigo-500" />
                       <span>Unlimited Product Listings</span>
@@ -653,32 +761,13 @@ export default function VendorDashboardPage() {
                       <CheckCircle size={18} className="text-indigo-500" />
                       <span>Real-Time Order Tracking</span>
                     </div>
-                    <div className="flex items-center gap-3 text-sm font-bold text-gray-600">
-                      <CheckCircle size={18} className="text-indigo-500" />
-                      <span>Direct Customer Settlements</span>
-                    </div>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => initiateSub.mutate({})}
-                  disabled={initiateSub.isPending}
-                  className="w-full mt-8 bg-indigo-600 text-white py-6 rounded-[2rem] font-black text-lg uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-500/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
-                >
-                  {initiateSub.isPending ? (
-                    <Loader2 className="animate-spin" />
-                  ) : (
-                    <>
-                      <span>Pay & Activate Now</span>
-                      <ArrowRight size={20} />
-                    </>
-                  )}
-                </button>
-                
                 {!subStatus?.isExpired && (
                   <button
                     onClick={() => setShowUpgradeModal(false)}
-                    className="mt-6 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-600"
+                    className="mt-8 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-600"
                   >
                     Cancel
                   </button>

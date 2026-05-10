@@ -68,6 +68,14 @@ export default function AdminVendorsPage() {
     SUSPENDED: data?.vendors.filter(v => v.status === 'SUSPENDED').length ?? 0,
   };
 
+  const confirmPayment = trpc.admin.confirmVendorPayment.useMutation({
+    onSuccess: () => {
+      toast.success('Payment confirmed! Vendor can now be approved.');
+      refetch();
+    },
+    onError: err => toast.error(err.message),
+  });
+
   const handleAction = (vendorId: string, status: VendorStatus) => {
     const rate = parseFloat(commissionInputs[vendorId] ?? '15') / 100;
     updateStatus.mutate({ vendorId, status, commissionRate: isNaN(rate) ? 0.15 : rate });
@@ -269,6 +277,8 @@ export default function AdminVendorsPage() {
                           <Detail icon={<IndianRupee size={13} />} label="Pending Payout" value={`₹${vendor.pendingPayout.toFixed(2)}`} warn={vendor.pendingPayout > 0} />
                           <Detail icon={<Star size={13} />} label="Commission" value={`${(vendor.commissionRate * 100).toFixed(0)}%`} />
                           <Detail icon={<CreditCard size={13} />} label="Bank Acc." value={vendor.bankAccount ? `****${vendor.bankAccount.slice(-4)}` : '—'} />
+                          {vendor.subscriptionUtr && <Detail icon={<CheckCircle size={13} />} label="Admission UTR" value={vendor.subscriptionUtr} highlight />}
+                          <Detail icon={<IndianRupee size={13} />} label="Adm. Fee" value={vendor.subscriptionStatus === 'PAID' ? 'PAID' : 'PENDING'} highlight={vendor.subscriptionStatus === 'PAID'} />
                           {vendor.ifscCode && <Detail icon={<Building2 size={13} />} label="IFSC" value={vendor.ifscCode} />}
                         </div>
                       </div>
@@ -276,6 +286,29 @@ export default function AdminVendorsPage() {
                       {/* Column 3: Actions */}
                       <div className="space-y-3">
                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Actions</p>
+                        
+                        {vendor.subscriptionStatus !== 'PAID' && (
+                          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 mb-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-6 h-6 bg-indigo-500 rounded-lg flex items-center justify-center text-white">
+                                <IndianRupee size={12} />
+                              </div>
+                              <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Admission Fee</span>
+                            </div>
+                            <p className="text-[10px] text-indigo-600 font-bold mb-3 uppercase tracking-tight">
+                              Status: {vendor.subscriptionStatus === 'NONE' ? 'NOT PAID' : 'PENDING APPROVAL'}
+                            </p>
+                            <button
+                              onClick={() => confirmPayment.mutate({ vendorId: vendor.id })}
+                              disabled={confirmPayment.isPending}
+                              className="w-full bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest py-2 rounded-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
+                            >
+                              {confirmPayment.isPending ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
+                              Confirm ₹700 Paid
+                            </button>
+                          </div>
+                        )}
+
                         {vendor.status === 'PENDING' && (
                           <div className="space-y-3">
                             <div>

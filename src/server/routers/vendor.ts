@@ -23,6 +23,7 @@ export const vendorRouter = createTRPCRouter({
         bankName: z.string().optional(),
         ifscCode: z.string().optional(),
         upiId: z.string().optional(),
+        upiQrCode: z.string().startsWith('data:image/').optional(),
         // GST
         gstNumber: z.string().optional(),
       })
@@ -38,6 +39,10 @@ export const vendorRouter = createTRPCRouter({
       let logoUrl: string | undefined = undefined;
       if (input.logo) {
         logoUrl = await uploadImage(input.logo, 'vendors/logos');
+      }
+      let upiQrCodeUrl: string | undefined = undefined;
+      if (input.upiQrCode) {
+        upiQrCodeUrl = await uploadImage(input.upiQrCode, 'vendors/upiqr');
       }
 
       const [vendor] = await ctx.prisma.$transaction([
@@ -58,6 +63,7 @@ export const vendorRouter = createTRPCRouter({
             bankName: input.bankName,
             ifscCode: input.ifscCode,
             upiId: input.upiId,
+            upiQrCode: upiQrCodeUrl,
             gstNumber: input.gstNumber,
           },
         }),
@@ -99,6 +105,7 @@ export const vendorRouter = createTRPCRouter({
         bankName: z.string().optional(),
         ifscCode: z.string().optional(),
         upiId: z.string().optional(),
+        upiQrCode: z.string().startsWith('data:image/').optional(),
         // GST
         gstNumber: z.string().optional(),
         // Images
@@ -117,6 +124,10 @@ export const vendorRouter = createTRPCRouter({
       if (coverImage) {
         coverImageUrl = await uploadImage(coverImage, 'vendors/covers');
       }
+      let upiQrCodeUrl: string | undefined = undefined;
+      if (input.upiQrCode) {
+        upiQrCodeUrl = await uploadImage(input.upiQrCode, 'vendors/upiqr');
+      }
 
       return ctx.prisma.vendor.update({
         where: { id: ctx.vendor.id },
@@ -124,6 +135,7 @@ export const vendorRouter = createTRPCRouter({
           ...updateData,
           logo: logoUrl ?? ctx.vendor.logo,
           coverImage: coverImageUrl ?? ctx.vendor.coverImage,
+          upiQrCode: upiQrCodeUrl ?? ctx.vendor.upiQrCode,
         },
       });
     }),
@@ -192,6 +204,19 @@ export const vendorRouter = createTRPCRouter({
       return {
         redirectUrl: paymentRes.redirectUrl,
       };
+    }),
+
+  submitManualPayment: vendorProcedure
+    .input(z.object({ utr: z.string().min(6) }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.vendor.update({
+        where: { id: ctx.vendor.id },
+        data: {
+          subscriptionStatus: 'PENDING_APPROVAL',
+          subscriptionUtr: input.utr,
+          subscriptionMethod: 'MANUAL',
+        }
+      });
     }),
 
   getSubscriptionStatus: vendorProcedure.query(async ({ ctx }) => {

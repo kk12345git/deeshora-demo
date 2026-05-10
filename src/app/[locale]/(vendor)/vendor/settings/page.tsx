@@ -36,6 +36,7 @@ export default function VendorSettingsPage() {
   const { data: profile, isLoading } = trpc.vendor.myProfile.useQuery();
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
   const [coverBase64, setCoverBase64] = useState<string | null>(null);
+  const [upiQrBase64, setUpiQrBase64] = useState<string | null>(null);
 
   const updateMutation = trpc.vendor.updateProfile.useMutation({
     onSuccess: () => {
@@ -43,11 +44,12 @@ export default function VendorSettingsPage() {
       utils.vendor.myProfile.invalidate();
       setLogoBase64(null);
       setCoverBase64(null);
+      setUpiQrBase64(null);
     },
     onError: (err) => toast.error(err.message),
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'cover') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'cover' | 'upiQr') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -60,7 +62,8 @@ export default function VendorSettingsPage() {
     reader.onloadend = () => {
       const base64 = reader.result as string;
       if (type === 'logo') setLogoBase64(base64);
-      else setCoverBase64(base64);
+      else if (type === 'cover') setCoverBase64(base64);
+      else setUpiQrBase64(base64);
     };
     reader.readAsDataURL(file);
   };
@@ -81,6 +84,7 @@ export default function VendorSettingsPage() {
       ...rawData,
       logo: logoBase64 || undefined,
       coverImage: coverBase64 || undefined,
+      upiQrCode: upiQrBase64 || undefined,
       categories: [rawData.category]
     };
 

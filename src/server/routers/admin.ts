@@ -246,6 +246,15 @@ export const adminRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const existingVendor = await ctx.prisma.vendor.findUnique({ where: { id: input.vendorId } });
+      
+      if (input.status === 'APPROVED' && existingVendor?.subscriptionStatus === 'NONE') {
+        throw new TRPCError({ 
+          code: 'BAD_REQUEST', 
+          message: 'Vendor must pay ₹700 admission fee before approval. Please ensure payment is completed via PhonePe or confirmed manually.' 
+        });
+      }
+
       const vendor = await ctx.prisma.vendor.update({
         where: { id: input.vendorId },
         data: {
@@ -263,6 +272,33 @@ export const adminRouter = createTRPCRouter({
         actorName: ctx.user.name,
         message: `Vendor ${vendor.shopName} status updated to ${input.status}`,
         metadata: { status: input.status, commissionRate: input.commissionRate },
+      });
+
+      return vendor;
+    }),
+
+
+  confirmVendorPayment: adminProcedure
+    .input(z.object({ vendorId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const vendor = await ctx.prisma.vendor.update({
+        where: { id: input.vendorId },
+        data: { 
+          status: 'APPROVED',
+          subscriptionStatus: 'PAID',
+          plan: 'PREMIUM',
+          planExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+        },
+      });
+
+      await logActivity({
+        type: 'VENDOR',
+        action: 'PAYMENT_CONFIRMATION',
+        entityId: vendor.id,
+        entityType: 'Vendor',
+        actorId: ctx.user.id,
+        actorName: ctx.user.name,
+        message: `Admin manually confirmed ₹700 admission payment for ${vendor.shopName}`,
       });
 
       return vendor;

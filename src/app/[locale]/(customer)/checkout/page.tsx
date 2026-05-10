@@ -195,8 +195,14 @@ function UpiModal({ orderId, onClose }: { orderId: string; onClose: () => void }
 
         <div className="p-8 space-y-6">
           <div className="bg-gray-50 p-6 rounded-[2rem] flex flex-col items-center">
-            <div className="bg-white p-4 rounded-3xl shadow-sm mb-4 border border-gray-100">
-              <Image src={qrUrl} alt="UPI QR" width={192} height={192} className="w-48 h-48" unoptimized />
+            <div className="bg-white p-4 rounded-3xl shadow-sm mb-4 border border-gray-100 relative w-48 h-48 overflow-hidden">
+              <Image 
+                src={order.vendor.upiQrCode || qrUrl} 
+                alt="UPI QR" 
+                fill
+                className="object-contain p-2" 
+                unoptimized 
+              />
             </div>
             <div className="text-center">
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-center">Paying To</p>
