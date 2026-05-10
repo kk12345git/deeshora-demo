@@ -24,7 +24,7 @@ export default async function AdminDashboardPage() {
             <AlertTriangle size={32} />
           </div>
           <h2 className="text-2xl font-black text-gray-900">Access Denied</h2>
-          <p className="text-gray-500 max-w-xs text-center font-medium">You don't have permission to access the Command Center. Please sign in as an administrator.</p>
+          <p className="text-gray-500 max-w-xs text-center font-medium">You don&apos;t have permission to access the Command Center. Please sign in as an administrator.</p>
           <Link href="/" className="btn-primary px-8 py-3 rounded-2xl">Return Home</Link>
         </div>
       );
