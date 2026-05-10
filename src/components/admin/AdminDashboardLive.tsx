@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { getPusherClient, CHANNELS, EVENTS } from '@/lib/pusher';
-import { Users, Store, ShoppingCart, IndianRupee, AlertTriangle, ArrowRight, TrendingUp, Clock, Activity, Bike } from "lucide-react";
+import { Users, Store, ShoppingCart, IndianRupee, AlertTriangle, ArrowRight, TrendingUp, Clock, Activity, Bike, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 
