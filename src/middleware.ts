@@ -1,5 +1,6 @@
 // src/middleware.ts
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 import createMiddleware from 'next-intl/middleware';
 
 const intlMiddleware = createMiddleware({
@@ -24,7 +25,7 @@ export default clerkMiddleware((auth, req) => {
   
   // HACK: Skip next-intl for API and tRPC routes to prevent HTML redirects on JSON requests
   if (req.nextUrl.pathname.startsWith('/api') || req.nextUrl.pathname.startsWith('/trpc')) {
-    return;
+    return NextResponse.next();
   }
 
   return intlMiddleware(req);
