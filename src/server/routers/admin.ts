@@ -9,7 +9,18 @@ import { logActivity } from '@/lib/activity';
 
 export const adminRouter = createTRPCRouter({
   stats: adminProcedure.query(async ({ ctx }) => {
-    const totalUsers = await ctx.prisma.user.count({ where: { role: 'CUSTOMER' } });
+    let totalUsers = 0;
+    let totalDeliveryPartners = 0;
+    let onlinePartners = 0;
+
+    try {
+      totalUsers = await ctx.prisma.user.count({ where: { role: 'CUSTOMER' } });
+      totalDeliveryPartners = await ctx.prisma.user.count({ where: { role: 'DELIVERY_PARTNER' } });
+      onlinePartners = await ctx.prisma.user.count({ where: { role: 'DELIVERY_PARTNER', isDeliveryOnline: true } });
+    } catch (e) {
+      console.error('[AdminStats] User/Partner counts failed (likely Enum mismatch):', e);
+    }
+
     const totalVendors = await ctx.prisma.vendor.count({ where: { status: 'APPROVED' } });
     const pendingVendors = await ctx.prisma.vendor.count({ where: { status: 'PENDING' } });
     const totalOrders = await ctx.prisma.order.count();
@@ -18,17 +29,14 @@ export const adminRouter = createTRPCRouter({
     today.setHours(0, 0, 0, 0);
     const todayOrders = await ctx.prisma.order.count({ where: { createdAt: { gte: today } } });
 
-
     const platformRevenue = await ctx.prisma.order.aggregate({
       where: { paymentStatus: 'PAID' },
       _sum: { commission: true },
     });
 
-
     const pendingPayouts = await ctx.prisma.vendor.aggregate({
       _sum: { pendingPayout: true },
     });
-
 
     // Monthly revenue for the last 6 months
     let monthlyRevenueData: Array<{ month: string; revenue: number }> = [];
@@ -44,12 +52,7 @@ export const adminRouter = createTRPCRouter({
       `;
     } catch (e) {
       console.error('[AdminStats] Raw query failed:', e);
-      // Fallback to empty array
     }
-
-
-    const totalDeliveryPartners = await ctx.prisma.user.count({ where: { role: 'DELIVERY_PARTNER' } });
-    const onlinePartners = await ctx.prisma.user.count({ where: { role: 'DELIVERY_PARTNER', isDeliveryOnline: true } });
 
     return {
       totalUsers,
@@ -173,14 +176,12 @@ export const adminRouter = createTRPCRouter({
         default:            since = new Date(now.getFullYear(), now.getMonth(), 1);
       }
 
-      const [orderAgg, newUsers, newVendors, topVendors] = await Promise.all([
+      const [orderAgg, topVendors] = await Promise.all([
         ctx.prisma.order.aggregate({
           where: { paymentStatus: 'PAID', createdAt: { gte: since } },
           _sum: { total: true, commission: true },
           _count: { id: true },
         }),
-        ctx.prisma.user.count({ where: { createdAt: { gte: since }, role: 'CUSTOMER' } }),
-        ctx.prisma.vendor.count({ where: { createdAt: { gte: since } } }),
         ctx.prisma.order.groupBy({
           by: ['vendorId'],
           where: { paymentStatus: 'PAID', createdAt: { gte: since } },
@@ -189,6 +190,18 @@ export const adminRouter = createTRPCRouter({
           take: 5,
         }),
       ]);
+
+      let newUsers = 0;
+      let newVendors = 0;
+      try {
+        [newUsers, newVendors] = await Promise.all([
+          ctx.prisma.user.count({ where: { createdAt: { gte: since }, role: 'CUSTOMER' } }),
+          ctx.prisma.vendor.count({ where: { createdAt: { gte: since } } }),
+        ]);
+      } catch (e) {
+        console.error('[PlatformAnalytics] Counts failed:', e);
+      }
+
 
       const topVendorDetails = await ctx.prisma.vendor.findMany({
         where: { id: { in: topVendors.map(v => v.vendorId) } },
