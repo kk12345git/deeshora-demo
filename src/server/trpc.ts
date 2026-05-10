@@ -108,7 +108,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
 
       // 2. Sync Clerk metadata if missing or wrong
       const { sessionClaims } = await auth();
-      if (sessionClaims?.metadata?.role !== 'ADMIN') {
+      if ((sessionClaims?.metadata as any)?.role !== 'ADMIN') {
         try {
           const clerk = await clerkClient();
           await clerk.users.updateUserMetadata(userId, {
@@ -122,7 +122,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
     } else if (user.role === 'DELIVERY_PARTNER') {
       // Sync DELIVERY_PARTNER role to Clerk
       const { sessionClaims } = await auth();
-      if (sessionClaims?.metadata?.role !== 'DELIVERY_PARTNER') {
+      if ((sessionClaims?.metadata as any)?.role !== 'DELIVERY_PARTNER') {
         try {
           const clerk = await clerkClient();
           await clerk.users.updateUserMetadata(userId, {
