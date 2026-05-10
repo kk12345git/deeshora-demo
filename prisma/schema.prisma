@@ -78,7 +78,9 @@ model Vendor {
   bankAccountName        String?
   bankName               String?
   gstNumber              String?
+  fssaiNumber            String?
   upiId                  String?
+  upiQrCode              String?
   categories             String[]
   isVerified             Boolean            @default(false)
   plan                   VendorPlan         @default(PREMIUM)

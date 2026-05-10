@@ -24,9 +24,11 @@ export const vendorRouter = createTRPCRouter({
         ifscCode: z.string().optional(),
         upiId: z.string().optional(),
         upiQrCode: z.string().startsWith('data:image/').optional(),
-        // GST
+        // GST & FSSAI
         gstNumber: z.string().optional(),
+        fssaiNumber: z.string().optional(),
       })
+
     )
     .mutation(async ({ ctx, input }) => {
       const existingVendor = await ctx.prisma.vendor.findUnique({
@@ -65,8 +67,10 @@ export const vendorRouter = createTRPCRouter({
             upiId: input.upiId,
             upiQrCode: upiQrCodeUrl,
             gstNumber: input.gstNumber,
+            fssaiNumber: input.fssaiNumber,
           },
         }),
+
         ctx.prisma.user.update({
           where: { id: ctx.user.id },
           data: { role: 'VENDOR' },
@@ -118,9 +122,11 @@ export const vendorRouter = createTRPCRouter({
         ifscCode: z.string().optional(),
         upiId: z.string().optional(),
         upiQrCode: z.string().startsWith('data:image/').optional(),
-        // GST
+        // GST & FSSAI
         gstNumber: z.string().optional(),
+        fssaiNumber: z.string().optional(),
         // Images
+
         logo: z.string().startsWith('data:image/').optional(),
         coverImage: z.string().startsWith('data:image/').optional(),
       })
