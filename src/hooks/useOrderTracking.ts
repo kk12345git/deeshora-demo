@@ -1,6 +1,6 @@
 // src/hooks/useOrderTracking.ts
 import { useEffect, useRef, useState } from 'react';
-import { getPusherClient } from '@/lib/pusher';
+import { getPusherClient, CHANNELS, EVENTS } from '@/lib/pusher';
 import { OrderStatus } from '@prisma/client';
 import toast from 'react-hot-toast';
 
@@ -28,7 +28,7 @@ export const useOrderTracking = (orderId: string) => {
 
 
     const pusherClient = getPusherClient();
-    const channelName = `private-order-${orderId}`;
+    const channelName = CHANNELS.ORDER(orderId);
     const channel = pusherClient.subscribe(channelName);
 
 
@@ -49,7 +49,7 @@ export const useOrderTracking = (orderId: string) => {
 
     channel.bind('pusher:subscription_succeeded', handleConnection);
     channel.bind('pusher:subscription_error', handleDisconnection);
-    channel.bind('order-status-updated', handleUpdate);
+    channel.bind(EVENTS.ORDER_STATUS_UPDATED, handleUpdate);
 
 
     return () => {
@@ -102,7 +102,7 @@ export const useVendorNotifications = (vendorId: string | undefined, onNewOrder:
 
 
     const pusherClient = getPusherClient();
-    const channelName = `private-vendor-${vendorId}`;
+    const channelName = CHANNELS.VENDOR(vendorId);
     const channel = pusherClient.subscribe(channelName);
 
 
@@ -119,7 +119,7 @@ export const useVendorNotifications = (vendorId: string | undefined, onNewOrder:
 
     channel.bind('pusher:subscription_succeeded', handleConnection);
     channel.bind('pusher:subscription_error', handleDisconnection);
-    channel.bind('new-order', handleNewOrder);
+    channel.bind(EVENTS.NEW_ORDER, handleNewOrder);
 
 
     return () => {

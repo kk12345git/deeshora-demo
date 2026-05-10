@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { createTRPCRouter, deliveryProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { OrderStatus } from '@prisma/client';
+import { pusherServer, CHANNELS, EVENTS } from '@/lib/pusher';
 
 export const deliveryRouter = createTRPCRouter({
   /** Get all orders that are READY for pickup but not yet assigned */
@@ -88,8 +89,8 @@ export const deliveryRouter = createTRPCRouter({
       // Trigger Pusher for real-time customer tracking update
       try {
         await pusherServer.trigger(
-          CHANNELS.ORDER_TRACKING(input.orderId),
-          EVENTS.ORDER_STATUS_UPDATE,
+          CHANNELS.ORDER(input.orderId),
+          EVENTS.ORDER_STATUS_UPDATED,
           { 
             status: 'OUT_FOR_DELIVERY', 
             message: 'Order picked up by delivery partner.',
