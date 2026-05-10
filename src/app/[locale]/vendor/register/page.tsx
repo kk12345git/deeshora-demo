@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/navigation";
 import { trpc } from "@/lib/trpc";
 import toast from "react-hot-toast";
 import { 

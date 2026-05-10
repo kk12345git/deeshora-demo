@@ -1,12 +1,12 @@
 // src/server/routers/coupon.ts
 import { z } from 'zod';
-import { createTRPCRouter, publicProcedure, adminProcedure } from '@/server/trpc';
+import { createTRPCRouter, protectedProcedure, adminProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { DiscountType } from '@prisma/client';
 
 export const couponRouter = createTRPCRouter({
-  /** Public: validate a coupon code against a cart total */
-  validate: publicProcedure
+  /** Protected: validate a coupon code against a cart total (auth required to prevent code enumeration) */
+  validate: protectedProcedure
     .input(z.object({ code: z.string().trim().toUpperCase(), cartTotal: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const coupon = await ctx.prisma.coupon.findUnique({

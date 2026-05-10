@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { trpc } from '@/lib/trpc';
 import Image from 'next/image';
 import { Upload, X, ChevronLeft, Loader2, Package, IndianRupee, Box, Sparkles, AlertTriangle, CheckCircle2, Lightbulb, Tag } from 'lucide-react';

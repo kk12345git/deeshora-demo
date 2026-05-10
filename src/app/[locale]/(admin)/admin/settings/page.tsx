@@ -1,6 +1,8 @@
+"use client";
+import React, { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import toast from "react-hot-toast";
-import { Loader2, Truck, CheckCircle, Zap, MessageSquare, Save, IndianRupee, AlertCircle } from "lucide-react";
+import { Loader2, Truck, CheckCircle, Zap, MessageSquare, Save, IndianRupee } from "lucide-react";
 import { motion } from "framer-motion";
 
 function SettingsField({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
@@ -16,37 +18,33 @@ function SettingsField({ label, icon, children }: { label: string; icon: React.R
 }
 
 export default function AdminSettingsPage() {
-  const { data: config, isLoading, refetch } = trpc.admin.getConfig.useQuery();
-  const updateConfigMutation = trpc.admin.updateConfig.useMutation({
-    onSuccess: () => {
-      toast.success("Settings updated!");
-      refetch();
-    },
-    onError: (err) => toast.error(err.message),
-  });
+  const utils = trpc.useUtils();
+  const { data: config, isLoading } = trpc.admin.getConfig.useQuery();
+  const [isSaving, setIsSaving] = useState(false);
+  const updateConfigMutation = trpc.admin.updateConfig.useMutation();
 
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSaving(true);
     const formData = new FormData(e.currentTarget);
-    const delivery_fee = formData.get('delivery_fee') as string;
-    const free_delivery_above = formData.get('free_delivery_above') as string;
-    const business_whatsapp = formData.get('business_whatsapp') as string;
-    const delivery_partners = formData.get('delivery_partners') as string;
-    const platform_fixed_fee = formData.get('platform_fixed_fee') as string;
-
-
-    const whatsapp_access_token = formData.get('whatsapp_access_token') as string;
-    const whatsapp_phone_id = formData.get('whatsapp_phone_id') as string;
-
-
-    updateConfigMutation.mutate({ key: 'delivery_fee', value: delivery_fee });
-    updateConfigMutation.mutate({ key: 'free_delivery_above', value: free_delivery_above });
-    updateConfigMutation.mutate({ key: 'business_whatsapp', value: business_whatsapp });
-    updateConfigMutation.mutate({ key: 'delivery_partners', value: delivery_partners });
-    updateConfigMutation.mutate({ key: 'platform_fixed_fee', value: platform_fixed_fee });
-    updateConfigMutation.mutate({ key: 'whatsapp_access_token', value: whatsapp_access_token });
-    updateConfigMutation.mutate({ key: 'whatsapp_phone_id', value: whatsapp_phone_id });
+    const pairs: Array<{ key: string; value: string }> = [
+      { key: 'delivery_fee',        value: formData.get('delivery_fee') as string },
+      { key: 'free_delivery_above', value: formData.get('free_delivery_above') as string },
+      { key: 'business_whatsapp',   value: formData.get('business_whatsapp') as string },
+      { key: 'delivery_partners',   value: formData.get('delivery_partners') as string },
+      { key: 'platform_fixed_fee',  value: formData.get('platform_fixed_fee') as string },
+      { key: 'whatsapp_access_token', value: formData.get('whatsapp_access_token') as string },
+      { key: 'whatsapp_phone_id',   value: formData.get('whatsapp_phone_id') as string },
+    ];
+    try {
+      await Promise.all(pairs.map(p => updateConfigMutation.mutateAsync(p)));
+      toast.success('Settings updated! ✅');
+      utils.admin.getConfig.invalidate();
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Failed to save settings');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
 
@@ -223,10 +221,10 @@ export default function AdminSettingsPage() {
           <div className="flex items-center justify-end">
             <button 
               type="submit" 
-              disabled={updateConfigMutation.isPending}
+              disabled={isSaving}
               className="h-20 px-12 bg-gray-950 text-white rounded-[1.75rem] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-4 transition-all shadow-2xl shadow-gray-950/20 hover:bg-orange-600 active:scale-95 disabled:opacity-20"
             >
-              {updateConfigMutation.isPending ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+              {isSaving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
               Commit Global Changes
             </button>
           </div>

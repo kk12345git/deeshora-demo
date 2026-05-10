@@ -84,7 +84,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       <OnboardingModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        onSuccess={() => { handleOnboardingSuccess(); addToCart(); }}
+        onSuccess={handleOnboardingSuccess}
       />
       
       {/* Image Container */}

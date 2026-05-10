@@ -11,7 +11,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { getWhatsAppUrl, WHATSAPP_TEMPLATES } from '@/lib/whatsapp';
 import toast from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
 import JsonLd from '@/components/JsonLd';
 

@@ -709,12 +709,16 @@ export const productRouter = createTRPCRouter({
       }))
     )
     .mutation(async ({ ctx, input }) => {
-      const results = [];
+      const results: string[] = [];
+      const skipped: string[] = [];
       const categories = await ctx.prisma.category.findMany();
 
       for (const item of input) {
         const category = categories.find(c => c.name.toLowerCase() === item.categoryName.toLowerCase());
-        if (!category) continue;
+        if (!category) {
+          skipped.push(item.name); // track silently-dropped items
+          continue;
+        }
 
         const slug = `${slugify(item.name, { lower: true, strict: true })}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
@@ -736,6 +740,11 @@ export const productRouter = createTRPCRouter({
         results.push(product.id);
       }
 
-      return { success: true, count: results.length };
+      return {
+        success: true,
+        count: results.length,
+        skippedCount: skipped.length,
+        skippedNames: skipped, // caller can show which items need a valid category
+      };
     }),
 });

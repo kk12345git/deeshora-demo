@@ -45,32 +45,39 @@ export const userRouter = createTRPCRouter({
 
     if (!user) throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
 
-    // Auto-generate referral code if missing
+    // Auto-generate referral code if missing — with collision-safe retry loop
     if (!user.referralCode) {
-      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-      user = await ctx.prisma.user.update({
-        where: { id: user.id },
-        data: { referralCode: code },
-        include: {
-          addresses: { orderBy: { isDefault: 'desc' } },
-          referredBy: { select: { name: true } },
-          referrals: { take: 10, select: { id: true, name: true, createdAt: true } },
-          orders: {
-            take: 5,
-            orderBy: { createdAt: 'desc' },
-            select: {
-              id: true,
-              status: true,
-              total: true,
-              createdAt: true,
-              paymentStatus: true,
-              vendor: { select: { shopName: true } },
-              items: { take: 1, select: { image: true, name: true } },
+      let code: string | null = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const candidate = (user.id.slice(0, 3) + Math.random().toString(36).substring(2, 7)).toUpperCase();
+        const existing = await ctx.prisma.user.findUnique({ where: { referralCode: candidate } });
+        if (!existing) { code = candidate; break; }
+      }
+      if (code) {
+        user = await ctx.prisma.user.update({
+          where: { id: user.id },
+          data: { referralCode: code },
+          include: {
+            addresses: { orderBy: { isDefault: 'desc' } },
+            referredBy: { select: { name: true } },
+            referrals: { take: 10, select: { id: true, name: true, createdAt: true } },
+            orders: {
+              take: 5,
+              orderBy: { createdAt: 'desc' },
+              select: {
+                id: true,
+                status: true,
+                total: true,
+                createdAt: true,
+                paymentStatus: true,
+                vendor: { select: { shopName: true } },
+                items: { take: 1, select: { image: true, name: true } },
+              },
             },
+            _count: { select: { orders: true, reviews: true, referrals: true } },
           },
-          _count: { select: { orders: true, reviews: true, referrals: true } },
-        },
-      });
+        });
+      }
     }
 
     return user;

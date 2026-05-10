@@ -101,9 +101,18 @@ export async function POST(req: Request) {
     const name = `${first_name ?? ''} ${last_name ?? ''}`.trim() || email?.split('@')[0] || 'User';
     const role = public_metadata?.role as UserRole | undefined;
 
-    await prisma.user.update({
+    // Use upsert to handle the race condition where user.updated fires
+    // before user.created (possible in some Clerk configurations)
+    await prisma.user.upsert({
       where: { clerkId: id },
-      data: {
+      create: {
+        clerkId: id,
+        email: email,
+        name,
+        avatar: image_url,
+        role: role || 'CUSTOMER',
+      },
+      update: {
         email: email,
         name,
         avatar: image_url,

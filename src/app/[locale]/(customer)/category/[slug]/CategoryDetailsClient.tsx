@@ -5,7 +5,7 @@ import { trpc } from '@/lib/trpc';
 import ProductCard from '@/components/customer/ProductCard';
 import { ChevronLeft, Filter, Loader2, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { useState, useEffect } from 'react';
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
 

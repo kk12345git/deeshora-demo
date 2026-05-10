@@ -73,6 +73,18 @@ export const vendorRouter = createTRPCRouter({
         }),
       ]);
 
+      // Sync Clerk publicMetadata so the Navbar role badge updates immediately
+      // without waiting for the next webhook event
+      try {
+        const { clerkClient } = await import('@clerk/nextjs/server');
+        const clerk = await clerkClient();
+        await clerk.users.updateUserMetadata(ctx.user.clerkId, {
+          publicMetadata: { role: 'VENDOR' },
+        });
+      } catch (err) {
+        console.error('[Vendor] Failed to sync Clerk metadata after registration:', err);
+        // Non-fatal — webhook will sync on next Clerk event
+      }
 
       return vendor;
     }),

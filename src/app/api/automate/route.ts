@@ -6,11 +6,12 @@ import { logActivity } from '@/lib/activity';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-  // Simple security check using an API key from env
+  const AUTOMATION_KEY = process.env.AUTOMATION_KEY;
   const { searchParams } = new URL(req.url);
   const key = searchParams.get('key');
-  
-  if (key !== process.env.AUTOMATION_KEY && process.env.NODE_ENV === 'production') {
+
+  // Always require the key — reject if env var is missing or key doesn't match
+  if (!AUTOMATION_KEY || key !== AUTOMATION_KEY) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -51,14 +52,15 @@ export async function GET(req: Request) {
       results.subscriptionsProcessed++;
     }
 
-    // 2. Low Stock Notifications
-    const lowStockProducts = await prisma.product.findMany({
-      where: {
-        isActive: true,
-        stock: { lte: prisma.product.fields.lowStockThreshold },
-      },
-      include: { vendor: { select: { userId: true, shopName: true } } },
+    // Fetch active products and post-filter: Prisma doesn't support
+    // column-to-column comparisons in where clauses without $queryRaw
+    const allLowStockCandidates = await prisma.product.findMany({
+      where: { isActive: true, stock: { lte: 10 } }, // broad pre-filter
+      select: { id: true, name: true, stock: true, lowStockThreshold: true, vendor: { select: { userId: true, shopName: true } } },
     });
+    const lowStockProducts = allLowStockCandidates.filter(
+      (p) => p.stock <= p.lowStockThreshold
+    );
 
     for (const product of lowStockProducts) {
       // Check if we already notified recently (last 24h) to avoid spam

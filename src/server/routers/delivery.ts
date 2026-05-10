@@ -125,20 +125,30 @@ export const deliveryRouter = createTRPCRouter({
 
       if (order.deliveryPartnerId !== ctx.user.id) throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not the assigned partner.' });
 
-      const updated = await ctx.prisma.order.update({
-        where: { id: input.orderId },
-        data: {
-          status: 'DELIVERED',
-          deliveredAt: new Date(),
-          // H3: Mark COD as PAID when delivery partner confirms delivery
-          paymentStatus: order.paymentMethod === 'COD' ? 'PAID' : order.paymentStatus,
-          timeline: {
-            create: {
-              status: 'DELIVERED',
-              message: 'Order delivered successfully.',
+      const updated = await ctx.prisma.$transaction(async (tx) => {
+        const updatedOrder = await tx.order.update({
+          where: { id: input.orderId },
+          data: {
+            status: 'DELIVERED',
+            deliveredAt: new Date(),
+            // H3: Mark COD as PAID when delivery partner confirms delivery
+            paymentStatus: order.paymentMethod === 'COD' ? 'PAID' : order.paymentStatus,
+            timeline: {
+              create: {
+                status: 'DELIVERED',
+                message: 'Order delivered successfully.',
+              },
             },
           },
-        },
+        });
+
+        // Credit vendor's pending payout — was previously missing from the delivery partner path
+        await tx.vendor.update({
+          where: { id: order.vendorId },
+          data: { pendingPayout: { increment: order.vendorAmount } },
+        });
+
+        return updatedOrder;
       });
 
       // Return phone and message info so the frontend can trigger the WhatsApp redirect

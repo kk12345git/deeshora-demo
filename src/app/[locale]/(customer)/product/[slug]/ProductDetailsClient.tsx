@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Minus, Plus, AlertTriangle, CheckCircle, ChevronLeft, ShoppingCart, Share2, Heart, MapPin, Loader2, Info, Zap, MessageCircle } from 'lucide-react';
 import { useCart, CartItem } from '@/hooks/useCart';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter } from "@/navigation";
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
 import JsonLd from '@/components/JsonLd';
 import { getProductShareUrl } from '@/lib/whatsapp';

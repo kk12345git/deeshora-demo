@@ -16,12 +16,12 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push("/sign-in");
-    } else if (isLoaded && user?.publicMetadata?.role !== "DELIVERY" && user?.publicMetadata?.role !== "ADMIN") {
+    } else if (isLoaded && user?.publicMetadata?.role !== "DELIVERY_PARTNER" && user?.publicMetadata?.role !== "ADMIN") {
       router.push("/");
     }
   }, [isLoaded, isSignedIn, user, router]);
 
-  if (!isLoaded || !isSignedIn || (user?.publicMetadata?.role !== "DELIVERY" && user?.publicMetadata?.role !== "ADMIN")) {
+  if (!isLoaded || !isSignedIn || (user?.publicMetadata?.role !== "DELIVERY_PARTNER" && user?.publicMetadata?.role !== "ADMIN")) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <Loader2 className="animate-spin text-blue-500 w-12 h-12" />

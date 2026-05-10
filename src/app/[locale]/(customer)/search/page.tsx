@@ -1,7 +1,8 @@
 // src/app/(customer)/search/page.tsx
 "use client";
 
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { trpc } from '@/lib/trpc';
 import ProductCard from '@/components/customer/ProductCard';
 import { Search as SearchIcon, Loader2, ShoppingBag, Sparkles, Zap, Tag, ArrowRight, X } from 'lucide-react';

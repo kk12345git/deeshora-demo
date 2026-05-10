@@ -7,7 +7,7 @@ import {
   Loader2, AlertCircle, Clock
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/navigation";
 import SwipeButton from "@/components/delivery/SwipeButton";
 import { WHATSAPP_TEMPLATES, getWhatsAppUrl } from "@/lib/whatsapp";
 import toast from "react-hot-toast";

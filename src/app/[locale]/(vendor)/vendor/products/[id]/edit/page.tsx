@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from '@/navigation';
+import { useParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
 import Image from 'next/image';
 import {

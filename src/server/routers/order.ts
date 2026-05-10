@@ -169,14 +169,22 @@ export const orderRouter = createTRPCRouter({
             // Low stock alert check
             const productAfterUpdate = await tx.product.findUnique({
               where: { id: item.productId },
-              select: { stock: true, lowStockThreshold: true, name: true, vendorId: true }
+              select: {
+                stock: true,
+                lowStockThreshold: true,
+                name: true,
+                vendorId: true,
+                vendor: { select: { userId: true } }, // Need User.id, not Vendor.id
+              }
             });
 
             if (productAfterUpdate && productAfterUpdate.stock <= productAfterUpdate.lowStockThreshold) {
-              // Create DB notification
+              const vendorUserId = productAfterUpdate.vendor.userId; // User.id of the vendor owner
+
+              // Create DB notification targeting the vendor's user account
               await tx.notification.create({
                 data: {
-                  userId: productAfterUpdate.vendorId, // Vendor is a user
+                  userId: vendorUserId,
                   title: 'Low Stock Alert!',
                   message: `"${productAfterUpdate.name}" is running low on stock. Only ${productAfterUpdate.stock} left.`,
                   type: 'LOW_STOCK',
@@ -184,7 +192,7 @@ export const orderRouter = createTRPCRouter({
                 }
               });
 
-              // Trigger Pusher for real-time UI update
+              // Trigger Pusher for real-time UI update (uses Vendor.id for channel)
               try {
                 await pusherServer.trigger(
                   CHANNELS.VENDOR(productAfterUpdate.vendorId),

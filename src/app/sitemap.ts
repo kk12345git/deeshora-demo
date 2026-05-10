@@ -16,8 +16,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     select: { slug: true, updatedAt: true },
   });
 
-  // Fetch all vendors
+  // Fetch only approved vendors — do not leak PENDING/SUSPENDED vendors to crawlers
   const vendors = await prisma.vendor.findMany({
+    where: { status: 'APPROVED' },
     select: { id: true, updatedAt: true },
   });
 

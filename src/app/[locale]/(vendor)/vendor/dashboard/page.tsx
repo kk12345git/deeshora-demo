@@ -4,7 +4,7 @@
 import { trpc } from '@/lib/trpc';
 import { useVendorNotifications } from '@/hooks/useOrderTracking';
 import { Link } from '@/navigation';
-import Script from 'next/script';
+
 import {
   Loader2, Clock, Package, ShoppingCart, IndianRupee,
   AlertCircle, TrendingUp, Bell, ArrowRight, CheckCircle,
@@ -201,7 +201,6 @@ export default function VendorDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-5">

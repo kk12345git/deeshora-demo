@@ -417,7 +417,7 @@ export const adminRouter = createTRPCRouter({
       const { cursor, status } = input;
       const orders = await ctx.prisma.order.findMany({
         take: limit + 1,
-        where: { status: status as any },
+        where: { status: status },
         include: {
           user: { select: { name: true, email: true } },
           vendor: { select: { shopName: true, city: true } },
@@ -851,9 +851,21 @@ export const adminRouter = createTRPCRouter({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot delete your own admin account.' });
       }
 
-      const user = await ctx.prisma.user.delete({
-        where: { id: input.userId },
-      });
+      const user = await ctx.prisma.user.findUnique({ where: { id: input.userId } });
+      if (!user) throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found.' });
+
+      // Delete from Clerk first so the user cannot sign back in and recreate the DB record
+      try {
+        const { clerkClient } = await import('@clerk/nextjs/server');
+        const clerk = await clerkClient();
+        await clerk.users.deleteUser(user.clerkId);
+      } catch (err) {
+        console.error('[Admin] Failed to delete Clerk user:', err);
+        // If Clerk deletion fails, abort so we don't have an orphaned DB record
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to delete user from auth provider. Please try again.' });
+      }
+
+      await ctx.prisma.user.delete({ where: { id: input.userId } });
 
       await logActivity({
         type: 'USER',
@@ -995,20 +1007,37 @@ export const adminRouter = createTRPCRouter({
   approvePayment: adminProcedure
     .input(z.object({ orderId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-       const order = await ctx.prisma.order.update({
+       const existingOrder = await ctx.prisma.order.findUnique({
          where: { id: input.orderId },
-         data: {
-           paymentStatus: 'PAID',
-           status: 'CONFIRMED', // Auto-confirm once paid
-           timeline: { 
-             create: { 
-               status: 'CONFIRMED', 
-               message: 'Payment verified manually by admin. Order confirmed.' 
-             } 
-           }
-         }
+         select: { vendorId: true, vendorAmount: true, paymentStatus: true }
        });
-       return order;
+       if (!existingOrder) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+
+       return ctx.prisma.$transaction(async (tx) => {
+         const order = await tx.order.update({
+           where: { id: input.orderId },
+           data: {
+             paymentStatus: 'PAID',
+             status: 'CONFIRMED',
+             timeline: {
+               create: {
+                 status: 'CONFIRMED',
+                 message: 'Payment verified manually by admin. Order confirmed.'
+               }
+             }
+           }
+         });
+
+         // Credit vendor's pending payout — this path was previously missing this step
+         if (existingOrder.paymentStatus !== 'PAID') {
+           await tx.vendor.update({
+             where: { id: existingOrder.vendorId },
+             data: { pendingPayout: { increment: existingOrder.vendorAmount } },
+           });
+         }
+
+         return order;
+       });
     }),
 
 

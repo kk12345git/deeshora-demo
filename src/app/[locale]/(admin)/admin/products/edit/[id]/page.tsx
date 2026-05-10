@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from '@/navigation';
+import { useParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
 import { 
   Loader2, ChevronLeft, Save, Package, IndianRupee, Box, 

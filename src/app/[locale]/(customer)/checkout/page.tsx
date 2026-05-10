@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { trpc } from '@/lib/trpc';
-import { useRouter } from 'next/navigation';
+import { useRouter } from "@/navigation";
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 import {
