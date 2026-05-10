@@ -30,6 +30,15 @@ export const getPusherClient = () => {
         },
       },
     });
+
+    // Debugging: Log connection states
+    pusherClientInstance.connection.bind('state_change', (states: any) => {
+      console.log('[Pusher] Connection state changed from', states.previous, 'to', states.current);
+    });
+
+    pusherClientInstance.connection.bind('error', (err: any) => {
+      console.error('[Pusher] Connection error:', err);
+    });
   }
   return pusherClientInstance;
 };

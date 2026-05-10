@@ -6,14 +6,20 @@
  * @param message Message text
  */
 export function getWhatsAppUrl(phone: string, message: string) {
-  // Clean phone number: remove spaces, dashes, etc.
-  const cleanPhone = phone.replace(/[^0-9]/g, '');
+  // Clean phone number: remove non-digits
+  let cleanPhone = phone.replace(/[^0-9]/g, '');
+  
+  // If number is 10 digits and starts with 6-9 (Indian mobile), prepend 91
+  if (cleanPhone.length === 10 && /^[6-9]/.test(cleanPhone)) {
+    cleanPhone = `91${cleanPhone}`;
+  }
+  
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
 
-export function getProductShareUrl(phone: string, productName: string, productSlug: string) {
+export function getProductShareUrl(phone: string, productName: string, productSlug: string, locale: string = 'en') {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://deeshora.com';
-  const productUrl = `${appUrl}/product/${productSlug}`;
+  const productUrl = `${appUrl}/${locale}/product/${productSlug}`;
   const message = `Hi! I'm interested in this product: *${productName}*\n\n${productUrl}\n\nCan you provide more details?`;
   return getWhatsAppUrl(phone, message);
 }
@@ -32,6 +38,9 @@ export const WHATSAPP_TEMPLATES = {
       
     ORDER_UPDATE: (orderId: string, status: string, shopName: string) => 
       `Hello! Update on your Order #${orderId.slice(-8).toUpperCase()} from ${shopName}: The status is now "${status.replace(/_/g, ' ')}".`,
+
+    CONFIRMATION_WITH_INVOICE: (orderId: string, shopName: string, invoiceUrl: string) =>
+      `✅ *Order Confirmed!*\n\nHi! Your Order #${orderId.slice(-8).toUpperCase()} has been confirmed by *${shopName}*. We are starting to prepare it!\n\n📄 *Download PDF Invoice:* ${invoiceUrl}?download=true\n\nThank you for shopping with us! 🙏`,
 
     ORDER_DELAYED: (orderId: string, shopName: string, reason?: string) =>
       `Hi! We apologize for the delay with your order #${orderId.slice(-8).toUpperCase()} from ${shopName}.${reason ? ` Reason: ${reason}` : ''} We are working to get it to you as soon as possible! 🙏`,
@@ -59,6 +68,9 @@ export const WHATSAPP_TEMPLATES = {
     ORDER_UPDATE: (orderId: string, status: string, shopName: string) => 
       `வணக்கம்! ${shopName}-ல் உங்கள் ஆர்டர் #${orderId.slice(-8).toUpperCase()} இப்போது "${status.replace(/_/g, ' ')}" நிலையில் உள்ளது.`,
 
+    CONFIRMATION_WITH_INVOICE: (orderId: string, shopName: string, invoiceUrl: string) =>
+      `✅ *ஆர்டர் உறுதி செய்யப்பட்டது!*\n\nவணக்கம்! உங்கள் ஆர்டர் #${orderId.slice(-8).toUpperCase()} *${shopName}*-ஆல் உறுதி செய்யப்பட்டது. நாங்கள் தயாரிப்பைத் தொடங்குகிறோம்!\n\n📄 *PDF ரசீதை இங்கே பதிவிறக்கம் செய்யவும்:* ${invoiceUrl}?download=true\n\nஎங்களுடன் ஷாப்பிங் செய்ததற்கு நன்றி! 🙏`,
+
     ORDER_DELAYED: (orderId: string, shopName: string, reason?: string) =>
       `வணக்கம்! உங்கள் ஆர்டர் #${orderId.slice(-8).toUpperCase()} டெலிவரி செய்வதில் சிறிது தாமதம் ஏற்பட்டுள்ளது. வருந்துகிறோம்! 🙏`,
 
@@ -75,3 +87,4 @@ export const WHATSAPP_TEMPLATES = {
       `வணக்கம் Deeshora உதவி மையம்! எனக்கு ஒரு உதவி தேவை.`,
   }
 };
+

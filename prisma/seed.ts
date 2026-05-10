@@ -137,6 +137,34 @@ async function main() {
   });
   console.log('✅ Seeded 1 community.');
   
+  // ── Seed Sample Delivery Partner ────────────────────────────────────
+  console.log('🛵 Seeding sample delivery partner...');
+  const sampleDeliveryEmail = 'rider@example.com';
+  const deliveryUser = await prisma.user.upsert({
+    where: { email: sampleDeliveryEmail },
+    create: {
+      clerkId: 'user_seed_d1',
+      email: sampleDeliveryEmail,
+      name: 'Rider Rajesh',
+      role: 'DELIVERY_PARTNER',
+      isDeliveryOnline: true,
+    },
+    update: { role: 'DELIVERY_PARTNER' },
+  });
+
+  await prisma.deliveryPartner.upsert({
+    where: { userId: deliveryUser.id },
+    create: {
+      userId: deliveryUser.id,
+      name: 'Rider Rajesh',
+      phone: '918939318865',
+      vehicleType: 'BIKE',
+      vehicleNumber: 'TN 01 AB 1234',
+    },
+    update: { name: 'Rider Rajesh' },
+  });
+  console.log('✅ Seeded delivery partner.');
+
   // ── Seed Sample Activity Logs ────────────────────────────────────────
   console.log('📜 Seeding initial activity logs...');
   const activities = [

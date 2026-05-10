@@ -7,12 +7,21 @@ import {
   Navigation, MessageSquare, Loader2, Bell 
 } from "lucide-react";
 import SwipeButton from "@/components/delivery/SwipeButton";
+import EarningsCard from "@/components/delivery/EarningsCard";
 import { WHATSAPP_TEMPLATES, getWhatsAppUrl } from "@/lib/whatsapp";
 import toast from "react-hot-toast";
 
 export default function MyTasksPage() {
-  const { data: stats } = trpc.delivery.getStats.useQuery();
+  const { data: stats, refetch: refetchStats } = trpc.delivery.getStats.useQuery();
   const { data: tasks, isLoading, refetch } = trpc.delivery.getMyTasks.useQuery();
+
+  const toggleStatusMutation = trpc.delivery.toggleStatus.useMutation({
+    onSuccess: () => {
+      refetchStats();
+      toast.success("Status updated!");
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const completeMutation = trpc.delivery.completeOrder.useMutation({
     onSuccess: (data) => {
@@ -38,22 +47,36 @@ export default function MyTasksPage() {
 
   return (
     <div className="space-y-6 pb-4">
-      {/* Dynamic Summary Cards */}
-      <div className="grid grid-cols-2 gap-4">
-         <div className="bg-gray-900/50 border border-gray-800 p-5 rounded-3xl">
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Today</span>
-            <div className="flex items-baseline gap-2">
-               <span className="text-3xl font-black text-green-500">{stats?.completedToday || 0}</span>
-               <span className="text-xs font-bold text-gray-400">Done</span>
+      {/* Status Toggle & Premium Stats */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between bg-gray-900/50 p-4 rounded-3xl border border-gray-800">
+          <div className="flex items-center gap-3">
+            <div className={`w-3 h-3 rounded-full ${stats?.isOnline ? 'bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`} />
+            <div>
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Status</p>
+              <p className="text-sm font-black text-gray-200 uppercase tracking-tighter">
+                {stats?.isOnline ? 'Online & Active' : 'Offline'}
+              </p>
             </div>
-         </div>
-         <div className="bg-gray-900/50 border border-gray-800 p-5 rounded-3xl">
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Status</span>
-            <div className="flex items-center gap-2 mt-2">
-               <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-               <span className="text-sm font-black text-gray-200 uppercase tracking-wider">Active</span>
-            </div>
-         </div>
+          </div>
+          <button 
+            onClick={() => toggleStatusMutation.mutate()}
+            disabled={toggleStatusMutation.isPending}
+            className={`px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
+              stats?.isOnline 
+                ? 'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white' 
+                : 'bg-green-500 text-white shadow-xl shadow-green-500/20 hover:scale-105 active:scale-95'
+            }`}
+          >
+            {stats?.isOnline ? 'Go Offline' : 'Go Online'}
+          </button>
+        </div>
+
+        <EarningsCard 
+          todayEarnings={stats?.todayEarnings || 0}
+          completedToday={stats?.completedToday || 0}
+          totalEarnings={stats?.totalEarnings || 0}
+        />
       </div>
 
       <div className="flex items-center justify-between">
@@ -64,7 +87,15 @@ export default function MyTasksPage() {
       </div>
 
       {(!tasks || tasks.length === 0) ? (
-        <div className="bg-gray-900/30 border-2 border-dashed border-gray-800 rounded-[2.5rem] py-16 px-8 text-center">
+        <div className="bg-gray-900/30 border-2 border-dashed border-gray-800 rounded-[2.5rem] py-16 px-8 text-center relative overflow-hidden">
+           {!stats?.isOnline && (
+             <div className="absolute inset-0 bg-gray-950/40 backdrop-blur-[2px] z-10 flex items-center justify-center">
+                <div className="bg-gray-900 border border-gray-800 p-6 rounded-3xl shadow-2xl max-w-[250px]">
+                   <p className="text-sm font-black text-gray-200 mb-2 uppercase italic tracking-tighter">You are Offline</p>
+                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Go online to start receiving orders and earning.</p>
+                </div>
+             </div>
+           )}
            <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center text-gray-700 mx-auto mb-4">
               <Package size={30} />
            </div>
@@ -72,7 +103,7 @@ export default function MyTasksPage() {
            <p className="text-sm text-gray-500 mb-6">Claim an order from the pool to get started.</p>
            <a 
             href="/delivery/pool"
-            className="inline-flex items-center gap-2 text-blue-500 text-sm font-black uppercase tracking-widest hover:text-blue-400 transition-colors"
+            className={`inline-flex items-center gap-2 text-blue-500 text-sm font-black uppercase tracking-widest hover:text-blue-400 transition-colors ${!stats?.isOnline ? 'pointer-events-none opacity-50' : ''}`}
            >
               Go to Pool <ExternalLink size={14} />
            </a>

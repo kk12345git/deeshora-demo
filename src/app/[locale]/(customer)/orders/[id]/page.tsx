@@ -13,7 +13,7 @@ import { OrderStatus } from '@prisma/client';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 
-const LiveTrackingMap = dynamic(() => import('@/components/customer/LiveTrackingMap'), {
+const OrderMap = dynamic(() => import('@/components/customer/OrderMap'), {
   ssr: false,
   loading: () => <div className="h-64 bg-gray-50 animate-pulse rounded-2xl flex items-center justify-center text-gray-400 font-bold">Loading Map...</div>
 });
@@ -182,7 +182,7 @@ export default function OrderTrackingPage() {
   const orderId = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const { data: order, isLoading, error } = trpc.order.byId.useQuery({ id: orderId });
-  const { updates, currentStatus: liveStatus, isConnected } = useOrderTracking(orderId);
+  const { updates, currentStatus: liveStatus, deliveryPartner: livePartner, isConnected } = useOrderTracking(orderId);
 
   const [displayStatus, setDisplayStatus] = useState<OrderStatus | null>(null);
   const [reviewingProductId, setReviewingProductId] = useState<string | null>(null);
@@ -317,11 +317,41 @@ export default function OrderTrackingPage() {
         <OrderStatusBadge status={displayStatus ?? order.status} />
       </div>
 
+      {/* Delivery Partner Assigned Card */}
+      {(livePartner || order.deliveryPartner) && (displayStatus === 'OUT_FOR_DELIVERY' || displayStatus === 'READY') && (
+        <div className="bg-blue-600 rounded-[2rem] p-6 text-white mb-6 shadow-xl shadow-blue-500/20 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl -mr-10 -mt-10" />
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-2xl border border-white/30 backdrop-blur-md">
+                🛵
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100 mb-1">Your Delivery Partner</p>
+                <p className="text-xl font-black tracking-tight">{(livePartner || order.deliveryPartner)?.name}</p>
+                <div className="flex items-center gap-1.5 mt-1 text-blue-100">
+                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">En Route to you</span>
+                </div>
+              </div>
+            </div>
+            {(livePartner || order.deliveryPartner)?.phone && (
+              <a 
+                href={`tel:${(livePartner || order.deliveryPartner)?.phone}`}
+                className="w-12 h-12 bg-white text-blue-600 rounded-2xl flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all"
+              >
+                <Phone size={20} fill="currentColor" />
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Delivery progress */}
       <div className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-100/60 dark:shadow-black/20 p-6 sm:p-8 mb-6 space-y-8">
         {(displayStatus === 'OUT_FOR_DELIVERY' || displayStatus === 'READY' || displayStatus === 'DELIVERED') && (
           <div className="animate-in fade-in zoom-in-95 duration-700">
-            <LiveTrackingMap status={displayStatus} />
+            <OrderMap status={displayStatus} orderId={order.id} />
           </div>
         )}
         {displayStatus && <DeliveryProgress status={displayStatus} />}

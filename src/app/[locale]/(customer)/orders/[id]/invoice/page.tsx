@@ -1,9 +1,9 @@
 // src/app/(customer)/orders/[id]/invoice/page.tsx
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
-import { useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -13,8 +13,19 @@ import {
 
 export default function InvoicePage() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const isAutoDownload = searchParams?.get('download') === 'true';
   const printRef = useRef<HTMLDivElement>(null);
   const { data: order, isLoading, error } = trpc.order.invoice.useQuery({ id });
+
+  useEffect(() => {
+    if (isAutoDownload && !isLoading && order) {
+      const timer = setTimeout(() => {
+        window.print();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isAutoDownload, isLoading, order]);
 
   const handlePrint = () => window.print();
 
@@ -38,6 +49,7 @@ export default function InvoicePage() {
   const invoiceNumber = `INV-${order.id.slice(-8).toUpperCase()}`;
   const invoiceDate = new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
   const isPaid = order.paymentStatus === 'PAID';
+  const isCod = order.paymentMethod === 'COD';
 
   return (
     <>
@@ -93,15 +105,30 @@ export default function InvoicePage() {
                 <p className="text-2xl font-black text-gray-900">TAX INVOICE</p>
                 <p className="text-sm font-bold text-orange-500 mt-1">{invoiceNumber}</p>
                 <p className="text-xs text-gray-400 mt-1">Date: {invoiceDate}</p>
-                {isPaid ? (
-                  <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-black px-3 py-1.5 rounded-full mt-2">
-                    <CheckCircle size={12} /> PAID
-                  </div>
-                ) : (
-                  <div className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 text-xs font-black px-3 py-1.5 rounded-full mt-2">
-                    <Clock size={12} /> PAYMENT PENDING
-                  </div>
-                )}
+                <div className="flex flex-col items-end gap-2 mt-2">
+                  {isPaid ? (
+                    <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-black px-3 py-1.5 rounded-full">
+                      <CheckCircle size={12} /> PAID
+                    </div>
+                  ) : (
+                    <>
+                      <div className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 text-xs font-black px-3 py-1.5 rounded-full">
+                        <Clock size={12} /> PAYMENT PENDING
+                      </div>
+                      {!isPaid && (
+                        <Link 
+                          href={`/orders/${id}`}
+                          className="no-print text-[10px] font-black text-white bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-xl shadow-lg shadow-orange-500/20 transition-all uppercase tracking-tight"
+                        >
+                          Pay Now Online
+                        </Link>
+                      )}
+                    </>
+                  )}
+                  {isCod && !isPaid && (
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cash on Delivery</p>
+                  )}
+                </div>
               </div>
             </div>
 

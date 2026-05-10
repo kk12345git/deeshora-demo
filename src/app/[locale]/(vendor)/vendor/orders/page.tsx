@@ -41,16 +41,56 @@ export default function VendorOrdersPage() {
   const { data, isLoading, refetch } = trpc.order.vendorOrders.useQuery(queryInput);
 
   const updateStatusMutation = trpc.order.updateStatus.useMutation({
-    onSuccess: (_, vars) => {
+    onSuccess: (res, vars) => {
       toast.success('Order status updated!');
       refetch();
       if (expandedId === vars.orderId) setExpandedId(null);
+
+      // Automated WhatsApp Prompt for Confirmation
+      if (vars.status === 'CONFIRMED' && res.userPhone) {
+        const invoiceUrl = `${window.location.origin}/${language === 'ENGLISH' ? 'en' : 'ta'}/orders/${vars.orderId}/invoice`;
+        const whatsappUrl = getWhatsAppUrl(
+          res.userPhone, 
+          WHATSAPP_TEMPLATES[language].CONFIRMATION_WITH_INVOICE(vars.orderId, res.shopName, invoiceUrl)
+        );
+
+        toast.custom((t) => (
+          <div className={`bg-white rounded-2xl shadow-2xl p-4 border border-emerald-100 flex flex-col gap-3 min-w-[300px] ${t.visible ? 'animate-in fade-in zoom-in-95' : 'animate-out fade-out zoom-out-95'}`}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white">
+                <Send size={18} />
+              </div>
+              <div>
+                <p className="font-black text-sm text-gray-900 uppercase tracking-tight">Invoice Ready!</p>
+                <p className="text-xs text-gray-500">Share with customer now?</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => {
+                  window.open(whatsappUrl, '_blank');
+                  toast.dismiss(t.id);
+                }}
+                className="flex-1 bg-[#25D366] hover:bg-[#22c35e] text-white font-black text-xs py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
+              >
+                <Phone size={14} fill="currentColor" /> Send WhatsApp
+              </button>
+              <button 
+                onClick={() => toast.dismiss(t.id)}
+                className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold text-xs rounded-xl transition-all"
+              >
+                Later
+              </button>
+            </div>
+          </div>
+        ), { duration: 10000, position: 'top-center' });
+      }
     },
     onError: (err) => toast.error(err.message),
   });
 
   // Real-time notifications
-  useVendorNotifications(vendorProfile?.id, (data: any) => {
+  const { isConnected } = useVendorNotifications(vendorProfile?.id, (data: any) => {
     toast.custom((t) => (
       <div className={`flex items-center gap-3 bg-gray-900 text-white px-5 py-4 rounded-2xl shadow-2xl ${t.visible ? 'animate-in slide-in-from-top-4' : 'animate-out slide-out-to-top-4'}`}>
         <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -82,7 +122,13 @@ export default function VendorOrdersPage() {
               </span>
             )}
           </h1>
-          <p className="text-gray-400 text-sm mt-1">Manage and fulfill customer orders in real-time</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-gray-400 text-sm">Manage and fulfill customer orders in real-time</p>
+            <span className={`flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${isConnected ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600 animate-pulse'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-red-500'}`} />
+              {isConnected ? 'Real-time Live' : 'Connecting...'}
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex bg-white rounded-xl border border-gray-100 p-1 shadow-sm">
@@ -225,9 +271,9 @@ export default function VendorOrdersPage() {
                         </div>
                       </div>
 
-                      {/* Delivery Address */}
+                      {/* Delivery Info */}
                       <div className="space-y-2">
-                        <p className="text-xs font-black uppercase tracking-widest text-gray-400">Delivery To</p>
+                        <p className="text-xs font-black uppercase tracking-widest text-gray-400">Delivery</p>
                         <div className="space-y-1.5">
                           <p className="font-bold text-sm text-gray-800">{order.user.name}</p>
                           <p className="text-xs text-gray-600 flex items-start gap-1.5">
@@ -235,6 +281,18 @@ export default function VendorOrdersPage() {
                             {order.address.line1}{order.address.line2 ? `, ${order.address.line2}` : ''}<br/>
                             {order.address.city} - {order.address.pincode}
                           </p>
+                          
+                          {order.deliveryPartner && (
+                            <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Assigned Partner</p>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-bold text-gray-900">{order.deliveryPartner.name}</span>
+                                <a href={`tel:${order.deliveryPartner.phone}`} className="text-blue-600">
+                                  <Phone size={14} fill="currentColor" />
+                                </a>
+                              </div>
+                            </div>
+                          )}
                           <div className="flex flex-wrap gap-2 mt-2">
                              {order.user.phone && (
                                 <>
@@ -262,7 +320,7 @@ export default function VendorOrdersPage() {
 
                                   {order.paymentStatus === 'PAID' && (
                                     <a 
-                                      href={getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES[language].INVOICE_SHARE(order.id, vendorProfile?.shopName || 'Deeshora', `${window.location.origin}/orders/${order.id}/invoice`))}
+                                      href={getWhatsAppUrl(order.user.phone, WHATSAPP_TEMPLATES[language].INVOICE_SHARE(order.id, vendorProfile?.shopName || 'Deeshora', `${window.location.origin}/${language === 'ENGLISH' ? 'en' : 'ta'}/orders/${order.id}/invoice`))}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-purple-100 transition-all"
@@ -336,7 +394,9 @@ export default function VendorOrdersPage() {
                                     
                                     const message = `🛵 *NEW DELIVERY ORDER*\n\n*Shop:* ${vendorProfile?.shopName}\n*Order:* #${order.id.slice(-8).toUpperCase()}\n*Customer:* ${order.user.name}\n*Phone:* ${order.user.phone}\n*Address:* ${order.address.line1}, ${order.address.city}\n*Total:* ₹${order.total}\n*Pay Status:* ${order.paymentStatus}\n\n*Delivery Note:* ${order.notes || 'None'}\n\nPlease deliver this order! 🚀`;
                                     
-                                    window.open(`https://wa.me/${partnerNumber}?text=${encodeURIComponent(message)}`, '_blank');
+                                    // Use the helper to ensure cleaned number
+                                    const url = getWhatsAppUrl(partnerNumber, message);
+                                    window.open(url, '_blank');
                                   }}
                                   className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20"
                                 >

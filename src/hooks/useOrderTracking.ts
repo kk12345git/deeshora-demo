@@ -9,12 +9,17 @@ interface OrderUpdate {
   status: OrderStatus;
   message: string;
   timestamp: Date;
+  deliveryPartner?: {
+    name: string;
+    phone: string;
+  };
 }
 
 
 export const useOrderTracking = (orderId: string) => {
   const [updates, setUpdates] = useState<OrderUpdate[]>([]);
   const [currentStatus, setCurrentStatus] = useState<OrderStatus | null>(null);
+  const [deliveryPartner, setDeliveryPartner] = useState<OrderUpdate['deliveryPartner'] | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
 
@@ -31,9 +36,12 @@ export const useOrderTracking = (orderId: string) => {
     const handleDisconnection = () => setIsConnected(false);
 
 
-    const handleUpdate = (data: { status: OrderStatus; message: string }) => {
+    const handleUpdate = (data: { status: OrderStatus; message: string; deliveryPartner?: any }) => {
       const newUpdate: OrderUpdate = { ...data, timestamp: new Date() };
       setCurrentStatus(data.status);
+      if (data.deliveryPartner) {
+        setDeliveryPartner(data.deliveryPartner);
+      }
       setUpdates((prev) => [newUpdate, ...prev]);
       toast.success(`Order Update: ${data.message}`);
     };
@@ -52,7 +60,7 @@ export const useOrderTracking = (orderId: string) => {
   }, [orderId]);
 
 
-  return { updates, currentStatus, isConnected };
+  return { updates, currentStatus, deliveryPartner, isConnected };
 };
 
 
@@ -84,6 +92,7 @@ function playNewOrderSound() {
 
 
 export const useVendorNotifications = (vendorId: string | undefined, onNewOrder: (data: any) => void) => {
+  const [isConnected, setIsConnected] = useState(false);
   // Use a ref for onNewOrder to avoid re-subscribing on every render
   const onNewOrderRef = useRef(onNewOrder);
   useEffect(() => { onNewOrderRef.current = onNewOrder; }, [onNewOrder]);
@@ -97,6 +106,10 @@ export const useVendorNotifications = (vendorId: string | undefined, onNewOrder:
     const channel = pusherClient.subscribe(channelName);
 
 
+    const handleConnection = () => setIsConnected(true);
+    const handleDisconnection = () => setIsConnected(false);
+
+
     const handleNewOrder = (data: { orderId: string; customerName: string }) => {
       // Play the audio alert
       playNewOrderSound();
@@ -104,12 +117,17 @@ export const useVendorNotifications = (vendorId: string | undefined, onNewOrder:
     };
 
 
+    channel.bind('pusher:subscription_succeeded', handleConnection);
+    channel.bind('pusher:subscription_error', handleDisconnection);
     channel.bind('new-order', handleNewOrder);
 
 
     return () => {
-      channel.unbind('new-order', handleNewOrder);
+      channel.unbind_all();
       pusherClient.unsubscribe(channelName);
+      setIsConnected(false);
     };
   }, [vendorId]);
+
+  return { isConnected };
 };

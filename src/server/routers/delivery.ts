@@ -6,6 +6,16 @@ import { OrderStatus } from '@prisma/client';
 export const deliveryRouter = createTRPCRouter({
   /** Get all orders that are READY for pickup but not yet assigned */
   getPool: deliveryProcedure.query(async ({ ctx }) => {
+    // Only return pool if the current delivery partner is online
+    const currentUser = await ctx.prisma.user.findUnique({
+      where: { id: ctx.user.id },
+      select: { isDeliveryOnline: true },
+    });
+
+    if (!currentUser?.isDeliveryOnline) {
+      return [];
+    }
+
     return ctx.prisma.order.findMany({
       where: {
         status: 'READY',
@@ -48,7 +58,16 @@ export const deliveryRouter = createTRPCRouter({
       if (order.status !== 'READY') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Order is not ready for pickup.' });
       if (order.deliveryPartnerId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Order already claimed.' });
 
-      return ctx.prisma.order.update({
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: ctx.user.id },
+        select: { isDeliveryOnline: true },
+      });
+
+      if (!user?.isDeliveryOnline) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'You must be online to claim orders.' });
+      }
+
+      const updatedOrder = await ctx.prisma.order.update({
         where: { id: input.orderId },
         data: {
           deliveryPartnerId: ctx.user.id,
@@ -61,12 +80,35 @@ export const deliveryRouter = createTRPCRouter({
             },
           },
         },
+        include: {
+          deliveryPartner: { select: { name: true, phone: true } },
+        }
       });
+
+      // Trigger Pusher for real-time customer tracking update
+      try {
+        await pusherServer.trigger(
+          CHANNELS.ORDER_TRACKING(input.orderId),
+          EVENTS.ORDER_STATUS_UPDATE,
+          { 
+            status: 'OUT_FOR_DELIVERY', 
+            message: 'Order picked up by delivery partner.',
+            deliveryPartner: updatedOrder.deliveryPartner
+          }
+        );
+      } catch (err) {
+        console.error('[Delivery] Pusher claim notify failed:', err);
+      }
+
+      return updatedOrder;
     }),
 
   /** Mark order as delivered and trigger completion logic */
   completeOrder: deliveryProcedure
-    .input(z.object({ orderId: z.string() }))
+    .input(z.object({ 
+      orderId: z.string(),
+      verificationCode: z.string().optional()
+    }))
     .mutation(async ({ ctx, input }) => {
       const order = await ctx.prisma.order.findUnique({
         where: { id: input.orderId },
@@ -74,6 +116,12 @@ export const deliveryRouter = createTRPCRouter({
       });
 
       if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+      
+      // If verification code is provided, check if it's the Metro-style pass
+      if (input.verificationCode && input.verificationCode !== `VERIFY_DELIVERY_${input.orderId}`) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid Verification QR code.' });
+      }
+
       if (order.deliveryPartnerId !== ctx.user.id) throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not the assigned partner.' });
 
       const updated = await ctx.prisma.order.update({
@@ -164,6 +212,11 @@ export const deliveryRouter = createTRPCRouter({
       },
     });
 
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: ctx.user.id },
+      select: { isDeliveryOnline: true },
+    });
+
     return { 
       completedToday, 
       activeTasks: activeTasksCount,
@@ -171,6 +224,7 @@ export const deliveryRouter = createTRPCRouter({
       totalEarnings: earningsData._sum.deliveryFee || 0,
       weeklyEarnings: weeklyEarningsData._sum.deliveryFee || 0,
       todayEarnings: todayEarningsData._sum.deliveryFee || 0,
+      isOnline: user?.isDeliveryOnline || false,
     };
   }),
 
@@ -224,4 +278,18 @@ export const deliveryRouter = createTRPCRouter({
 
       return order;
     }),
+  
+  /** Toggle driver online/offline status */
+  toggleStatus: deliveryProcedure.mutation(async ({ ctx }) => {
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: ctx.user.id },
+    });
+    
+    if (!user) throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found.' });
+    
+    return ctx.prisma.user.update({
+      where: { id: ctx.user.id },
+      data: { isDeliveryOnline: !user.isDeliveryOnline },
+    });
+  }),
 });

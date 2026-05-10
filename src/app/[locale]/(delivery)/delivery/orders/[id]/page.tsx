@@ -12,6 +12,9 @@ import SwipeButton from "@/components/delivery/SwipeButton";
 import { WHATSAPP_TEMPLATES, getWhatsAppUrl } from "@/lib/whatsapp";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import dynamic from 'next/dynamic';
+
+const DeliveryMap = dynamic(() => import('@/components/delivery/DeliveryMap'), { ssr: false });
 
 export default function OrderDetailsPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -65,10 +68,17 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h2 className="text-xl font-black text-white italic">Task Details</h2>
+          <h2 className="text-xl font-black text-white italic">Delivery Task</h2>
           <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Order #{order.id.slice(-8).toUpperCase()}</p>
         </div>
       </div>
+
+      {/* Interactive Map Section */}
+      <DeliveryMap 
+        pickup={[(order.vendor.coordinates as any)?.lat || 13.16, (order.vendor.coordinates as any)?.lng || 80.30]}
+        drop={[(order.address.coordinates as any)?.lat || 13.17, (order.address.coordinates as any)?.lng || 80.31]}
+        driver={[13.15, 80.29]} // Mock driver location
+      />
 
       {/* Status Banner */}
       <div className={`p-4 rounded-3xl flex items-center justify-between ${
@@ -187,16 +197,51 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
          </div>
       </div>
 
-      {/* Footer Action */}
+      {/* QR Verification Section (Metro Style) */}
       {isAssigned && (
-         <div className="pt-4 px-2">
-            <SwipeButton 
-              label="Slide to Complete order"
-              successLabel="Delivered"
-              onComplete={() => completeMutation.mutate({ orderId: order.id })}
-              disabled={completeMutation.isPending}
+        <div className="bg-gray-900 border border-gray-800 rounded-[2rem] p-6 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-500">
+              <AlertCircle size={18} />
+            </div>
+            <h3 className="text-sm font-black text-gray-100 uppercase tracking-widest">Verify Delivery</h3>
+          </div>
+          
+          <p className="text-xs text-gray-500 leading-relaxed">
+            Please ask the customer to show their **WhatsApp Delivery Pass (QR)**. You can verify it here.
+          </p>
+
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              placeholder="Enter Verification Code"
+              id="qr-code-input"
+              className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-all"
             />
-         </div>
+            <button 
+              onClick={() => {
+                const input = document.getElementById('qr-code-input') as HTMLInputElement;
+                completeMutation.mutate({ orderId: order.id, verificationCode: input.value });
+              }}
+              className="bg-blue-600 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-500 transition-all active:scale-95"
+            >
+              Verify
+            </button>
+          </div>
+          
+          <div className="flex items-center gap-4 py-2">
+            <div className="flex-1 h-px bg-gray-800" />
+            <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">OR</span>
+            <div className="flex-1 h-px bg-gray-800" />
+          </div>
+
+          <SwipeButton 
+            label="Slide to Complete"
+            successLabel="Delivered"
+            onComplete={() => completeMutation.mutate({ orderId: order.id })}
+            disabled={completeMutation.isPending}
+          />
+        </div>
       )}
     </div>
   );

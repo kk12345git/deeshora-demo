@@ -204,8 +204,15 @@ export const orderRouter = createTRPCRouter({
               EVENTS.NEW_ORDER,
               { orderId: order.id, customerName: user.name }
             );
+
+            // Also notify Admin of new order
+            await pusherServer.trigger(
+              CHANNELS.ADMIN,
+              EVENTS.NEW_ORDER,
+              { orderId: order.id, customerName: user.name, shopName: vendor.shopName }
+            );
           } catch (pusherErr) {
-            console.error('[Order] Pusher notify failed for vendor:', vendor.id, pusherErr);
+            console.error('[Order] Pusher notify failed for vendor/admin:', vendor.id, pusherErr);
             // Non-fatal — vendor will see order on next refresh
           }
 
@@ -299,10 +306,10 @@ export const orderRouter = createTRPCRouter({
         await pusherServer.trigger(
           CHANNELS.ADMIN,
           EVENTS.NEW_PAYMENT_VERIFICATION,
-          { orderId: order.id, utrNumber: input.utrNumber }
+          { orderId: order.id, utrNumber: input.utrNumber, customerName: ctx.user.name }
         );
       } catch (err) {
-        console.error('[Order] Pusher admin notify failed:', err);
+        console.error('[Order] Pusher admin notify failed for UTR:', err);
       }
 
       return updated;
@@ -353,6 +360,7 @@ export const orderRouter = createTRPCRouter({
           address: true,
           items: { include: { product: { select: { slug: true } } } },
           timeline: { orderBy: { createdAt: 'desc' } },
+          deliveryPartner: { select: { name: true, phone: true, avatar: true } },
         },
       });
       if (!order) {
@@ -380,6 +388,7 @@ export const orderRouter = createTRPCRouter({
           user: { select: { name: true, phone: true } },
           address: true,
           items: true,
+          deliveryPartner: { select: { name: true, phone: true } },
         },
         cursor: cursor ? { id: cursor } : undefined,
         orderBy: { createdAt: 'desc' },
@@ -406,6 +415,7 @@ export const orderRouter = createTRPCRouter({
       const { orderId, status } = input;
       const order = await ctx.prisma.order.findFirst({
         where: { id: orderId, vendorId: ctx.vendor.id },
+        include: { user: { select: { phone: true } } },
       });
 
 
@@ -528,7 +538,11 @@ export const orderRouter = createTRPCRouter({
         console.error('[Order] Pusher status update failed:', orderId, pusherErr);
       }
 
-      return updatedOrder;
+      return {
+        ...updatedOrder,
+        userPhone: order.user.phone,
+        shopName: ctx.vendor.shopName,
+      };
     }),
 
 

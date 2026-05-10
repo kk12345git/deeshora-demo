@@ -42,12 +42,17 @@ export const adminRouter = createTRPCRouter({
     `;
 
 
+    const totalDeliveryPartners = await ctx.prisma.user.count({ where: { role: 'DELIVERY_PARTNER' } });
+    const onlinePartners = await ctx.prisma.user.count({ where: { role: 'DELIVERY_PARTNER', isDeliveryOnline: true } });
+
     return {
       totalUsers,
       totalVendors,
       pendingVendors,
       totalOrders,
       todayOrders,
+      totalDeliveryPartners,
+      onlinePartners,
       platformRevenue: platformRevenue._sum.commission ?? 0,
       pendingPayouts: pendingPayouts._sum.pendingPayout ?? 0,
       monthlyRevenue: monthlyRevenueData,

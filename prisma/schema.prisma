@@ -93,8 +93,9 @@ model User {
   area        String?  // e.g., "Thiruvottriyur"
   pincode     String?
   landmark    String?
-  isOnboarded Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  isOnboarded      Boolean  @default(false)
+  isDeliveryOnline Boolean  @default(false) // Added for delivery partner status
+  createdAt        DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   addresses Address[]
@@ -124,6 +125,7 @@ model Address {
   state     String
   pincode   String
   isDefault Boolean  @default(false)
+  coordinates Json?    // Added for precise delivery location
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -170,6 +172,7 @@ model Vendor {
   gstNumber       String?      // GST registration number
   totalEarnings   Float        @default(0)
   pendingPayout   Float        @default(0)
+  coordinates     Json?        // Added for precise pickup location
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 

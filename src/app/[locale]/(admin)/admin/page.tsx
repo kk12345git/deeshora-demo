@@ -82,20 +82,20 @@ export default async function AdminDashboardPage() {
             link: "/admin/vendors",
           },
           {
+            title: "Delivery Fleet",
+            value: stats.totalDeliveryPartners,
+            icon: <Bike size={22} />,
+            sub: `${stats.onlinePartners} partners online`,
+            gradient: "from-cyan-500 to-blue-600",
+            link: "/admin/users?role=DELIVERY_PARTNER",
+          },
+          {
             title: "Orders Today",
             value: stats.todayOrders,
             icon: <ShoppingCart size={22} />,
             sub: "Since midnight",
             gradient: "from-purple-500 to-pink-600",
             link: "/admin/orders",
-          },
-          {
-            title: "Total Revenue",
-            value: `₹${stats.platformRevenue.toLocaleString('en-IN')}`,
-            icon: <IndianRupee size={22} />,
-            sub: "Lifetime commission",
-            gradient: "from-orange-500 to-red-600",
-            link: "/admin/analytics",
           },
         ].map((card, i) => (
           <div
