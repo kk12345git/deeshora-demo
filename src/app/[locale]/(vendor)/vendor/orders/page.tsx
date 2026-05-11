@@ -89,6 +89,14 @@ export default function VendorOrdersPage() {
     onError: (err) => toast.error(err.message),
   });
 
+  const verifyPaymentMutation = trpc.order.verifyPayment.useMutation({
+    onSuccess: () => {
+      toast.success('Payment verified!');
+      refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
   // Real-time notifications
   const { isConnected } = useVendorNotifications(vendorProfile?.id, (data: any) => {
     toast.custom((t) => (
@@ -380,6 +388,29 @@ export default function VendorOrdersPage() {
                           )}
                           {['DELIVERED', 'CANCELLED'].includes(order.status) && (
                             <p className="text-center text-xs text-gray-400 py-2">Order {order.status.toLowerCase()}</p>
+                          )}
+
+                          {order.paymentStatus === 'PENDING' && order.paymentMethod === 'MANUAL_UPI' && (
+                            <div className="pt-2 border-t border-gray-100 mt-2 space-y-2">
+                               <p className="text-[10px] font-black uppercase text-gray-400">Payment Reconciliation</p>
+                               <div className="grid grid-cols-2 gap-2">
+                                  <button
+                                    onClick={() => verifyPaymentMutation.mutate({ orderId: order.id, status: 'PAID' })}
+                                    disabled={verifyPaymentMutation.isPending}
+                                    className="py-2 bg-emerald-500 text-white font-black text-xs rounded-xl hover:bg-emerald-600 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10"
+                                  >
+                                    {verifyPaymentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
+                                    Confirm Paid
+                                  </button>
+                                  <button
+                                    onClick={() => verifyPaymentMutation.mutate({ orderId: order.id, status: 'FAILED' })}
+                                    disabled={verifyPaymentMutation.isPending}
+                                    className="py-2 bg-red-50 text-red-600 font-bold text-xs rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-1.5"
+                                  >
+                                    <XCircle size={12} /> Mark Failed
+                                  </button>
+                               </div>
+                            </div>
                           )}
 
                           {/* WhatsApp Coordination */}

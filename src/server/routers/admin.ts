@@ -690,10 +690,23 @@ export const adminRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
-      return ctx.prisma.product.update({
+      const updated = await ctx.prisma.product.update({
         where: { id },
         data,
       });
+
+      await logActivity({
+        type: 'PRODUCT',
+        action: 'UPDATE',
+        entityId: id,
+        entityType: 'Product',
+        actorId: ctx.user.id,
+        actorName: ctx.user.name,
+        message: `Admin updated product: ${updated.name}`,
+        metadata: data,
+      });
+
+      return updated;
     }),
 
   deleteProduct: adminProcedure
@@ -709,13 +722,37 @@ export const adminRouter = createTRPCRouter({
       }
 
       if (product._count.orderItems > 0) {
-        return ctx.prisma.product.update({
+        const deactivated = await ctx.prisma.product.update({
           where: { id: input.id },
           data: { isActive: false, isFeatured: false }
         });
+
+        await logActivity({
+          type: 'PRODUCT',
+          action: 'UPDATE',
+          entityId: input.id,
+          entityType: 'Product',
+          actorId: ctx.user.id,
+          actorName: ctx.user.name,
+          message: `Admin deactivated product (has order history): ${product.name}`,
+        });
+
+        return deactivated;
       }
 
-      return ctx.prisma.product.delete({ where: { id: input.id } });
+      const deleted = await ctx.prisma.product.delete({ where: { id: input.id } });
+
+      await logActivity({
+        type: 'PRODUCT',
+        action: 'DELETE',
+        entityId: input.id,
+        entityType: 'Product',
+        actorId: ctx.user.id,
+        actorName: ctx.user.name,
+        message: `Admin deleted product: ${product.name}`,
+      });
+
+      return deleted;
     }),
 
 
@@ -919,6 +956,49 @@ export const adminRouter = createTRPCRouter({
       return updated;
     }),
 
+  verifyOrderPayment: adminProcedure
+    .input(z.object({
+      orderId: z.string(),
+      status: z.enum(['PAID', 'FAILED']),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const order = await ctx.prisma.order.findUnique({
+        where: { id: input.orderId },
+      });
+      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
+
+      const updated = await ctx.prisma.order.update({
+        where: { id: input.orderId },
+        data: {
+          paymentStatus: input.status,
+          timeline: {
+            create: {
+              status: order.status,
+              message: input.status === 'PAID' ? 'Payment verified by admin.' : 'Payment verification failed.',
+            }
+          }
+        }
+      });
+
+      // Trigger pusher for customer and vendor
+      try {
+        const { pusherServer, CHANNELS, EVENTS } = await import('@/lib/pusher');
+        await pusherServer.trigger(CHANNELS.ORDER(input.orderId), EVENTS.ORDER_STATUS_UPDATED, { status: order.status, message: input.status === 'PAID' ? 'Payment confirmed by platform!' : 'Payment failed.' });
+        await pusherServer.trigger(CHANNELS.VENDOR(order.vendorId), EVENTS.STATS_UPDATED, {}); // Refresh vendor dashboard
+      } catch (e) {}
+
+      await logActivity({
+        type: 'ORDER',
+        action: 'PAYMENT_VERIFY',
+        entityId: input.orderId,
+        entityType: 'Order',
+        actorId: ctx.user.id,
+        actorName: ctx.user.name,
+        message: `Admin verified payment for order #${input.orderId.slice(-6)} as ${input.status}`,
+      });
+
+      return updated;
+    }),
 
   deleteUser: adminProcedure
     .input(z.object({ userId: z.string() }))

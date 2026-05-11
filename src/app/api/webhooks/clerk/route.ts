@@ -95,9 +95,20 @@ export async function POST(req: Request) {
     // Trigger Pusher for Admin dashboard refresh
     try {
       const { pusherServer, CHANNELS, EVENTS } = await import('@/lib/pusher');
+      const { logActivity } = await import('@/lib/activity');
+      
       await pusherServer.trigger(CHANNELS.ADMIN, 'user-created', { name, email });
+      
+      await logActivity({
+        type: 'USER',
+        action: 'CREATE',
+        actorId: id,
+        actorName: name,
+        message: `New user registered: ${name} (${email})`,
+        metadata: { email, role },
+      });
     } catch (err) {
-      console.error('[ClerkWebhook] Pusher trigger failed:', err);
+      console.error('[ClerkWebhook] Activity logging failed:', err);
     }
 
     return NextResponse.json({ message: 'User created' }, { status: 201 });

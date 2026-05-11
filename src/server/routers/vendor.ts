@@ -3,6 +3,7 @@ import { createTRPCRouter, protectedProcedure, vendorProcedure, publicProcedure 
 import { TRPCError } from '@trpc/server';
 import { uploadImage } from '@/lib/cloudinary';
 import { initiatePhonePePayment } from '@/lib/payments/phonepe';
+import { logActivity } from '@/lib/activity';
 
 
 export const vendorRouter = createTRPCRouter({
@@ -89,6 +90,17 @@ export const vendorRouter = createTRPCRouter({
         console.error('[Vendor] Failed to sync Clerk metadata after registration:', err);
         // Non-fatal — webhook will sync on next Clerk event
       }
+
+      await logActivity({
+        type: 'VENDOR',
+        action: 'CREATE',
+        entityId: vendor.id,
+        entityType: 'Vendor',
+        actorId: ctx.user.id,
+        actorName: ctx.user.name,
+        message: `New vendor registration: ${vendor.shopName} in ${vendor.city}`,
+        metadata: { shopName: vendor.shopName, city: vendor.city },
+      });
 
       return vendor;
     }),

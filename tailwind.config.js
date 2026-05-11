@@ -40,9 +40,9 @@ module.exports = {
         '2xl': '1rem',   
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        outfit: ['var(--font-outfit)', 'sans-serif'],
-        inter: ['var(--font-inter)', 'sans-serif'],
+        sans: ['var(--font-manrope)', 'sans-serif'],
+        'plus-jakarta': ['var(--font-plus-jakarta)', 'sans-serif'],
+        manrope: ['var(--font-manrope)', 'sans-serif'],
       },
     },
   },

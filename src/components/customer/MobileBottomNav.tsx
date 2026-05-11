@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, ShoppingBag, User, Package, Users } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
+import { motion } from "framer-motion";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
@@ -30,19 +31,26 @@ export default function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 ${
-                isActive ? "text-orange-600 scale-110" : "text-gray-400 hover:text-gray-600"
+              className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative ${
+                isActive ? "text-orange-600" : "text-gray-400 hover:text-gray-600"
               }`}
             >
-              <div className="relative">
-                <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+              {isActive && (
+                <motion.div 
+                  layoutId="activeTab"
+                  className="absolute inset-0 bg-orange-50/50 -z-10"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <div className={`relative transition-transform duration-300 ${isActive ? "scale-110 -translate-y-1" : ""}`}>
+                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                 {item.badge !== undefined && item.badge > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-orange-600 text-white text-[9px] font-black flex items-center justify-center shadow-lg shadow-orange-500/30">
+                  <span className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-orange-600 text-white text-[8px] font-black flex items-center justify-center shadow-lg shadow-orange-500/30">
                     {item.badge}
                   </span>
                 )}
               </div>
-              <span className={`text-[10px] font-bold mt-1 uppercase tracking-wider ${isActive ? "opacity-100" : "opacity-70"}`}>
+              <span className={`text-[9px] font-black mt-1 uppercase tracking-[0.1em] transition-all ${isActive ? "opacity-100 scale-105" : "opacity-60"}`}>
                 {item.name}
               </span>
             </Link>

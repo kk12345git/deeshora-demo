@@ -26,11 +26,10 @@ export default function CheckoutPage() {
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [notes, setNotes] = useState('');
   const [paymentStep, setPaymentStep] = useState<PaymentStep>('SELECT');
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'MANUAL_UPI'>('COD');
+  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'MANUAL_UPI'>('MANUAL_UPI');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<null | { id: string; code: string; discount: number; description: string }>(null);
-  const [showUpiModal, setShowUpiModal] = useState(false);
   const [placedOrderIds, setPlacedOrderIds] = useState<string[]>([]);
 
   const addAddressMutation = trpc.user.addAddress.useMutation({
@@ -97,10 +96,8 @@ export default function CheckoutPage() {
 
       if (paymentMethod === 'MANUAL_UPI') {
         clearCart();
-        setPlacedOrderIds(result.orderIds);
-        // Auto-open invoice in new tab
-        window.open(`/orders/${result.orderIds[0]}/invoice?download=true`, '_blank');
-        setShowUpiModal(true);
+        toast.success('Order placed! Proceeding to payment...');
+        router.push(`/orders/${result.orderIds[0]}/payment`);
       } else {
         clearCart();
         setPlacedOrderIds(result.orderIds);
@@ -138,126 +135,9 @@ export default function CheckoutPage() {
             </button>
           </div>
         </div>
-
-        {/* UPI QR Modal */}
-        {showUpiModal && placedOrderIds.length > 0 && (
-          <UpiModal 
-            orderId={placedOrderIds[0]} 
-            onClose={() => setShowUpiModal(false)} 
-          />
-        )}
       </div>
     );
   }
-
-
-// ─── UPI Payment Modal Component ───────────────────────────────────────────
-function UpiModal({ orderId, onClose }: { orderId: string; onClose: () => void }) {
-  const { data: order } = trpc.order.byId.useQuery({ id: orderId });
-  const router = useRouter();
-  const [utr, setUtr] = useState('');
-  
-  const submitUtr = trpc.order.submitUtr.useMutation({
-    onSuccess: () => {
-      toast.success('Payment submitted for verification!');
-      router.push(`/orders/${orderId}?success=true`);
-    },
-    onError: (e) => toast.error(e.message)
-  });
-
-  if (!order) return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
-      <Loader2 className="w-10 h-10 animate-spin text-white" />
-    </div>
-  );
-
-  const upiId = order.vendor.upiId || 'deeshware15@okicici';
-  const amount = order.total.toFixed(2);
-  const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(order.vendor.shopName)}&am=${amount}&cu=INR&tn=Order_${order.id.slice(-8).toUpperCase()}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiUrl)}`;
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
-        <div className="bg-orange-500 p-8 text-center text-white relative">
-          <button onClick={onClose} className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors">
-            <X size={24} />
-          </button>
-          <div className="w-20 h-20 bg-white/20 rounded-[2rem] flex items-center justify-center mx-auto mb-4 backdrop-blur-md">
-            <CreditCard size={36} />
-          </div>
-          <h3 className="text-2xl font-black mb-1">Pay with UPI</h3>
-          <p className="text-orange-100 font-bold opacity-80">Scan the QR code to complete payment</p>
-        </div>
-
-        <div className="p-8 space-y-6">
-          <div className="bg-gray-50 p-6 rounded-[2rem] flex flex-col items-center">
-            <div className="bg-white p-4 rounded-3xl shadow-sm mb-4 border border-gray-100 relative w-48 h-48 overflow-hidden">
-              <Image 
-                src={order.vendor.upiQrCode || qrUrl} 
-                alt="UPI QR" 
-                fill
-                className="object-contain p-2" 
-                unoptimized 
-              />
-            </div>
-            <div className="text-center">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-center">Paying To</p>
-              <p className="font-black text-gray-900 text-center">{order.vendor.shopName}</p>
-              <p className="text-[10px] font-bold text-orange-500 mt-1 text-center">{upiId}</p>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Link 
-              href={`/orders/${orderId}/invoice`}
-              target="_blank"
-              className="flex-1 h-12 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-600 hover:bg-gray-100 transition-all"
-            >
-              <FileText size={14} /> View Order Invoice
-            </Link>
-          </div>
-
-          <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex items-center justify-between">
-            <span className="text-sm font-bold text-orange-700">Total Amount</span>
-            <span className="text-xl font-black text-orange-900">₹{amount}</span>
-          </div>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Transaction Ref / UTR Number</label>
-              <input
-                type="text"
-                placeholder="12-digit UTR Number"
-                value={utr}
-                onChange={(e) => setUtr(e.target.value.replace(/\D/g, '').slice(0, 12))}
-                className="w-full h-14 bg-gray-50 border-2 border-gray-100 rounded-2xl px-6 font-mono font-bold text-lg focus:border-orange-500 focus:bg-white outline-none transition-all"
-              />
-            </div>
-
-            <button
-              onClick={() => {
-                if (utr.length < 12) {
-                  toast.error('Please enter a valid 12-digit UTR number.');
-                  return;
-                }
-                submitUtr.mutate({ orderId, utrNumber: utr });
-              }}
-              disabled={submitUtr.isPending}
-              className="w-full h-16 bg-gray-900 text-white rounded-2xl font-black text-lg shadow-xl shadow-gray-900/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-            >
-              {submitUtr.isPending ? <Loader2 className="animate-spin" /> : <>Submit & Confirm <CheckCircle size={22} className="text-emerald-400" /></>}
-            </button>
-          </div>
-
-          <p className="text-[10px] text-center text-gray-400 font-bold leading-relaxed px-4">
-            Pay ₹{amount} in your UPI app, then copy the 12-digit UTR/Transaction ID and paste it here to confirm your order.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 
   // ─── Main Checkout Screen ─────────────────────────────────────────────────
@@ -349,6 +229,32 @@ function UpiModal({ orderId, onClose }: { orderId: string; onClose: () => void }
               </h2>
 
               <div className="grid grid-cols-1 gap-4">
+                {/* Manual UPI (Free) */}
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('MANUAL_UPI')}
+                  className={`relative group flex flex-col p-5 rounded-2xl border-2 text-left transition-all ${
+                    paymentMethod === 'MANUAL_UPI'
+                      ? 'border-orange-500 bg-orange-50/50 shadow-lg shadow-orange-500/10'
+                      : 'border-gray-100 bg-white hover:border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-md transition-all ${
+                      paymentMethod === 'MANUAL_UPI' ? 'bg-orange-500 shadow-orange-500/20' : 'bg-gray-100'
+                    }`}>
+                      <CreditCard size={20} className={paymentMethod === 'MANUAL_UPI' ? 'text-white' : 'text-gray-400'} />
+                    </div>
+                    {paymentMethod === 'MANUAL_UPI' && (
+                      <div className="w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center border-orange-500 bg-orange-500">
+                        <Check size={11} className="text-white" strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                  <p className={`font-black text-base ${paymentMethod === 'MANUAL_UPI' ? 'text-orange-900' : 'text-gray-400'}`}>Direct UPI Transfer (Zero Cost)</p>
+                  <p className="text-xs text-gray-400 font-medium mt-1 leading-relaxed">Pay via any UPI app and enter Transaction ID. Free for you!</p>
+                </button>
+
                 {/* COD */}
                 <button
                   type="button"
@@ -379,32 +285,6 @@ function UpiModal({ orderId, onClose }: { orderId: string; onClose: () => void }
                     <AlertCircle size={11} className="text-amber-500" />
                     <span className="text-[10px] font-black text-amber-600 uppercase tracking-wider">₹10 extra COD fee</span>
                   </div>
-                </button>
-
-                {/* Manual UPI (Free) */}
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('MANUAL_UPI')}
-                  className={`relative group flex flex-col p-5 rounded-2xl border-2 text-left transition-all ${
-                    paymentMethod === 'MANUAL_UPI'
-                      ? 'border-orange-500 bg-orange-50/50 shadow-lg shadow-orange-500/10'
-                      : 'border-gray-100 bg-white hover:border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-md transition-all ${
-                      paymentMethod === 'MANUAL_UPI' ? 'bg-orange-500 shadow-orange-500/20' : 'bg-gray-100'
-                    }`}>
-                      <CreditCard size={20} className={paymentMethod === 'MANUAL_UPI' ? 'text-white' : 'text-gray-400'} />
-                    </div>
-                    {paymentMethod === 'MANUAL_UPI' && (
-                      <div className="w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center border-orange-500 bg-orange-500">
-                        <Check size={11} className="text-white" strokeWidth={3} />
-                      </div>
-                    )}
-                  </div>
-                  <p className={`font-black text-base ${paymentMethod === 'MANUAL_UPI' ? 'text-orange-900' : 'text-gray-400'}`}>Direct UPI Transfer (Zero Cost)</p>
-                  <p className="text-xs text-gray-400 font-medium mt-1 leading-relaxed">Pay via any UPI app and enter Transaction ID. Free for you!</p>
                 </button>
               </div>
             </div>
@@ -512,11 +392,7 @@ function UpiModal({ orderId, onClose }: { orderId: string; onClose: () => void }
                 </div>
               </div>
 
-              {/* Payment indicator */}
-              <div className="flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 bg-gray-50">
-                <Banknote size={16} className="text-gray-500 flex-shrink-0" />
-                <span className="text-xs font-black text-gray-600">Paying cash on delivery</span>
-              </div>
+
 
               {/* Confirm CTA */}
               <button

@@ -39,6 +39,8 @@ export default function AdminDashboardLive({ initialStats, initialActivities }: 
     channel.bind(EVENTS.NEW_ORDER, handleUpdate);
     channel.bind(EVENTS.VENDOR_APPROVED, handleUpdate);
     channel.bind(EVENTS.NEW_PAYMENT_VERIFICATION, handleUpdate);
+    channel.bind(EVENTS.NEW_ACTIVITY, handleUpdate);
+    channel.bind(EVENTS.STATS_UPDATED, handleUpdate);
     channel.bind('user-created', handleUpdate);
 
     return () => {

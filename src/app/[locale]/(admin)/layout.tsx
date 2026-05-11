@@ -8,6 +8,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Users, Store, ShoppingCart, CreditCard, Settings, Loader2, Menu, X, Package, MapPin, Tag, BarChart2, FileText, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Footer from "@/components/layout/Footer";
 
 const navItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -132,7 +133,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="hidden lg:flex w-72 flex-shrink-0 bg-gray-950 text-gray-300 flex-col sticky top-0 h-screen border-r border-white/5 shadow-2xl">
         <div className="p-8 border-b border-white/5">
           <Link href="/admin" className="flex items-center gap-3 group">
-            <div className="relative w-11 h-11 transition-all group-hover:scale-105 duration-500">
+            <div className="relative w-11 h-11 transition-all group-hover:scale-105 duration-300">
                 <Image src="/logo.jpg" alt="Logo" fill className="object-cover rounded-xl shadow-2xl border border-white/10" />
                 <div className="absolute inset-0 bg-orange-500/20 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
@@ -209,8 +210,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
            </div>
         </header>
 
-        <main className="flex-grow p-4 md:p-8 lg:p-10 xl:p-12 overflow-x-hidden relative z-10">
-            <div className="max-w-7xl mx-auto">
+        <main className="flex-grow p-4 md:p-8 lg:p-10 xl:p-12 overflow-x-hidden relative z-10 flex flex-col">
+            <div className="max-w-7xl mx-auto flex-grow w-full">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={pathname}
@@ -222,6 +223,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {children}
                 </motion.div>
               </AnimatePresence>
+            </div>
+            <div className="mt-20">
+              <Footer />
             </div>
         </main>
       </div>

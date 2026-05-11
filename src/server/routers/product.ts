@@ -81,11 +81,11 @@ export const productRouter = createTRPCRouter({
             status: 'APPROVED',
           },
           isFeatured: featured,
-          OR: search
+          OR: search && search.trim().length > 0
             ? [
-                { name: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } },
-                { tags: { has: search.toLowerCase() } },
+                { AND: search.trim().split(/\s+/).map(w => ({ name: { contains: w, mode: 'insensitive' as const } })) },
+                { AND: search.trim().split(/\s+/).map(w => ({ description: { contains: w, mode: 'insensitive' as const } })) },
+                { AND: search.trim().split(/\s+/).map(w => ({ tags: { has: w.toLowerCase() } })) },
               ]
             : undefined,
         },
@@ -131,12 +131,17 @@ export const productRouter = createTRPCRouter({
         },
       };
 
-      // 1. Exact name match
+      const words = q.split(/\s+/).filter(w => w.length > 0);
+      const nameContains = words.map(w => ({ name: { contains: w, mode: 'insensitive' as const } }));
+      const descContains = words.map(w => ({ description: { contains: w, mode: 'insensitive' as const } }));
+      const tagsContains = words.map(w => ({ tags: { has: w.toLowerCase() } }));
+
+      // 1. Exact name match (all words must be in the name)
       const exactByName = await ctx.prisma.product.findMany({
         take: limit,
         where: {
           ...baseWhere,
-          name: { contains: q, mode: 'insensitive' },
+          AND: nameContains.length > 0 ? nameContains : undefined,
         },
         include: {
           vendor: { select: { shopName: true, city: true } },
@@ -152,10 +157,10 @@ export const productRouter = createTRPCRouter({
         where: {
           ...baseWhere,
           id: { notIn: Array.from(exactIds) },
-          OR: [
-            { description: { contains: q, mode: 'insensitive' } },
-            { tags: { has: q.toLowerCase() } },
-          ],
+          OR: words.length > 0 ? [
+            { AND: descContains },
+            { AND: tagsContains },
+          ] : undefined,
         },
         include: {
           vendor: { select: { shopName: true, city: true } },
@@ -193,6 +198,16 @@ export const productRouter = createTRPCRouter({
           city,
         },
       }).catch(() => {});
+
+      // Real-time activity log for Admin
+      logActivity({
+        type: 'SEARCH',
+        action: 'QUERY',
+        actorId: ctx.user?.id,
+        actorName: ctx.user?.name || 'Guest',
+        message: `Search query: "${q}" in ${city || 'All Cities'} (${exactByName.length + relatedByDesc.length} results)`,
+        metadata: { query: q, city, results: exactByName.length + relatedByDesc.length },
+      });
 
       // ─── Intent detection: does this query imply a specific category?
       const detectedCatName = autoDetectCategory(q);
@@ -248,13 +263,17 @@ export const productRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const { query, city } = input;
-      if (query.trim().length < 2) return [];
+      const q = query.trim();
+      if (q.length < 2) return [];
+
+      const words = q.split(/\s+/).filter(w => w.length > 0);
+      const nameContains = words.map(w => ({ name: { contains: w, mode: 'insensitive' as const } }));
 
       const results = await ctx.prisma.product.findMany({
         take: 6,
         where: {
           isActive: true,
-          name: { contains: query.trim(), mode: 'insensitive' },
+          AND: nameContains.length > 0 ? nameContains : undefined,
           vendor: {
             status: 'APPROVED',
             city: city ? { equals: city, mode: 'insensitive' } : undefined,

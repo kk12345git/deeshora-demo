@@ -1,22 +1,33 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
-import { Inter, Outfit } from "next/font/google";
+import { Plus_Jakarta_Sans, Manrope } from "next/font/google";
 import "../globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCProvider } from "@/components/providers";
 import { Toaster } from "react-hot-toast";
 import JsonLd from "@/components/JsonLd";
 import NextTopLoader from 'nextjs-toploader';
+import { CartSync } from "@/components/cart/CartSync";
+import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import PageTransition from "@/components/layout/PageTransition";
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import PWARegistration from '@/components/PWARegistration';
+import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import RoleGuard from "@/components/providers/RoleGuard";
 
-const outfit = Outfit({ 
+const plusJakartaSans = Plus_Jakarta_Sans({ 
     subsets: ["latin"],
-    weight: ['300', '400', '500', '600', '700', '800', '900'],
-    variable: '--font-outfit'
+    weight: ['300', '400', '500', '600', '700', '800'],
+    variable: '--font-plus-jakarta'
 });
 
-const inter = Inter({
+const manrope = Manrope({
     subsets: ["latin"],
-    variable: '--font-inter'
+    weight: ['200', '300', '400', '500', '600', '700', '800'],
+    variable: '--font-manrope'
 });
 
 export const metadata: Metadata = {
@@ -66,19 +77,6 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
-import { CartSync } from "@/components/cart/CartSync";
-import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
-
-import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import PageTransition from "@/components/layout/PageTransition";
-
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
-import { notFound } from 'next/navigation';
-
-import PWARegistration from '@/components/PWARegistration';
-import PWAInstallPrompt from '@/components/PWAInstallPrompt';
-
 export default async function RootLayout({
   children,
   params: { locale }
@@ -105,7 +103,7 @@ export default async function RootLayout({
           <meta name="apple-mobile-web-app-title" content="Deeshora" />
           <link rel="apple-touch-icon" href="/logo.jpg" />
         </head>
-        <body className={`${outfit.variable} ${inter.variable} font-outfit antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
+        <body className={`${plusJakartaSans.variable} ${manrope.variable} font-manrope antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
           <NextTopLoader color="#f97316" showSpinner={false} height={3} />
           <TRPCProvider>
             <PWARegistration />
@@ -115,9 +113,11 @@ export default async function RootLayout({
                   <CartSync />
                   <RoleSwitcher />
                   <JsonLd />
-                  <PageTransition>
-                    {children}
-                  </PageTransition>
+                  <RoleGuard>
+                    <PageTransition>
+                      {children}
+                    </PageTransition>
+                  </RoleGuard>
                   <Toaster 
                       position="bottom-center"
                       toastOptions={{

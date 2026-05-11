@@ -48,6 +48,14 @@ export default function AdminOrdersPage() {
     onError: err => toast.error(err.message),
   });
 
+  const verifyPayment = trpc.admin.verifyOrderPayment.useMutation({
+    onSuccess: () => {
+      toast.success('Payment reconciliation updated! ✅');
+      refetch();
+    },
+    onError: err => toast.error(err.message),
+  });
+
   const orders = (data?.orders ?? []).filter(o =>
     !search ||
     o.id.toLowerCase().includes(search.toLowerCase()) ||
@@ -338,6 +346,29 @@ export default function AdminOrdersPage() {
                                 </button>
                               );
                             })}
+                          </div>
+                        )}
+
+                        {order.paymentStatus === 'PENDING' && order.paymentMethod === 'MANUAL_UPI' && (
+                          <div className="pt-4 border-t border-gray-100 mt-2 space-y-3">
+                             <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">Manual UPI Reconciliation</p>
+                             <div className="grid grid-cols-2 gap-2">
+                                <button
+                                  onClick={() => verifyPayment.mutate({ orderId: order.id, status: 'PAID' })}
+                                  disabled={verifyPayment.isPending}
+                                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+                                >
+                                  {verifyPayment.isPending ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
+                                  Confirm Success
+                                </button>
+                                <button
+                                  onClick={() => verifyPayment.mutate({ orderId: order.id, status: 'FAILED' })}
+                                  disabled={verifyPayment.isPending}
+                                  className="w-full py-3 bg-red-50 text-red-600 hover:bg-red-100 font-black text-[10px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2"
+                                >
+                                  <AlertTriangle size={12} /> Mark as Failed
+                                </button>
+                             </div>
                           </div>
                         )}
                       </div>

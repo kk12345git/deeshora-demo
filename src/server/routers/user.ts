@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { uploadImage } from '@/lib/cloudinary';
+import { clerkClient } from '@clerk/nextjs/server';
 
 /** Check DB for serviceability — falls back to false if not found */
 async function checkServiceable(prisma: any, area: string | null | undefined): Promise<boolean> {
@@ -266,5 +267,32 @@ export const userRouter = createTRPCRouter({
         where: { id: input.id, userId: ctx.user.id },
         data: { isRead: true }
       });
+    }),
+
+  // Set user role during onboarding
+  setRole: protectedProcedure
+    .input(z.object({
+      role: z.enum(['CUSTOMER', 'VENDOR', 'DELIVERY_PARTNER'])
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const updated = await ctx.prisma.user.update({
+        where: { id: ctx.user.id },
+        data: {
+          role: input.role,
+          isOnboarded: input.role === 'CUSTOMER' ? true : false
+        }
+      });
+
+      // Sync to Clerk metadata for faster frontend checks
+      try {
+        const clerk = await clerkClient();
+        await clerk.users.updateUserMetadata(ctx.userId, {
+          publicMetadata: { role: input.role }
+        });
+      } catch (e) {
+        console.error('[UserRouter] Failed to sync role to Clerk:', e);
+      }
+
+      return updated;
     }),
 });

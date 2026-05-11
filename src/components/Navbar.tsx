@@ -153,9 +153,9 @@ export default function Navbar() {
         {/* ── Main Nav Row ───────────────────────────────────────────────── */}
           <motion.nav 
             layout
-            className={`flex items-center gap-3 px-4 py-3 rounded-[2rem] border transition-all duration-500 ${
+            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-2xl md:rounded-[2rem] border transition-all duration-500 ${
               scrolled
-              ? "bg-white/70 dark:bg-gray-900/70 backdrop-blur-2xl border-white/20 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]"
+              ? "bg-white/60 dark:bg-gray-900/60 backdrop-blur-3xl border-white/40 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]"
               : "bg-white dark:bg-gray-900 border-transparent shadow-sm"
             }`}
           >

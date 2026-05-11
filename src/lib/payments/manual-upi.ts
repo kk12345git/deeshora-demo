@@ -3,7 +3,7 @@ import { PaymentInitiateRequest, PaymentInitiateResponse } from './types';
 
 export function initiateManualUpiPayment(req: PaymentInitiateRequest): PaymentInitiateResponse {
   // Use the admin's UPI ID from environment or a default
-  const adminUpiId = process.env.ADMIN_UPI_ID || 'deeshware15@okicici';
+  const adminUpiId = process.env.ADMIN_UPI_ID || 'deeshware15-2@okicici';
   const amount = req.amount.toFixed(2);
   const shopName = "Deeshora";
   const transactionNote = `Order_${req.orderId.slice(-8).toUpperCase()}`;

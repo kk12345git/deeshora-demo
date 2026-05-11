@@ -230,7 +230,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                     </Link>
                     <div className="flex items-center text-[11px] font-bold text-gray-500 gap-1.5 ml-auto bg-white px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
                         <Star size={14} className="text-yellow-400 fill-current" />
-                        <span>{product.rating.toFixed(1)}</span>
+                        <span>{(product.rating || 0).toFixed(1)}</span>
                         <span className="text-gray-300">•</span>
                         <span>{product.reviewCount} Reviews</span>
                     </div>

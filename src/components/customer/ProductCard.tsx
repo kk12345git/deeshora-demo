@@ -133,39 +133,39 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       </Link>
 
       {/* Content */}
-      <div className="p-4 sm:p-6 flex flex-col flex-grow space-y-2 sm:space-y-3">
+      <div className="p-3 sm:p-6 flex flex-col flex-grow space-y-1.5 sm:space-y-3">
         <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-orange-500 tracking-wider">
-                <Store size={12} />
-                {product.vendor.shopName}
-                <CheckCircle2 size={12} className="text-blue-500 fill-blue-500/10" />
+            <div className="flex items-center gap-1 text-[8px] sm:text-[10px] font-black uppercase text-orange-500 tracking-wider">
+                <Store size={10} className="sm:size-3" />
+                <span className="truncate max-w-[60px] sm:max-w-none">{product.vendor.shopName}</span>
+                <CheckCircle2 size={10} className="text-blue-500 fill-blue-500/10 hidden sm:block" />
             </div>
-            <div className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <Star size={10} className="text-yellow-400 fill-current" />
-                <span className="text-[10px] font-bold text-gray-700 dark:text-gray-300">
+            <div className="flex items-center gap-1 px-1 sm:px-1.5 py-0.5 bg-gray-50 dark:bg-gray-800 rounded-md sm:rounded-lg">
+                <Star size={8} className="text-yellow-400 fill-current sm:size-3" />
+                <span className="text-[8px] sm:text-[10px] font-bold text-gray-700 dark:text-gray-300">
                     {product.rating?.toFixed(1) || "5.0"}
                 </span>
             </div>
         </div>
 
-        <h3 className="text-base font-bold text-gray-900 dark:text-white line-clamp-2 min-h-[3rem]">
+        <h3 className="text-xs sm:text-base font-bold text-gray-900 dark:text-white line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem]">
           <Link href={`/product/${product.slug}`} className="hover:text-orange-500 transition-colors uppercase tracking-tight">
             {product.name}
           </Link>
         </h3>
 
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center justify-between pt-1 sm:pt-2">
           <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-                <p className="text-2xl font-black text-gray-950 dark:text-white tracking-tighter">₹{product.price}</p>
+            <div className="flex items-center gap-1 sm:gap-2">
+                <p className="text-lg sm:text-2xl font-black text-gray-950 dark:text-white tracking-tighter">₹{product.price}</p>
                 {product.mrp > product.price && (
-                    <p className="text-sm text-gray-400 dark:text-gray-500 line-through">₹{product.mrp}</p>
+                    <p className="text-[10px] sm:text-sm text-gray-400 dark:text-gray-500 line-through">₹{product.mrp}</p>
                 )}
             </div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{product.unit || "per piece"}</p>
+            <p className="text-[8px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest">{product.unit || "per piece"}</p>
           </div>
 
-          <div className="relative group-hover:scale-110 transition-transform">
+          <div className="relative group-hover:scale-110 transition-transform active:scale-90">
             {product.stock > 0 && (
                 cartItem ? (
                     <div className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">

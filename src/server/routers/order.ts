@@ -92,6 +92,8 @@ export const orderRouter = createTRPCRouter({
       const freeDeliveryThreshold = freeDeliveryConfig ? parseFloat(freeDeliveryConfig.value) : 299;
       const platformFixedFee = platformFixedFeeConfig ? parseFloat(platformFixedFeeConfig.value) : 0;
 
+      const pusherEventsToTrigger: Array<() => Promise<void>> = [];
+
       const finalOrders = await ctx.prisma.$transaction(async (tx) => {
         const createdOrders = [];
 
@@ -193,36 +195,40 @@ export const orderRouter = createTRPCRouter({
               });
 
               // Trigger Pusher for real-time UI update (uses Vendor.id for channel)
-              try {
-                await pusherServer.trigger(
-                  CHANNELS.VENDOR(productAfterUpdate.vendorId),
-                  EVENTS.LOW_STOCK_ALERT,
-                  { productId: item.productId, stock: productAfterUpdate.stock, name: productAfterUpdate.name }
-                );
-              } catch (pusherErr) {
-                console.error('[Order] Pusher low stock alert failed:', pusherErr);
-              }
+              pusherEventsToTrigger.push(async () => {
+                try {
+                  await pusherServer.trigger(
+                    CHANNELS.VENDOR(productAfterUpdate.vendorId),
+                    EVENTS.LOW_STOCK_ALERT,
+                    { productId: item.productId, stock: productAfterUpdate.stock, name: productAfterUpdate.name }
+                  );
+                } catch (pusherErr) {
+                  console.error('[Order] Pusher low stock alert failed:', pusherErr);
+                }
+              });
             }
           }
 
           // M3: Pusher wrapped in try/catch — order is NOT rolled back if notification fails
-          try {
-            await pusherServer.trigger(
-              CHANNELS.VENDOR(vendor.id),
-              EVENTS.NEW_ORDER,
-              { orderId: order.id, customerName: user.name }
-            );
+          pusherEventsToTrigger.push(async () => {
+            try {
+              await pusherServer.trigger(
+                CHANNELS.VENDOR(vendor.id),
+                EVENTS.NEW_ORDER,
+                { orderId: order.id, customerName: user.name }
+              );
 
-            // Also notify Admin of new order
-            await pusherServer.trigger(
-              CHANNELS.ADMIN,
-              EVENTS.NEW_ORDER,
-              { orderId: order.id, customerName: user.name, shopName: vendor.shopName }
-            );
-          } catch (pusherErr) {
-            console.error('[Order] Pusher notify failed for vendor/admin:', vendor.id, pusherErr);
-            // Non-fatal — vendor will see order on next refresh
-          }
+              // Also notify Admin of new order
+              await pusherServer.trigger(
+                CHANNELS.ADMIN,
+                EVENTS.NEW_ORDER,
+                { orderId: order.id, customerName: user.name, shopName: vendor.shopName }
+              );
+            } catch (pusherErr) {
+              console.error('[Order] Pusher notify failed for vendor/admin:', vendor.id, pusherErr);
+              // Non-fatal — vendor will see order on next refresh
+            }
+          });
 
           await logActivity({
             type: 'ORDER',
@@ -243,6 +249,9 @@ export const orderRouter = createTRPCRouter({
 
         return createdOrders;
       });
+
+      // Fire off all external events non-blockingly after transaction succeeds
+      Promise.all(pusherEventsToTrigger.map(fn => fn())).catch(e => console.error("Pusher events failed", e));
 
       return {
         success: true,
@@ -285,7 +294,7 @@ export const orderRouter = createTRPCRouter({
   submitUtr: protectedProcedure
     .input(z.object({
       orderId: z.string(),
-      utrNumber: z.string().min(12, 'UTR must be at least 12 digits'),
+      utrNumber: z.string().regex(/^\d{12}$/, 'UTR must be exactly 12 digits (numeric)'),
     }))
     .mutation(async ({ ctx, input }) => {
       const order = await ctx.prisma.order.findUnique({
@@ -771,5 +780,41 @@ export const orderRouter = createTRPCRouter({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
       }
       return order;
+    }),
+
+  verifyPayment: vendorProcedure
+    .input(z.object({
+      orderId: z.string(),
+      status: z.enum(['PAID', 'FAILED']),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const order = await ctx.prisma.order.findFirst({
+        where: { id: input.orderId, vendorId: ctx.vendor.id },
+      });
+      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
+
+      const updated = await ctx.prisma.order.update({
+        where: { id: input.orderId },
+        data: {
+          paymentStatus: input.status,
+          timeline: {
+            create: {
+              status: order.status,
+              message: input.status === 'PAID' ? 'Payment verified by vendor.' : 'Payment verification failed.',
+            }
+          }
+        }
+      });
+
+      // Trigger pusher for customer
+      try {
+        await pusherServer.trigger(
+          CHANNELS.ORDER(input.orderId),
+          EVENTS.ORDER_STATUS_UPDATED,
+          { status: order.status, message: input.status === 'PAID' ? 'Payment confirmed by vendor!' : 'Payment failed.' }
+        );
+      } catch (e) {}
+
+      return updated;
     }),
 });

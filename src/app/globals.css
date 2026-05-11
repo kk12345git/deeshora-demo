@@ -66,7 +66,11 @@
 
   body {
     @apply bg-gray-50 text-gray-800 antialiased;
-    font-family: inherit; /* Rely on next/font class set in layout */
+    font-family: var(--font-manrope), sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-plus-jakarta), sans-serif;
   }
 }
 

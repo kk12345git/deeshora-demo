@@ -9,6 +9,28 @@ import { Search as SearchIcon, Loader2, ShoppingBag, Sparkles, Zap, Tag, ArrowRi
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
+
+function CategoryItemImage({ category }: { category: any }) {
+  const [error, setError] = useState(false);
+  if (!category.image || error) {
+    return (
+      <div className="w-20 h-20 bg-orange-100 rounded-full group-hover:bg-white/20 flex items-center justify-center text-orange-500 font-bold text-2xl">
+        {category.name[0]}
+      </div>
+    );
+  }
+  return (
+    <Image 
+      src={category.image} 
+      alt={category.name} 
+      width={80} 
+      height={80} 
+      className="object-contain group-hover:scale-110 transition-transform group-hover:brightness-0 group-hover:invert" 
+      onError={() => setError(true)} 
+    />
+  );
+}
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -290,6 +312,29 @@ export default function SearchPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* ─── Explore Categories (When No Query) ─────────────────────── */}
+        {!query && (
+          <section className="py-12">
+            <div className="mb-8">
+              <h2 className="text-3xl font-black text-gray-900">Explore Categories</h2>
+              <p className="text-gray-500 mt-2">Find exactly what you need in your {selectedCity || "local area"}.</p>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+              {!categories ? Array(8).fill(0).map((_, i) => <div key={i} className="aspect-square bg-gray-100 animate-pulse rounded-3xl" />) : 
+              categories?.map((category) => (
+                <Link key={category.id} href={`/category/${category.slug}`} className="group space-y-4">
+                  <div className="aspect-square bg-gray-50 rounded-[2rem] p-4 flex items-center justify-center group-hover:bg-orange-600 transition-all group-hover:shadow-2xl group-hover:shadow-orange-500/40 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <CategoryItemImage category={category} />
+                  </div>
+                  <p className="text-center font-bold text-gray-800 group-hover:text-orange-600 transition-colors">{category.name}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
       </div>
     </div>

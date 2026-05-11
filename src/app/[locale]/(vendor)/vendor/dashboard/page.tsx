@@ -708,11 +708,18 @@ export default function VendorDashboardPage() {
                         <span className="text-sm font-bold text-gray-400">/mo</span>
                       </div>
                       <button
-                        onClick={() => initiateSub.mutate({})}
-                        disabled={initiateSub.isPending}
-                        className="w-full mt-8 bg-indigo-600 text-white py-6 rounded-[2rem] font-black text-lg uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-500/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                        onClick={() => {
+                          const upiUrl = `upi://pay?pa=deeshware15-2@okicici&pn=Deeshora&am=700&tr=${vendorProfile?.id || ''}&cu=INR`;
+                          window.location.href = upiUrl;
+                          toast.success('Redirecting to UPI app...');
+                          setTimeout(() => {
+                             setPaymentMethod('MANUAL');
+                             toast('Please enter your UTR number to confirm payment', { icon: '📝', duration: 6000 });
+                          }, 4000);
+                        }}
+                        className="w-full mt-8 bg-indigo-600 text-white py-6 rounded-[2rem] font-black text-lg uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-500/30 transition-all active:scale-95 flex items-center justify-center gap-3"
                       >
-                        {initiateSub.isPending ? <Loader2 className="animate-spin" /> : <span>Pay via PhonePe</span>}
+                        <span>Pay via UPI App</span>
                       </button>
                     </div>
                   ) : (
@@ -720,7 +727,7 @@ export default function VendorDashboardPage() {
                       <div className="p-4 bg-white border-2 border-dashed border-gray-100 rounded-[2rem] flex flex-col items-center">
                         <div className="relative w-48 h-48 mb-4">
                           <Image 
-                            src="/images/assets/subscription-qr.png" 
+                            src="/subscription-qr.png" 
                             alt="Subscription QR" 
                             fill 
                             className="object-contain"
@@ -775,7 +782,7 @@ export default function VendorDashboardPage() {
               </div>
               
               <div className="bg-gray-900 p-4 text-center">
-                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Secure Payment via PhonePe</p>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Secure Payment via UPI</p>
               </div>
             </motion.div>
           </div>

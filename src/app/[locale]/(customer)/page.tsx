@@ -123,7 +123,7 @@ export default function HomePage() {
         <div className="absolute bottom-0 left-0 w-1/3 h-full bg-gradient-to-r from-emerald-500/10 to-transparent blur-3xl opacity-20" />
         <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl" />
         
-        <div className="container mx-auto px-4 relative z-10 py-20">
+        <div className="container mx-auto px-4 relative z-10 py-12 md:py-20">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 text-sm font-medium animate-in fade-in slide-in-from-bottom-2 duration-700">
                <span className="flex h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
@@ -137,61 +137,94 @@ export default function HomePage() {
             </p>
 
             {/* ─── Eye Catching Line ─────────────────────────────────────────── */}
-            <div className="max-w-2xl mx-auto text-center py-8">
-               <h2 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-500 to-emerald-400 animate-pulse">Connecting Sellers, Empowering Buyers</h2>
+            <div className="max-w-2xl mx-auto text-center py-4 md:py-8">
+               <h2 className="text-2xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-500 to-emerald-400 animate-pulse">Connecting Sellers, Empowering Buyers</h2>
             </div>
 
-            {/* City selector + Browse CTA */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
               <CitySelector 
                 currentCity={selectedCity} 
                 onCityChange={setSelectedCity} 
               />
-              <Link href="#all-products" className="btn-primary px-8 py-3.5 rounded-2xl shadow-orange-500/20 shadow-xl hover:scale-105 transition-transform">
+              <Link href="/search" className="btn-primary px-8 py-3.5 rounded-2xl shadow-orange-500/20 shadow-xl hover:scale-105 transition-transform">
                 {t('browse_products')} <ArrowRight size={18} className="ml-1.5 inline" />
               </Link>
             </div>
 
-            {/* Stats / Trust */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-12 border-t border-white/5">
+            {/* Stats / Trust (Hidden on small mobile) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 pt-8 md:pt-12 border-t border-white/5">
                 <div>
-                    <p className="text-3xl font-bold text-white">500+</p>
-                    <p className="text-sm text-white/40">Local Shops</p>
+                    <p className="text-2xl md:text-3xl font-bold text-white">500+</p>
+                    <p className="text-[10px] md:text-sm text-white/40 uppercase tracking-widest">Local Shops</p>
                 </div>
                 <div>
-                    <p className="text-3xl font-bold text-white">50k+</p>
-                    <p className="text-sm text-white/40">Orders Delivered</p>
+                    <p className="text-2xl md:text-3xl font-bold text-white">50k+</p>
+                    <p className="text-[10px] md:text-sm text-white/40 uppercase tracking-widest">Orders</p>
                 </div>
-                <div>
-                    <p className="text-3xl font-bold text-white">4.9/5</p>
-                    <p className="text-sm text-white/40 leading-none">
-                        <span className="flex justify-center gap-0.5 text-orange-500"><Star size={12} fill="currentColor" /><Star size={12} fill="currentColor" /><Star size={12} fill="currentColor" /><Star size={12} fill="currentColor" /><Star size={12} fill="currentColor" /></span>
-                        Customer Rating
+                <div className="hidden sm:block">
+                    <p className="text-2xl md:text-3xl font-bold text-white">4.9/5</p>
+                    <p className="text-[10px] md:text-sm text-white/40 leading-none">
+                        <span className="flex justify-center gap-0.5 text-orange-500"><Star size={10} fill="currentColor" /><Star size={10} fill="currentColor" /><Star size={10} fill="currentColor" /><Star size={10} fill="currentColor" /><Star size={10} fill="currentColor" /></span>
+                        Rating
                     </p>
                 </div>
-                <div>
-                    <p className="text-3xl font-bold text-white">15 Min</p>
-                    <p className="text-sm text-white/40">Avg. Delivery</p>
+                <div className="hidden sm:block">
+                    <p className="text-2xl md:text-3xl font-bold text-white">15 Min</p>
+                    <p className="text-[10px] md:text-sm text-white/40 uppercase tracking-widest">Delivery</p>
                 </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Trust Pills */}
-      <section className="container mx-auto px-4 -mt-12 relative z-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      {/* Horizontal Categories Bar (Mobile First) */}
+      <section className="bg-white sticky top-[72px] z-30 border-b border-gray-100 shadow-sm overflow-hidden">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center gap-4 overflow-x-auto no-scrollbar pb-1">
+             <Link href="/search" className="flex-shrink-0 flex flex-col items-center gap-1.5 group">
+                <div className="w-14 h-14 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-500/20 group-active:scale-90 transition-transform">
+                  <Search size={20} />
+                </div>
+                <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Search</span>
+             </Link>
+             {isLoadingCats ? (
+                Array(6).fill(0).map((_, i) => (
+                  <div key={i} className="flex-shrink-0 flex flex-col items-center gap-1.5 animate-pulse">
+                    <div className="w-14 h-14 bg-gray-100 rounded-2xl" />
+                    <div className="w-10 h-2 bg-gray-100 rounded" />
+                  </div>
+                ))
+             ) : (
+                categories?.map((cat) => (
+                  <Link key={cat.id} href={`/category/${cat.slug}`} className="flex-shrink-0 flex flex-col items-center gap-1.5 group">
+                    <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center group-active:scale-90 transition-transform overflow-hidden relative border border-gray-100">
+                      <CategoryItemImage category={cat} />
+                    </div>
+                    <span className="text-[10px] font-black text-gray-500 group-hover:text-orange-600 uppercase tracking-widest truncate max-w-[64px]">{cat.name}</span>
+                  </Link>
+                ))
+             )}
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Pills (Optimized for Mobile) */}
+      <section className="container mx-auto px-4 py-8 relative z-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 max-w-5xl mx-auto">
           {[
-            { icon: Truck, title: "Lightning Fast", desc: "Doorstep delivery from local shops within 30 mins." },
-            { icon: CheckCircle, title: "100% Verified", desc: "Every vendor in your area is manually vetted by us." },
-            { icon: ShoppingBag, title: "Best Prices", desc: "Direct from shop prices without hidden markups." }
+            { icon: Truck, title: "Quick Delivery", desc: "Doorstep delivery within 30 mins." },
+            { icon: CheckCircle, title: "100% Verified", desc: "Every vendor is manually vetted." },
+            { icon: ShoppingBag, title: "Best Prices", desc: "Direct from shop prices." }
           ].map((pill, i) => (
-            <div key={i} className="card p-8 bg-white/80 backdrop-blur-xl border-white/50 shadow-2xl hover:-translate-y-2 transition-transform">
-              <div className="w-14 h-14 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-500/30 mb-6">
-                <pill.icon size={28} />
+            <div key={i} className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm md:flex-col md:text-center md:p-8 md:rounded-[2rem] hover:shadow-xl transition-all">
+              <div className="w-10 h-10 md:w-14 md:h-14 bg-orange-100 md:bg-orange-500 rounded-xl md:rounded-2xl flex items-center justify-center text-orange-600 md:text-white flex-shrink-0">
+                <pill.icon size={20} className="md:hidden" />
+                <pill.icon size={28} className="hidden md:block" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">{pill.title}</h3>
-              <p className="text-gray-500 leading-relaxed text-sm">{pill.desc}</p>
+              <div>
+                <h3 className="text-sm md:text-xl font-black text-gray-900">{pill.title}</h3>
+                <p className="text-xs md:text-sm text-gray-500 font-medium md:mt-2">{pill.desc}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -271,7 +304,7 @@ export default function HomePage() {
               Popular Right Now
               <span className="h-px bg-gray-200 flex-grow hidden md:block" />
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {popularProducts?.products.map((product) => (
                 <ProductCard key={product.id} product={product as any} />
               ))}
@@ -280,31 +313,6 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Categories */}
-      <section className="py-24 bg-white">
-        <div className="container mx-auto px-4">
-            <div>
-              <h2 className="text-3xl font-black text-gray-900">{t('explore_categories')}</h2>
-              <p className="text-gray-500 mt-2">Find exactly what you need in your {selectedCity || "local area"}.</p>
-            </div>
-            <Link href="/categories" className="text-orange-600 font-bold hover:underline flex items-center">
-                {t('see_all')} <ArrowRight size={16} className="ml-1" />
-            </Link>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
-            {isLoadingCats ? Array(8).fill(0).map((_, i) => <div key={i} className="aspect-square bg-gray-100 animate-pulse rounded-3xl" />) : 
-            categories?.map((category) => (
-              <Link key={category.id} href={`/category/${category.slug}`} className="group space-y-4">
-                <div className="aspect-square bg-gray-50 rounded-[2rem] p-4 flex items-center justify-center group-hover:bg-orange-600 transition-all group-hover:shadow-2xl group-hover:shadow-orange-500/40 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <CategoryItemImage category={category} />
-                </div>
-                <p className="text-center font-bold text-gray-800 group-hover:text-orange-600 transition-colors">{category.name}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Main Feed */}
       <section id="all-products" className="py-24">
@@ -328,7 +336,7 @@ export default function HomePage() {
                  {Array(12).fill(0).map((_, i) => <ProductCardSkeleton key={i} />)}
             </div>
           ) : (allProducts?.products.length || 0) > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
               {allProducts?.products.map((product) => (
                 <ProductCard key={product.id} product={product as any} />
               ))}

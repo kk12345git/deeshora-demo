@@ -8,6 +8,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Package, ShoppingCart, Settings, Loader2, Menu, X, Store, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Footer from "@/components/layout/Footer";
 
 const navItems = [
   { name: "Summary", href: "/vendor/dashboard", icon: LayoutDashboard },
@@ -145,8 +146,8 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
               <Store size={14} /> Visit Storefront
            </Link>
         </header>
-        <main className="flex-grow p-4 md:p-8 lg:p-12 overflow-x-hidden">
-            <div className="max-w-7xl mx-auto">
+        <main className="flex-grow p-4 md:p-8 lg:p-12 overflow-x-hidden flex flex-col">
+            <div className="max-w-7xl mx-auto flex-grow w-full">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={pathname}
@@ -157,6 +158,9 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                   {children}
                 </motion.div>
               </AnimatePresence>
+            </div>
+            <div className="mt-20">
+              <Footer />
             </div>
         </main>
       </div>

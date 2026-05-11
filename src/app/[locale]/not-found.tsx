@@ -1,0 +1,22 @@
+import Link from 'next/link';
+
+export default function NotFound() {
+  return (
+    <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 text-center">
+      <div className="w-24 h-24 bg-orange-50 text-orange-500 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-xl shadow-orange-500/10">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-4 italic">404</h1>
+      <h2 className="text-2xl font-black text-gray-900 tracking-tighter mb-4 uppercase">Page Not Found</h2>
+      <p className="text-gray-500 font-medium max-w-md mx-auto mb-10 leading-relaxed">
+        The page you are looking for doesn&apos;t exist or has been moved to a new neighborhood.
+      </p>
+      <Link
+        href="/"
+        className="px-10 py-4 bg-gray-900 text-white font-black rounded-2xl shadow-xl hover:bg-black transition-all uppercase tracking-widest text-sm"
+      >
+        Go Back Home
+      </Link>
+    </div>
+  );
+}

@@ -133,6 +133,20 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
           console.error('[tRPC] Failed to sync Clerk metadata for delivery partner:', e);
         }
       }
+    } else if (user.role === 'VENDOR') {
+      // Sync VENDOR role to Clerk
+      const { sessionClaims } = await auth();
+      if ((sessionClaims?.metadata as any)?.role !== 'VENDOR') {
+        try {
+          const clerk = await clerkClient();
+          await clerk.users.updateUserMetadata(userId, {
+            publicMetadata: { role: 'VENDOR' },
+          });
+          console.log(`[tRPC] Synced VENDOR role to Clerk for ${user.email}`);
+        } catch (e) {
+          console.error('[tRPC] Failed to sync Clerk metadata for vendor:', e);
+        }
+      }
     }
   }
 

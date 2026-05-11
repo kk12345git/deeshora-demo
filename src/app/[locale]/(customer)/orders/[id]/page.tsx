@@ -18,10 +18,7 @@ const OrderMap = dynamic(() => import('@/components/customer/OrderMap'), {
   loading: () => <div className="h-64 bg-gray-50 animate-pulse rounded-2xl flex items-center justify-center text-gray-400 font-bold">Loading Map...</div>
 });
 
-const WhatsAppChatBot = dynamic(() => import('@/components/customer/WhatsAppChatBot'), {
-  ssr: false
-});
-
+// WhatsAppChatBot removed
 
 // ─── Animated Vertical Delivery Progress ────────────────────────────────────────
 const STEPS: { status: OrderStatus; label: string; emoji: string; description: string }[] = [
@@ -457,8 +454,7 @@ export default function OrderTrackingPage() {
           </div>
         </div>
 
-        {/* Support Chatbot */}
-        <WhatsAppChatBot order={order} />
+        {/* Support Chatbot removed */}
       </div>
     </div>
   );

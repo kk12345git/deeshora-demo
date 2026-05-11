@@ -58,4 +58,6 @@ export const EVENTS = {
   VENDOR_APPROVED: 'vendor-approved',
   LOW_STOCK_ALERT: 'low-stock-alert',
   NEW_PAYMENT_VERIFICATION: 'new-payment-verification',
+  NEW_ACTIVITY: 'new-activity',
+  STATS_UPDATED: 'stats-updated',
 };
