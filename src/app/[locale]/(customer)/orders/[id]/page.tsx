@@ -190,7 +190,6 @@ export default function OrderTrackingPage() {
   
   // WhatsApp Automation State
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const { data: config } = trpc.admin.getConfig.useQuery();
 
   useEffect(() => {
     if (liveStatus) setDisplayStatus(liveStatus);
@@ -206,7 +205,7 @@ export default function OrderTrackingPage() {
       setIsRedirecting(true);
       
       const handleWhatsAppRedirect = async () => {
-        const businessNumber = config?.find((c: any) => c.key === 'business_whatsapp')?.value || '918939318865';
+        const businessNumber = '918939318865'; // Fallback to hardcoded business number
         let locationMsg = "Location not shared.";
 
         try {
@@ -245,7 +244,7 @@ export default function OrderTrackingPage() {
       // Auto-trigger after a short delay to allow toast to show
       setTimeout(handleWhatsAppRedirect, 2000);
     }
-  }, [order, config, isRedirecting]);
+  }, [order, isRedirecting]);
 
   if (isLoading) return (
     <div className="container mx-auto px-4 py-16 flex flex-col items-center gap-4">

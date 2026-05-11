@@ -140,15 +140,15 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                 {product.vendor.shopName}
                 <CheckCircle2 size={12} className="text-blue-500 fill-blue-500/10" />
             </div>
-            <div className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <Star size={10} className="text-yellow-400 fill-current" />
-                <span className="text-[10px] font-bold text-gray-700">
+                <span className="text-[10px] font-bold text-gray-700 dark:text-gray-300">
                     {product.rating?.toFixed(1) || "5.0"}
                 </span>
             </div>
         </div>
 
-        <h3 className="text-base font-bold text-gray-900 line-clamp-2 min-h-[3rem]">
+        <h3 className="text-base font-bold text-gray-900 dark:text-white line-clamp-2 min-h-[3rem]">
           <Link href={`/product/${product.slug}`} className="hover:text-orange-500 transition-colors uppercase tracking-tight">
             {product.name}
           </Link>
@@ -157,9 +157,9 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
         <div className="flex items-center justify-between pt-2">
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-                <p className="text-2xl font-black text-gray-950 tracking-tighter">₹{product.price}</p>
+                <p className="text-2xl font-black text-gray-950 dark:text-white tracking-tighter">₹{product.price}</p>
                 {product.mrp > product.price && (
-                    <p className="text-sm text-gray-400 line-through">₹{product.mrp}</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 line-through">₹{product.mrp}</p>
                 )}
             </div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{product.unit || "per piece"}</p>
@@ -168,14 +168,14 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           <div className="relative group-hover:scale-110 transition-transform">
             {product.stock > 0 && (
                 cartItem ? (
-                    <div className="flex items-center bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                    <div className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
                         <button
                             onClick={() => handleUpdateQuantity(product.id, cartItem.quantity - 1)}
-                            className="p-2.5 text-orange-600 hover:bg-orange-50 transition-colors"
+                            className="p-2.5 text-orange-600 hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors"
                         >
                             <Minus size={16} strokeWidth={3} />
                         </button>
-                        <span className="px-1 text-sm font-black w-6 text-center">{cartItem.quantity}</span>
+                        <span className="px-1 text-sm font-black w-6 text-center dark:text-white">{cartItem.quantity}</span>
                         <button
                             onClick={() => handleUpdateQuantity(product.id, cartItem.quantity + 1)}
                             className="p-2.5 text-orange-600 hover:bg-orange-50 transition-colors"

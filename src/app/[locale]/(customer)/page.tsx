@@ -23,6 +23,27 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+function CategoryItemImage({ category }: { category: any }) {
+  const [error, setError] = useState(false);
+  if (!category.image || error) {
+    return (
+      <div className="w-20 h-20 bg-orange-100 rounded-full group-hover:bg-white/20 flex items-center justify-center text-orange-500 font-bold text-2xl">
+        {category.name[0]}
+      </div>
+    );
+  }
+  return (
+    <Image 
+      src={category.image} 
+      alt={category.name} 
+      width={80} 
+      height={80} 
+      className="object-contain group-hover:scale-110 transition-transform group-hover:brightness-0 group-hover:invert" 
+      onError={() => setError(true)} 
+    />
+  );
+}
+
 export default function HomePage() {
   const [selectedCity, setSelectedCity] = useState<string | undefined>(undefined);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -299,11 +320,7 @@ export default function HomePage() {
               <Link key={category.id} href={`/category/${category.slug}`} className="group space-y-4">
                 <div className="aspect-square bg-gray-50 rounded-[2rem] p-4 flex items-center justify-center group-hover:bg-orange-600 transition-all group-hover:shadow-2xl group-hover:shadow-orange-500/40 relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  {category.image ? (
-                    <Image src={category.image} alt={category.name} width={80} height={80} className="object-contain group-hover:scale-110 transition-transform group-hover:brightness-0 group-hover:invert" />
-                  ) : (
-                    <div className="w-20 h-20 bg-orange-100 rounded-full group-hover:bg-white/20" />
-                  )}
+                  <CategoryItemImage category={category} />
                 </div>
                 <p className="text-center font-bold text-gray-800 group-hover:text-orange-600 transition-colors">{category.name}</p>
               </Link>

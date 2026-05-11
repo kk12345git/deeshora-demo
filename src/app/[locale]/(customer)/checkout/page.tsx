@@ -26,7 +26,7 @@ export default function CheckoutPage() {
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [notes, setNotes] = useState('');
   const [paymentStep, setPaymentStep] = useState<PaymentStep>('SELECT');
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'PHONEPE' | 'MANUAL_UPI'>('COD');
+  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'MANUAL_UPI'>('COD');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<null | { id: string; code: string; discount: number; description: string }>(null);
@@ -95,7 +95,7 @@ export default function CheckoutPage() {
         paymentMethod,
       });
 
-      if (paymentMethod === 'MANUAL_UPI' || paymentMethod === 'PHONEPE') {
+      if (paymentMethod === 'MANUAL_UPI') {
         clearCart();
         setPlacedOrderIds(result.orderIds);
         // Auto-open invoice in new tab
@@ -379,32 +379,6 @@ function UpiModal({ orderId, onClose }: { orderId: string; onClose: () => void }
                     <AlertCircle size={11} className="text-amber-500" />
                     <span className="text-[10px] font-black text-amber-600 uppercase tracking-wider">₹10 extra COD fee</span>
                   </div>
-                </button>
-
-                {/* PhonePe (Automatic) */}
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('PHONEPE')}
-                  className={`relative group flex flex-col p-5 rounded-2xl border-2 text-left transition-all ${
-                    paymentMethod === 'PHONEPE'
-                      ? 'border-orange-500 bg-orange-50/50 shadow-lg shadow-orange-500/10'
-                      : 'border-gray-100 bg-white hover:border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-md transition-all ${
-                      paymentMethod === 'PHONEPE' ? 'bg-orange-500 shadow-orange-500/20' : 'bg-gray-100'
-                    }`}>
-                      <CreditCard size={20} className={paymentMethod === 'PHONEPE' ? 'text-white' : 'text-gray-400'} />
-                    </div>
-                    {paymentMethod === 'PHONEPE' && (
-                      <div className="w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center border-orange-500 bg-orange-500">
-                        <Check size={11} className="text-white" strokeWidth={3} />
-                      </div>
-                    )}
-                  </div>
-                  <p className={`font-black text-base ${paymentMethod === 'PHONEPE' ? 'text-orange-900' : 'text-gray-400'}`}>Online Payment (Automatic)</p>
-                  <p className="text-xs text-gray-400 font-medium mt-1 leading-relaxed">UPI, Cards, Netbanking. Instant confirmation.</p>
                 </button>
 
                 {/* Manual UPI (Free) */}
