@@ -316,7 +316,7 @@ export const adminRouter = createTRPCRouter({
           status: 'APPROVED',
           subscriptionStatus: 'ACTIVE',
           plan: 'PREMIUM',
-          planExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+          planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Standard 30 days
         },
       });
 
@@ -698,6 +698,22 @@ export const adminRouter = createTRPCRouter({
   deleteProduct: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const product = await ctx.prisma.product.findUnique({
+        where: { id: input.id },
+        include: { _count: { select: { orderItems: true } } }
+      });
+
+      if (!product) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found' });
+      }
+
+      if (product._count.orderItems > 0) {
+        return ctx.prisma.product.update({
+          where: { id: input.id },
+          data: { isActive: false, isFeatured: false }
+        });
+      }
+
       return ctx.prisma.product.delete({ where: { id: input.id } });
     }),
 
@@ -1091,5 +1107,59 @@ export const adminRouter = createTRPCRouter({
            planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
          }
        });
+    }),
+
+  // ─── CATEGORY MANAGEMENT ───────────────────────────────────────────────────
+
+  createCategory: adminProcedure
+    .input(z.object({
+      name: z.string(),
+      slug: z.string(),
+      commissionRate: z.number().min(0).max(1).optional(),
+      isActive: z.boolean().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.prisma.category.findUnique({ where: { slug: input.slug } });
+      if (existing) throw new TRPCError({ code: 'CONFLICT', message: 'Category slug already exists.' });
+
+      return ctx.prisma.category.create({
+        data: input,
+      });
+    }),
+
+  updateCategory: adminProcedure
+    .input(z.object({
+      id: z.string(),
+      name: z.string().optional(),
+      slug: z.string().optional(),
+      commissionRate: z.number().min(0).max(1).optional(),
+      isActive: z.boolean().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.category.update({
+        where: { id: input.id },
+        data: {
+          ...input,
+          id: undefined, // don't update ID
+        },
+      });
+    }),
+
+  deleteCategory: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const category = await ctx.prisma.category.findUnique({
+        where: { id: input.id },
+        include: { _count: { select: { products: true } } },
+      });
+
+      if (!category) throw new TRPCError({ code: 'NOT_FOUND', message: 'Category not found.' });
+      if (category._count.products > 0) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot delete category with active products.' });
+      }
+
+      return ctx.prisma.category.delete({
+        where: { id: input.id },
+      });
     }),
 });

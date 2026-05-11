@@ -8,7 +8,7 @@ import { Link } from '@/navigation';
 import {
   Loader2, Clock, Package, ShoppingCart, IndianRupee,
   AlertCircle, TrendingUp, Bell, ArrowRight, CheckCircle,
-  Truck, Star, Wallet, BarChart3, Zap, ShoppingBag, ArrowUpRight, FileText
+  Truck, Star, Wallet, BarChart3, Zap, ShoppingBag, ArrowUpRight, FileText, Plus
 } from 'lucide-react';
 import { OrderStatusBadge } from '@/components/customer/OrderStatus';
 import toast from 'react-hot-toast';
@@ -586,7 +586,7 @@ export default function VendorDashboardPage() {
            {/* Quick Actions */}
            <div className="grid gap-3">
               {[
-                { label: 'Add Item', href: '/vendor/products/new', icon: <PlusIcon size={18} />, hot: true },
+                { label: 'Add Item', href: '/vendor/products/new', icon: <Plus size={18} />, hot: true },
                 { label: 'Manage Stock', href: '/vendor/products', icon: <Package size={18} /> },
                 { label: 'View Reports', href: '/vendor/invoices', icon: <FileText size={18} /> },
               ].map(action => (
@@ -806,13 +806,5 @@ export default function VendorDashboardPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function PlusIcon({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12h14m-7-7v14" />
-    </svg>
   );
 }

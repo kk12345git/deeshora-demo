@@ -249,7 +249,10 @@ export const vendorRouter = createTRPCRouter({
 
     if (!vendor) return null;
 
-    const isExpired = vendor.planExpiresAt ? new Date() > new Date(vendor.planExpiresAt) : true;
+    const isExpired = vendor.subscriptionStatus === 'PENDING_APPROVAL' 
+      ? false 
+      : (vendor.planExpiresAt ? new Date() > new Date(vendor.planExpiresAt) : true);
+
     const daysRemaining = vendor.planExpiresAt 
       ? Math.max(0, Math.ceil((new Date(vendor.planExpiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
       : 0;

@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 
 export default function AdminCategoriesPage() {
   const [isEditing, setIsEditing] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "",
     slug: "",
@@ -23,6 +24,23 @@ export default function AdminCategoriesPage() {
     onSuccess: () => {
       toast.success("Category updated!");
       setIsEditing(null);
+      refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const createMutation = trpc.admin.createCategory.useMutation({
+    onSuccess: () => {
+      toast.success("Category created!");
+      setIsCreating(false);
+      refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const deleteMutation = trpc.admin.deleteCategory.useMutation({
+    onSuccess: () => {
+      toast.success("Category deleted!");
       refetch();
     },
     onError: (err) => toast.error(err.message),
@@ -48,6 +66,20 @@ export default function AdminCategoriesPage() {
     });
   };
 
+  const handleCreate = () => {
+    createMutation.mutate({
+      name: editForm.name,
+      slug: editForm.slug,
+      commissionRate: parseFloat(editForm.commissionRate) / 100,
+      isActive: editForm.isActive,
+    });
+  };
+
+  const startCreate = () => {
+    setIsCreating(true);
+    setEditForm({ name: "", slug: "", commissionRate: "0", isActive: true });
+  };
+
   return (
     <div className="space-y-10">
       {/* Dynamic Header */}
@@ -60,6 +92,12 @@ export default function AdminCategoriesPage() {
           <h1 className="text-4xl font-black text-gray-900 tracking-tight">Category Engine</h1>
           <p className="text-gray-500 text-sm font-medium mt-1">Configure platform-wide taxonomies and <span className="text-gray-900 font-bold">commission overrides</span>.</p>
         </div>
+        <button
+          onClick={startCreate}
+          className="flex items-center gap-2 bg-gray-900 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-orange-500 transition-all shadow-xl hover:shadow-orange-500/30 active:scale-95"
+        >
+          <Plus size={16} /> New Category
+        </button>
       </div>
 
       {/* Categories Ledger */}
@@ -87,14 +125,71 @@ export default function AdminCategoriesPage() {
                    </div>
                 </td>
               </tr>
-            ) : categories?.map((cat, i) => (
-              <motion.tr 
-                key={cat.id} 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="group hover:bg-orange-50/20 transition-colors"
-              >
+            ) : (
+              <>
+                {isCreating && (
+                  <tr className="bg-orange-50/30">
+                    <td className="px-10 py-6">
+                      <input 
+                        type="text" 
+                        value={editForm.name} 
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        placeholder="Category Name"
+                        className="h-12 px-4 bg-white border-2 border-orange-300 rounded-xl font-bold text-sm outline-none focus:border-orange-500 transition-all w-64"
+                      />
+                    </td>
+                    <td className="px-10 py-6">
+                      <input 
+                        type="text" 
+                        value={editForm.slug} 
+                        onChange={(e) => setEditForm({ ...editForm, slug: e.target.value })}
+                        placeholder="slug-name"
+                        className="h-12 px-4 bg-white border-2 border-orange-300 rounded-xl font-mono text-xs outline-none focus:border-orange-500 transition-all w-48"
+                      />
+                    </td>
+                    <td className="px-10 py-6">
+                      <div className="flex items-center gap-2 relative">
+                        <input 
+                          type="number" 
+                          value={editForm.commissionRate} 
+                          onChange={(e) => setEditForm({ ...editForm, commissionRate: e.target.value })}
+                          className="h-12 px-4 pr-10 bg-white border-2 border-orange-300 rounded-xl font-black text-sm outline-none focus:border-orange-500 transition-all w-28"
+                        />
+                        <Percent size={14} className="absolute right-4 text-gray-400" />
+                      </div>
+                    </td>
+                    <td className="px-10 py-6">
+                      <button 
+                        onClick={() => setEditForm({ ...editForm, isActive: !editForm.isActive })}
+                        className={`h-12 px-6 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all border-2 ${
+                          editForm.isActive 
+                          ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                          : 'bg-red-50 text-red-600 border-red-100'
+                        }`}
+                      >
+                        {editForm.isActive ? 'Active' : 'Disabled'}
+                      </button>
+                    </td>
+                    <td className="px-10 py-6 text-right">
+                      <div className="flex justify-end gap-3">
+                        <button onClick={handleCreate} className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center hover:bg-emerald-600 transition-all shadow-lg active:scale-90">
+                          <Check size={20} />
+                        </button>
+                        <button onClick={() => setIsCreating(false)} className="w-12 h-12 bg-gray-100 text-gray-400 rounded-2xl flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all active:scale-90">
+                          <X size={20} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                {categories?.map((cat, i) => (
+                  <motion.tr 
+                    key={cat.id} 
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="group hover:bg-orange-50/20 transition-colors"
+                  >
                 <td className="px-10 py-6">
                   <div className="flex items-center gap-5">
                     <div className="relative w-14 h-14 rounded-2xl overflow-hidden shadow-inner border border-gray-100 group-hover:scale-110 transition-transform duration-500 bg-gray-50 flex items-center justify-center">
@@ -180,13 +275,20 @@ export default function AdminCategoriesPage() {
                       </button>
                     </div>
                   ) : (
-                    <button onClick={() => handleEdit(cat)} className="w-12 h-12 text-gray-300 hover:text-orange-600 hover:bg-orange-50 rounded-2xl flex items-center justify-center transition-all group-hover:bg-white active:scale-90">
-                      <Edit size={20} />
-                    </button>
+                    <div className="flex justify-end gap-3">
+                      <button onClick={() => handleEdit(cat)} className="w-12 h-12 text-gray-300 hover:text-orange-600 hover:bg-orange-50 rounded-2xl flex items-center justify-center transition-all group-hover:bg-white active:scale-90">
+                        <Edit size={20} />
+                      </button>
+                      <button onClick={() => { if(confirm('Are you sure?')) deleteMutation.mutate({ id: cat.id }) }} className="w-12 h-12 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-2xl flex items-center justify-center transition-all group-hover:bg-white active:scale-90">
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
                   )}
                 </td>
               </motion.tr>
             ))}
+            </>
+          )}
           </tbody>
         </table>
       </div>

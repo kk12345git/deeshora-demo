@@ -3,7 +3,7 @@
 import { useCart } from '@/hooks/useCart';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, IndianRupee, ShieldCheck, MessageCircle } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, IndianRupee, ShieldCheck, MessageCircle, AlertCircle } from 'lucide-react';
 import { getWhatsAppUrl } from '@/lib/whatsapp';
 import { trpc } from '@/lib/trpc';
 import { useEffect, useState } from 'react';
@@ -16,15 +16,25 @@ export default function CartPage() {
   const { items, updateQuantity, removeItem, total, clearCart } = useCart();
   const { data: config } = trpc.admin.getConfig.useQuery(undefined, { staleTime: Infinity });
 
+  // Fetch real-time availability
+  const { data: availabilityData, isFetching: isCheckingAvailability } = trpc.product.checkCartAvailability.useQuery(
+    items.map(i => i.productId),
+    { enabled: items.length > 0, refetchInterval: 15000 }
+  );
+
   const updateQuantityMutation = trpc.cart.updateQuantity.useMutation();
   const removeItemMutation = trpc.cart.removeItem.useMutation();
   const clearCartMutation = trpc.cart.clear.useMutation();
 
-  const handleUpdateQuantity = async (productId: string, quantity: number) => {
-    updateQuantity(productId, quantity);
+  const handleUpdateQuantity = async (productId: string, quantity: number, currentStock?: number) => {
+    // If real-time stock is known, cap the update
+    const maxStock = currentStock !== undefined ? currentStock : Infinity;
+    const finalQuantity = Math.min(quantity, maxStock);
+    
+    updateQuantity(productId, finalQuantity);
     if (isSignedIn) {
       try {
-        await updateQuantityMutation.mutateAsync({ productId, quantity });
+        await updateQuantityMutation.mutateAsync({ productId, quantity: finalQuantity });
       } catch (error) {
         console.error('Failed to sync quantity:', error);
       }
@@ -65,8 +75,18 @@ export default function CartPage() {
     }
   }, [config]);
 
+  // Merge items with availability data
+  const mergedItems = items.map(item => {
+    const availability = availabilityData?.find(a => a.id === item.productId);
+    const isAvailable = availability ? availability.isAvailable : true; // assume available until fetched
+    const realStock = availability ? availability.stock : item.stock;
+    const isExceedingStock = item.quantity > realStock;
+    return { ...item, isAvailable, realStock, isExceedingStock };
+  });
+
+  const hasUnavailableItems = mergedItems.some(i => !i.isAvailable || i.isExceedingStock);
   const cartTotal = total();
-  const hasPhysicalItems = items.some(item => item.type === 'PHYSICAL');
+  const hasPhysicalItems = mergedItems.some(item => item.type === 'PHYSICAL');
   const isEligibleForFreeDelivery = cartTotal >= freeDeliveryThreshold || !hasPhysicalItems;
   const finalDeliveryFee = isEligibleForFreeDelivery ? 0 : deliveryFee;
   const grandTotal = cartTotal + finalDeliveryFee;
@@ -103,38 +123,54 @@ export default function CartPage() {
         {/* Cart Items */}
         <div className="lg:col-span-7 space-y-6">
           <AnimatePresence mode="popLayout">
-            {items.map((item) => (
+            {mergedItems.map((item) => (
               <motion.div 
                 key={item.productId}
                 layout
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="group relative bg-white border border-gray-100 p-6 rounded-[2.5rem] flex items-center gap-6 hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-500 hover:-translate-y-1"
+                className={`group relative border p-6 rounded-[2.5rem] flex flex-col sm:flex-row items-center gap-6 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 ${!item.isAvailable ? 'bg-red-50 border-red-100 opacity-75' : item.isExceedingStock ? 'bg-amber-50 border-amber-100' : 'bg-white border-gray-100 hover:shadow-gray-200/50'}`}
               >
-              <div className="w-24 h-24 rounded-3xl overflow-hidden flex-shrink-0 shadow-inner bg-gray-50 border border-gray-50">
-                 <Image src={item.image} alt={item.name} width={120} height={120} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+              <div className="w-24 h-24 rounded-3xl overflow-hidden flex-shrink-0 shadow-inner bg-gray-50 border border-gray-50 relative">
+                 <Image src={item.image} alt={item.name} width={120} height={120} className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ${!item.isAvailable ? 'grayscale opacity-60' : ''}`} />
+                 {!item.isAvailable && (
+                   <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                     <span className="text-[10px] font-black uppercase text-white bg-red-500 px-2 py-1 rounded">Unavailable</span>
+                   </div>
+                 )}
               </div>
-              <div className="flex-grow">
+              <div className="flex-grow text-center sm:text-left">
                 <p className="text-lg font-black text-gray-900 leading-tight mb-1">{item.name}</p>
-                <div className="flex items-center gap-2 text-orange-600 font-black">
+                <div className="flex items-center justify-center sm:justify-start gap-2 text-orange-600 font-black">
                    <IndianRupee size={14} />
                    <span>{item.price}</span>
                 </div>
+                {item.isExceedingStock && item.isAvailable && (
+                  <p className="text-xs font-bold text-amber-600 mt-2 flex items-center justify-center sm:justify-start gap-1">
+                    <AlertCircle size={12} /> Only {item.realStock} left in stock
+                  </p>
+                )}
+                {!item.isAvailable && (
+                  <p className="text-xs font-bold text-red-600 mt-2 flex items-center justify-center sm:justify-start gap-1">
+                    <AlertCircle size={12} /> This item is no longer available
+                  </p>
+                )}
               </div>
               
-              <div className="flex flex-col items-end gap-4">
+              <div className="flex sm:flex-col items-center sm:items-end gap-4 mt-4 sm:mt-0 w-full sm:w-auto justify-between sm:justify-start">
                  <div className="flex items-center bg-gray-50 border border-gray-100 rounded-2xl p-1 shadow-inner">
                    <button 
-                     onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)} 
+                     onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1, item.realStock)} 
                      className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-white hover:text-orange-500 rounded-xl transition-all shadow-sm"
                    >
                      <Minus size={14} />
                    </button>
                    <span className="w-10 text-center text-sm font-black text-gray-800">{item.quantity}</span>
                    <button 
-                     onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)} 
-                     className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-white hover:text-orange-500 rounded-xl transition-all shadow-sm"
+                     onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1, item.realStock)} 
+                     disabled={item.quantity >= item.realStock}
+                     className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-white hover:text-orange-500 rounded-xl transition-all shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500"
                    >
                      <Plus size={14} />
                    </button>
@@ -194,19 +230,26 @@ export default function CartPage() {
             )}
 
             <div className="mt-10 relative z-10">
-              <Link href="/checkout" className="btn-primary w-full py-5 text-base flex gap-3 group/btn">
-                <span>Secure Checkout</span>
-                <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
-              </Link>
+              {hasUnavailableItems ? (
+                 <button disabled className="btn-primary w-full py-5 text-base flex gap-3 opacity-50 cursor-not-allowed">
+                   <AlertCircle size={18} /> Update Cart to Continue
+                 </button>
+              ) : (
+                <Link href="/checkout" className="btn-primary w-full py-5 text-base flex gap-3 group/btn">
+                  <span>Secure Checkout</span>
+                  <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
+                </Link>
+              )}
               
               <button 
+                disabled={hasUnavailableItems}
                 onClick={() => {
                   const businessNumber = config?.find((c: any) => c.key === 'business_whatsapp')?.value || '918939318865';
                   const itemsList = items.map(i => `• ${i.quantity}x ${i.name} (₹${i.price})`).join('\n');
                   const message = `Hi Deeshora! 🌟\n\nI want to order via WhatsApp!\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${grandTotal}\n\nPlease help me complete this order! 🙏`;
                   window.open(getWhatsAppUrl(businessNumber, message), '_blank');
                 }}
-                className="w-full mt-3 py-4 border-2 border-emerald-500 text-emerald-500 hover:bg-emerald-50 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 uppercase tracking-widest"
+                className="w-full mt-3 py-4 border-2 border-emerald-500 text-emerald-500 hover:bg-emerald-50 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
               >
                 <MessageCircle size={18} fill="currentColor" /> Order via WhatsApp
               </button>

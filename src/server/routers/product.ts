@@ -194,7 +194,7 @@ export const productRouter = createTRPCRouter({
         },
       }).catch(() => {});
 
-      // 4. Intent detection: does this query imply a specific category?
+      // ─── Intent detection: does this query imply a specific category?
       const detectedCatName = autoDetectCategory(q);
       let suggestedCategory = null;
       if (detectedCatName) {
@@ -211,6 +211,30 @@ export const productRouter = createTRPCRouter({
         totalExact: exactByName.length,
         suggestedCategory,
       };
+    }),
+
+
+  // ─── Real-time cart item availability check ────────────────────────────────
+  checkCartAvailability: publicProcedure
+    .input(z.array(z.string()))
+    .query(async ({ ctx, input }) => {
+      if (input.length === 0) return [];
+      
+      const products = await ctx.prisma.product.findMany({
+        where: { id: { in: input } },
+        select: {
+          id: true,
+          isActive: true,
+          stock: true,
+          vendor: { select: { status: true } },
+        },
+      });
+
+      return products.map(p => ({
+        id: p.id,
+        isAvailable: p.isActive && p.vendor.status === 'APPROVED' && p.stock > 0,
+        stock: p.stock,
+      }));
     }),
 
 
@@ -571,10 +595,34 @@ export const productRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const product = await ctx.prisma.product.findFirst({
         where: { id: input.id, vendorId: ctx.vendor.id },
+        include: { _count: { select: { orderItems: true } } }
       });
+      
       if (!product) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found or you do not own it.' });
       }
+
+      // Smart Delete: If product has been ordered, deactivate it instead of deleting
+      // to avoid breaking foreign key constraints and preserving history.
+      if (product._count.orderItems > 0) {
+        await ctx.prisma.product.update({
+          where: { id: input.id },
+          data: { isActive: false, isFeatured: false }
+        });
+
+        await logActivity({
+          type: 'PRODUCT',
+          action: 'UPDATE',
+          entityId: input.id,
+          entityType: 'Product',
+          actorId: ctx.vendor.userId,
+          actorName: ctx.vendor.shopName,
+          message: `Vendor ${ctx.vendor.shopName} deactivated product (sold previously): ${product.name}`,
+        });
+
+        return { success: true, message: 'Product has order history. It has been deactivated instead of deleted.' };
+      }
+
       await ctx.prisma.product.delete({ where: { id: input.id } });
 
       await logActivity({
@@ -587,7 +635,7 @@ export const productRouter = createTRPCRouter({
         message: `Vendor ${ctx.vendor.shopName} deleted product: ${product.name}`,
       });
 
-      return { success: true };
+      return { success: true, message: 'Product deleted successfully.' };
     }),
 
 
