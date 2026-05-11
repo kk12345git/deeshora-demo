@@ -68,7 +68,6 @@ export const metadata: Metadata = {
 
 import { CartSync } from "@/components/cart/CartSync";
 import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
-import { WhatsAppSupport } from "@/components/customer/WhatsAppSupport";
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import PageTransition from "@/components/layout/PageTransition";
@@ -119,7 +118,6 @@ export default async function RootLayout({
                   <PageTransition>
                     {children}
                   </PageTransition>
-                  <WhatsAppSupport />
                   <Toaster 
                       position="bottom-center"
                       toastOptions={{

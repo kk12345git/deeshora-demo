@@ -136,115 +136,9 @@ export default function HomePage() {
               {t('hero_subtitle')}
             </p>
 
-            {/* ─── AI Search Bar ─────────────────────────────────────────── */}
-            <div className="max-w-2xl mx-auto" ref={searchRef}>
-              <form onSubmit={handleSearchSubmit} className="relative">
-                <div className={`flex items-center bg-white rounded-[1.75rem] shadow-2xl shadow-black/40 overflow-hidden border-2 transition-all duration-300 ${showSuggestions && (suggestions?.length ?? 0) > 0 ? 'border-orange-400 rounded-b-none border-b-0' : 'border-transparent'}`}>
-                  {/* AI badge */}
-                  <div className="flex items-center gap-1.5 pl-5 pr-3 border-r border-gray-100 py-4 flex-shrink-0">
-                    <Sparkles size={16} className="text-orange-500" />
-                    <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest hidden sm:block">AI</span>
-                  </div>
-                  
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={searchInput}
-                    onChange={(e) => {
-                      setSearchInput(e.target.value);
-                      setShowSuggestions(e.target.value.length >= 2);
-                    }}
-                    onFocus={() => searchInput.length >= 2 && setShowSuggestions(true)}
-                    placeholder={tc('search')}
-                    className="flex-1 px-4 py-4 text-gray-900 font-medium placeholder:text-gray-400 outline-none bg-transparent text-base"
-                  />
-
-                  {searchInput && (
-                    <button
-                      type="button"
-                      onClick={() => { setSearchInput(''); setShowSuggestions(false); }}
-                      className="px-2 text-gray-300 hover:text-gray-500 transition-colors"
-                    >
-                      <X size={18} />
-                    </button>
-                  )}
-
-                  <button
-                    type="submit"
-                    className="m-1.5 flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-black px-6 py-3 rounded-[1.25rem] transition-all shadow-lg shadow-orange-500/30 hover:scale-[1.02] flex-shrink-0"
-                  >
-                    <Search size={18} />
-                    <span className="hidden sm:block">Search</span>
-                  </button>
-                </div>
-
-                {/* ─── Typeahead Dropdown ──────────────────────────────── */}
-                {showSuggestions && debouncedSearch.length >= 2 && (
-                  <div className="absolute top-full left-0 right-0 bg-white border-2 border-orange-400 border-t-0 rounded-b-[1.75rem] shadow-2xl shadow-black/20 overflow-hidden z-50">
-                    {isSuggesting ? (
-                      <div className="flex items-center gap-3 px-5 py-4 text-gray-400">
-                        <Loader2 size={16} className="animate-spin text-orange-400" />
-                        <span className="text-sm font-medium">Searching...</span>
-                      </div>
-                    ) : (suggestions?.length ?? 0) > 0 ? (
-                      <>
-                        <div className="px-5 pt-3 pb-1">
-                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Quick Results</span>
-                        </div>
-                        {suggestions?.map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => handleSuggestionClick(item.slug)}
-                            className="w-full flex items-center gap-4 px-5 py-3 hover:bg-orange-50 transition-colors text-left group"
-                          >
-                            <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-                              {item.images[0] ? (
-                                <Image src={item.images[0]} alt={item.name} width={40} height={40} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full bg-orange-100 flex items-center justify-center">
-                                  <ShoppingBag size={16} className="text-orange-400" />
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-gray-900 text-sm truncate group-hover:text-orange-600 transition-colors">{item.name}</p>
-                              <p className="text-xs text-gray-400">{item.category.name}</p>
-                            </div>
-                            <span className="font-black text-gray-800 text-sm flex-shrink-0">₹{item.price}</span>
-                          </button>
-                        ))}
-                        <button
-                          type="submit"
-                          className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-gray-50 hover:bg-orange-50 border-t border-gray-100 text-sm font-bold text-orange-600 transition-colors"
-                        >
-                          <Search size={14} />
-                          See all results for &quot;{debouncedSearch}&quot;
-                        </button>
-                      </>
-                    ) : (
-                      <div className="flex items-center gap-3 px-5 py-4 text-gray-400">
-                        <Search size={16} />
-                        <span className="text-sm font-medium">No quick matches — press Enter to search</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </form>
-
-              {/* Popular searches */}
-              <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-                <span className="text-white/30 text-xs font-bold uppercase tracking-widest">Trending:</span>
-                {['Fresh Vegetables', 'Milk', 'Rice', 'Bread', 'Eggs'].map((term) => (
-                  <button
-                    key={term}
-                    onClick={() => router.push(`/search?q=${encodeURIComponent(term)}`)}
-                    className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80 text-xs font-bold transition-all"
-                  >
-                    {term}
-                  </button>
-                ))}
-              </div>
+            {/* ─── Eye Catching Line ─────────────────────────────────────────── */}
+            <div className="max-w-2xl mx-auto text-center py-8">
+               <h2 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-500 to-emerald-400 animate-pulse">Connecting Sellers, Empowering Buyers</h2>
             </div>
 
             {/* City selector + Browse CTA */}
@@ -303,31 +197,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="py-24 bg-white">
-        <div className="container mx-auto px-4">
-            <div>
-              <h2 className="text-3xl font-black text-gray-900">{t('explore_categories')}</h2>
-              <p className="text-gray-500 mt-2">Find exactly what you need in your {selectedCity || "local area"}.</p>
-            </div>
-            <Link href="/categories" className="text-orange-600 font-bold hover:underline flex items-center">
-                {t('see_all')} <ArrowRight size={16} className="ml-1" />
-            </Link>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
-            {isLoadingCats ? Array(8).fill(0).map((_, i) => <div key={i} className="aspect-square bg-gray-100 animate-pulse rounded-3xl" />) : 
-            categories?.map((category) => (
-              <Link key={category.id} href={`/category/${category.slug}`} className="group space-y-4">
-                <div className="aspect-square bg-gray-50 rounded-[2rem] p-4 flex items-center justify-center group-hover:bg-orange-600 transition-all group-hover:shadow-2xl group-hover:shadow-orange-500/40 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <CategoryItemImage category={category} />
-                </div>
-                <p className="text-center font-bold text-gray-800 group-hover:text-orange-600 transition-colors">{category.name}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* Trending Communities */}
       {communities?.items && communities.items.length > 0 && (
@@ -410,25 +280,31 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Featured Products */}
-      {(featuredProducts?.products.length || 0) > 0 && (
-        <section className="bg-gray-50 py-24 border-y border-gray-100">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-black text-gray-900 mb-12 flex items-center gap-4">
-               {t('featured_specials')}
-               <span className="h-px bg-gray-200 flex-grow hidden md:block" />
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              <Suspense fallback={Array(4).fill(0).map((_, i) => <ProductCardSkeleton key={i} />)}>
-                {isLoadingFeatured ? Array(4).fill(0).map((_, i) => <ProductCardSkeleton key={i} />) :
-                featuredProducts?.products.map((product, i) => (
-                  <ProductCard key={product.id} product={product as any} priority={i < 4} />
-                ))}
-              </Suspense>
+      {/* Categories */}
+      <section className="py-24 bg-white">
+        <div className="container mx-auto px-4">
+            <div>
+              <h2 className="text-3xl font-black text-gray-900">{t('explore_categories')}</h2>
+              <p className="text-gray-500 mt-2">Find exactly what you need in your {selectedCity || "local area"}.</p>
             </div>
+            <Link href="/categories" className="text-orange-600 font-bold hover:underline flex items-center">
+                {t('see_all')} <ArrowRight size={16} className="ml-1" />
+            </Link>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+            {isLoadingCats ? Array(8).fill(0).map((_, i) => <div key={i} className="aspect-square bg-gray-100 animate-pulse rounded-3xl" />) : 
+            categories?.map((category) => (
+              <Link key={category.id} href={`/category/${category.slug}`} className="group space-y-4">
+                <div className="aspect-square bg-gray-50 rounded-[2rem] p-4 flex items-center justify-center group-hover:bg-orange-600 transition-all group-hover:shadow-2xl group-hover:shadow-orange-500/40 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <CategoryItemImage category={category} />
+                </div>
+                <p className="text-center font-bold text-gray-800 group-hover:text-orange-600 transition-colors">{category.name}</p>
+              </Link>
+            ))}
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* Main Feed */}
       <section id="all-products" className="py-24">
