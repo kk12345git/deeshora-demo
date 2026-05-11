@@ -100,8 +100,8 @@ export const orderRouter = createTRPCRouter({
           const deliveryFee = subtotal >= freeDeliveryThreshold ? 0 : baseDeliveryFee;
           const total = subtotal + deliveryFee;
 
-          // Powerful Commission Logic: Fixed Fee + Sum(Item Commissions)
-          let totalCommission = platformFixedFee;
+          // Commission is purely percentage-based, no fixed rate
+          let totalCommission = 0;
           const itemsToCreate = items.map((item) => {
             // Hierarchy: Product Rate -> Category Rate -> Vendor Rate
             const itemCommissionRate = item.product.commissionRate ?? item.product.category.commissionRate ?? vendor.commissionRate;
@@ -366,6 +366,7 @@ export const orderRouter = createTRPCRouter({
         include: {
           vendor: true,
           address: true,
+          user: { select: { name: true, phone: true } },
           items: { include: { product: { select: { slug: true } } } },
           timeline: { orderBy: { createdAt: 'desc' } },
           deliveryPartner: { select: { name: true, phone: true, avatar: true } },

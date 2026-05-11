@@ -91,24 +91,24 @@ function playNewOrderSound() {
 }
 
 
-export const useVendorNotifications = (vendorId: string | undefined, onNewOrder: (data: any) => void) => {
+export const useVendorNotifications = (vendorId: string | undefined, onNewOrder: (data: any) => void, onVendorApproved?: () => void) => {
   const [isConnected, setIsConnected] = useState(false);
   // Use a ref for onNewOrder to avoid re-subscribing on every render
   const onNewOrderRef = useRef(onNewOrder);
+  const onVendorApprovedRef = useRef(onVendorApproved);
+  
   useEffect(() => { onNewOrderRef.current = onNewOrder; }, [onNewOrder]);
+  useEffect(() => { onVendorApprovedRef.current = onVendorApproved; }, [onVendorApproved]);
 
   useEffect(() => {
     if (!vendorId) return;
-
 
     const pusherClient = getPusherClient();
     const channelName = CHANNELS.VENDOR(vendorId);
     const channel = pusherClient.subscribe(channelName);
 
-
     const handleConnection = () => setIsConnected(true);
     const handleDisconnection = () => setIsConnected(false);
-
 
     const handleNewOrder = (data: { orderId: string; customerName: string }) => {
       // Play the audio alert
@@ -116,11 +116,16 @@ export const useVendorNotifications = (vendorId: string | undefined, onNewOrder:
       onNewOrderRef.current(data);
     };
 
+    const handleVendorApproved = () => {
+      if (onVendorApprovedRef.current) {
+        onVendorApprovedRef.current();
+      }
+    };
 
     channel.bind('pusher:subscription_succeeded', handleConnection);
     channel.bind('pusher:subscription_error', handleDisconnection);
     channel.bind(EVENTS.NEW_ORDER, handleNewOrder);
-
+    channel.bind(EVENTS.VENDOR_APPROVED, handleVendorApproved);
 
     return () => {
       channel.unbind_all();

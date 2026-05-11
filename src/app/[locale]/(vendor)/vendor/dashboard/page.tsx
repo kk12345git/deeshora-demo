@@ -169,7 +169,12 @@ export default function VendorDashboardPage() {
     refetchOrders();
   }, [refetchStats, refetchOrders]);
 
-  useVendorNotifications(vendorProfile?.id, handleNewOrder);
+  useVendorNotifications(vendorProfile?.id, handleNewOrder, () => {
+    toast.success('Your payment has been confirmed by Admin! Welcome to Premium.');
+    setShowUpgradeModal(false);
+    refetchSubStatus();
+    refetchProfile();
+  });
 
   if (isLoadingProfile) return (
     <div className="flex justify-center items-center h-64"><Loader2 className="animate-spin w-10 h-10 text-orange-500" /></div>
@@ -714,10 +719,6 @@ export default function VendorDashboardPage() {
                     <div className="space-y-6">
                       <div className="p-4 bg-white border-2 border-dashed border-gray-100 rounded-[2rem] flex flex-col items-center">
                         <div className="relative w-48 h-48 mb-4">
-                          {/* 
-                              IMPORTANT: Place the provided QR code image in:
-                              public/images/assets/subscription-qr.png
-                          */}
                           <Image 
                             src="/images/assets/subscription-qr.png" 
                             alt="Subscription QR" 

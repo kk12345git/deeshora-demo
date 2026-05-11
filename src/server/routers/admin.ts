@@ -320,10 +320,11 @@ export const adminRouter = createTRPCRouter({
         },
       });
 
-      // Trigger Pusher for Admin dashboard refresh
+      // Trigger Pusher for Admin dashboard refresh and notify Vendor
       try {
         const { pusherServer, CHANNELS, EVENTS } = await import('@/lib/pusher');
         await pusherServer.trigger(CHANNELS.ADMIN, EVENTS.NEW_PAYMENT_VERIFICATION, { vendorId: vendor.id });
+        await pusherServer.trigger(CHANNELS.VENDOR(vendor.id), EVENTS.VENDOR_APPROVED, { vendorId: vendor.id });
       } catch (err) {
         console.error('[Admin] Pusher trigger failed:', err);
       }

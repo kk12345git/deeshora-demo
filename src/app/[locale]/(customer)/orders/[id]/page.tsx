@@ -6,7 +6,7 @@ import { trpc } from '@/lib/trpc';
 import { useOrderTracking } from '@/hooks/useOrderTracking';
 import { OrderStatusBadge } from '@/components/customer/OrderStatus';
 import Image from 'next/image';
-import { Wifi, WifiOff, Phone, FileText, ChevronLeft, Star, Send, Loader2, CheckCircle, Package, CookingPot, Bike, Home, Clock } from 'lucide-react';
+import { Wifi, WifiOff, Phone, FileText, ChevronLeft, Star, Send, Loader2, CheckCircle, Package, CookingPot, Bike, Home, Clock, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { OrderStatus } from '@prisma/client';
@@ -23,80 +23,123 @@ const WhatsAppChatBot = dynamic(() => import('@/components/customer/WhatsAppChat
 });
 
 
-// ─── Animated delivery progress ───────────────────────────────────────────────
-const STEPS: { status: OrderStatus; label: string; emoji: string }[] = [
-  { status: 'PENDING',          label: 'Placed',       emoji: '📋' },
-  { status: 'CONFIRMED',        label: 'Confirmed',    emoji: '✅' },
-  { status: 'PREPARING',        label: 'Preparing',    emoji: '🍳' },
-  { status: 'READY',            label: 'Ready',        emoji: '📦' },
-  { status: 'OUT_FOR_DELIVERY', label: 'On the Way',   emoji: '🛵' },
-  { status: 'DELIVERED',        label: 'Delivered',    emoji: '🏠' },
+// ─── Animated Vertical Delivery Progress ────────────────────────────────────────
+const STEPS: { status: OrderStatus; label: string; emoji: string; description: string }[] = [
+  { status: 'PENDING',          label: 'Order Placed',       emoji: '📋', description: 'We have received your order' },
+  { status: 'CONFIRMED',        label: 'Order Confirmed',    emoji: '✅', description: 'Your order has been accepted' },
+  { status: 'PREPARING',        label: 'Preparing',          emoji: '🍳', description: 'Your items are being packed/prepared' },
+  { status: 'READY',            label: 'Ready for Pickup',   emoji: '📦', description: 'Waiting for delivery partner' },
+  { status: 'OUT_FOR_DELIVERY', label: 'Out for Delivery',   emoji: '🛵', description: 'Your order is on the way' },
+  { status: 'DELIVERED',        label: 'Delivered',          emoji: '🏠', description: 'Enjoy your order!' },
 ];
 
-function DeliveryProgress({ status }: { status: OrderStatus }) {
+function VerticalDeliveryProgress({ 
+  status, 
+  timelineEvents, 
+  deliveryPartner 
+}: { 
+  status: OrderStatus; 
+  timelineEvents: any[];
+  deliveryPartner: any;
+}) {
   const isCancelled = status === 'CANCELLED' || status === 'REFUNDED';
   const currentIdx = STEPS.findIndex(s => s.status === status);
-  const pct = currentIdx >= 0 ? (currentIdx / (STEPS.length - 1)) * 100 : 0;
 
   if (isCancelled) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
+      <div className="flex flex-col items-center justify-center py-8 text-center gap-3 bg-red-50 rounded-2xl border border-red-100">
         <div className="w-16 h-16 bg-red-100 rounded-3xl flex items-center justify-center text-3xl">❌</div>
         <p className="font-black text-red-600 text-lg">Order {status === 'REFUNDED' ? 'Refunded' : 'Cancelled'}</p>
-        <p className="text-gray-400 text-sm">This order was {status.toLowerCase()}.</p>
+        <p className="text-red-500 text-sm font-medium">This order was {status.toLowerCase()} and will not be delivered.</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full select-none">
-      {/* Progress track */}
-      <div className="relative mb-8">
-        <div className="absolute left-0 right-0 top-5 h-1 bg-gray-100 rounded-full" />
-        <div
-          className="absolute left-0 top-5 h-1 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full transition-all duration-700"
-          style={{ width: `${pct}%` }}
-        />
-        <div className="flex justify-between relative">
-          {STEPS.map((step, i) => {
-            const done = i <= currentIdx;
-            const active = i === currentIdx;
-            return (
-              <div key={step.status} className="flex flex-col items-center gap-2 flex-1">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all duration-500 shadow-sm
-                  ${done
-                    ? 'bg-orange-500 shadow-orange-200 scale-110'
-                    : 'bg-gray-100'
-                  }
-                  ${active ? 'ring-4 ring-orange-100 animate-pulse' : ''}
-                `}>
-                  {step.emoji}
-                </div>
-                <span className={`text-[10px] font-black uppercase tracking-wide text-center leading-tight
-                  ${done ? 'text-orange-500' : 'text-gray-300'}
-                `}>
-                  {step.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 relative overflow-hidden">
+      <h2 className="text-sm font-black uppercase tracking-widest text-gray-900 mb-8 flex items-center gap-2">
+        <Clock size={16} className="text-orange-500" /> Order Tracking
+      </h2>
 
-      {/* Active step message */}
-      {currentIdx >= 0 && (
-        <div className="flex items-center justify-center gap-3 bg-orange-50 border border-orange-100 rounded-2xl px-4 py-3 mt-2">
-          <span className="text-xl">{STEPS[currentIdx].emoji}</span>
-          <div>
-            <p className="font-black text-orange-700 text-sm">{STEPS[currentIdx].label}</p>
-            <p className="text-xs text-orange-500">
-              {currentIdx < STEPS.length - 1
-                ? `Next: ${STEPS[currentIdx + 1].label} ${STEPS[currentIdx + 1].emoji}`
-                : 'Your order has arrived! 🎉'}
-            </p>
-          </div>
-        </div>
-      )}
+      <div className="relative pl-4 space-y-8">
+        {/* Vertical Line */}
+        <div className="absolute left-[35px] top-4 bottom-8 w-[2px] bg-gray-100 rounded-full" />
+        <div 
+          className="absolute left-[35px] top-4 w-[2px] bg-emerald-500 rounded-full transition-all duration-1000 ease-out"
+          style={{ height: currentIdx >= 0 ? `calc(${(currentIdx / (STEPS.length - 1)) * 100}% - 32px)` : '0%' }}
+        />
+
+        {STEPS.map((step, i) => {
+          const done = i <= currentIdx;
+          const active = i === currentIdx;
+          
+          // Find if we have real timeline events for this step to show timestamps
+          const stepEvents = timelineEvents.filter(e => e.status === step.status);
+          const latestEvent = stepEvents[0];
+
+          return (
+            <div key={step.status} className="relative z-10 flex gap-6">
+              {/* Icon / Bullet */}
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0 transition-all duration-500
+                ${done ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-gray-100 text-gray-400'}
+                ${active ? 'ring-4 ring-emerald-100 animate-pulse' : ''}
+              `}>
+                {done ? <CheckCircle size={20} /> : <div className="w-2.5 h-2.5 rounded-full bg-gray-300" />}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 pb-2">
+                <div className="flex justify-between items-start mb-1">
+                  <p className={`font-black text-base ${done ? 'text-gray-900' : 'text-gray-400'}`}>
+                    {step.label}
+                  </p>
+                  {latestEvent && (
+                    <span className="text-[10px] font-bold text-gray-400 uppercase">
+                      {new Date(latestEvent.createdAt).toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
+                    </span>
+                  )}
+                </div>
+                
+                <p className={`text-sm ${done ? 'text-gray-600' : 'text-gray-400'}`}>
+                  {step.description}
+                </p>
+
+                {/* Sub-events timeline details */}
+                {stepEvents.length > 0 && done && (
+                  <div className="mt-3 space-y-2">
+                    {stepEvents.map((e, idx) => (
+                      <div key={idx} className="flex items-start gap-2 bg-gray-50/80 rounded-xl p-3 border border-gray-100/50">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5" />
+                        <p className="text-xs text-gray-500 font-medium leading-relaxed">{e.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Delivery Partner Widget injects inside OUT_FOR_DELIVERY */}
+                {active && step.status === 'OUT_FOR_DELIVERY' && deliveryPartner && (
+                  <div className="mt-4 bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
+                        <Bike size={20} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Delivery Partner</p>
+                        <p className="text-sm font-black text-gray-900">{deliveryPartner.name}</p>
+                      </div>
+                    </div>
+                    {deliveryPartner.phone && (
+                      <a href={`tel:${deliveryPartner.phone}`} className="w-10 h-10 bg-white border border-emerald-200 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm hover:scale-105 transition-transform">
+                        <Phone size={16} fill="currentColor" />
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -141,7 +184,7 @@ function ReviewForm({ productId, productName, onDone }: { productId: string; pro
   });
 
   return (
-    <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 space-y-4 animate-in slide-in-from-bottom-2 duration-300">
+    <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 space-y-4 mt-3 animate-in slide-in-from-top-2 duration-300">
       <div>
         <p className="font-black text-gray-800 text-sm">Rate: <span className="text-orange-500">{productName}</span></p>
         <p className="text-xs text-gray-400 mt-0.5">Your honest opinion helps future buyers</p>
@@ -152,7 +195,7 @@ function ReviewForm({ productId, productName, onDone }: { productId: string; pro
         onChange={e => setComment(e.target.value)}
         placeholder="What did you love? Any suggestions? (optional)"
         rows={2}
-        className="w-full px-4 py-3 text-sm bg-white border-2 border-transparent focus:border-orange-400 rounded-xl outline-none resize-none font-medium transition-all"
+        className="w-full px-4 py-3 text-sm bg-white border-2 border-transparent focus:border-orange-400 rounded-xl outline-none resize-none font-medium transition-all shadow-sm"
       />
       <div className="flex gap-2">
         <button
@@ -247,15 +290,20 @@ export default function OrderTrackingPage() {
   }, [order, isRedirecting]);
 
   if (isLoading) return (
-    <div className="container mx-auto px-4 py-16 flex flex-col items-center gap-4">
-      <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
-      <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Tracking your order...</p>
+    <div className="container mx-auto px-4 py-32 flex flex-col items-center justify-center gap-4">
+      <Loader2 className="w-12 h-12 animate-spin text-orange-500" />
+      <p className="text-xs font-black text-gray-400 uppercase tracking-widest animate-pulse">Fetching Order Details...</p>
     </div>
   );
   if (error || !order) return (
-    <div className="container mx-auto px-4 py-12 text-center">
-      <p className="font-bold text-red-500">{error?.message ?? "We couldn't find that order."}</p>
-      <button onClick={() => router.back()} className="btn-primary mt-4">← Go Back</button>
+    <div className="container mx-auto px-4 py-24 text-center">
+      <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
+        <AlertCircle size={32} />
+      </div>
+      <p className="font-black text-gray-900 text-xl">{error?.message ?? "We couldn't find that order."}</p>
+      <button onClick={() => router.back()} className="mt-6 bg-gray-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800">
+        ← Return Home
+      </button>
     </div>
   );
 
@@ -265,233 +313,152 @@ export default function OrderTrackingPage() {
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const isDelivered = displayStatus === 'DELIVERED';
+  const currentPartner = livePartner || order.deliveryPartner;
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => router.back()}
-          className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors flex-shrink-0"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Order Tracking</p>
-          <h1 className="text-xl font-black text-gray-900 tracking-tight">#{order.id.slice(-8).toUpperCase()}</h1>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Live status pill */}
-          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black border transition-all ${
-            isConnected ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-gray-50 border-gray-100 text-gray-400'
-          }`}>
-            {isConnected
-              ? <><Wifi size={11} /><span className="hidden sm:inline">Live</span><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" /></>
-              : <><WifiOff size={11} /><span className="hidden sm:inline">Offline</span></>
-            }
+    <div className="bg-gray-50 min-h-screen pb-12">
+      <div className="container mx-auto max-w-2xl px-4 pt-6">
+        
+        {/* Header Strip */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={() => router.back()}
+            className="w-10 h-10 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors shadow-sm"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div className="text-center">
+            <h1 className="text-base font-black text-gray-900 tracking-tight">Order #{order.id.slice(-8).toUpperCase()}</h1>
+            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black uppercase mt-1 ${
+              isConnected ? 'text-emerald-600 bg-emerald-50' : 'text-gray-400 bg-gray-100'
+            }`}>
+              {isConnected ? <><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"/> Live Tracking</> : <><WifiOff size={10}/> Offline</>}
+            </div>
           </div>
-          {order.paymentStatus === 'PAID' && (
-            <Link
-              href={`/orders/${orderId}/invoice`}
-              className="flex items-center gap-1.5 text-xs font-black text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-full border border-orange-100 transition-colors"
-            >
-              <FileText size={11} /> Invoice
-            </Link>
-          )}
+          <div className="w-10" /> {/* Spacer for centering */}
         </div>
-      </div>
 
-      {/* From shop */}
-      <div className="flex items-center gap-2 mb-6 bg-white rounded-2xl border border-gray-100 px-4 py-3 shadow-sm">
-        <div className="w-8 h-8 bg-orange-100 rounded-xl flex items-center justify-center text-orange-500 flex-shrink-0">
-          🏪
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">From</p>
-          <p className="font-black text-gray-900 text-sm truncate">{order.vendor.shopName}</p>
-        </div>
-        <div className="text-right flex-shrink-0">
-          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total</p>
-          <p className="font-black text-gray-900 text-sm">₹{order.total.toFixed(0)}</p>
-        </div>
-        <OrderStatusBadge status={displayStatus ?? order.status} />
-      </div>
-
-      {/* Delivery Partner Assigned Card */}
-      {(livePartner || order.deliveryPartner) && (displayStatus === 'OUT_FOR_DELIVERY' || displayStatus === 'READY') && (
-        <div className="bg-blue-600 rounded-[2rem] p-6 text-white mb-6 shadow-xl shadow-blue-500/20 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl -mr-10 -mt-10" />
-          <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-2xl border border-white/30 backdrop-blur-md">
-                🛵
-              </div>
+        {/* Product Items Header Card (Meesho Style) */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
+          <div className="flex items-center justify-between pb-4 border-b border-gray-50 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center text-orange-600 text-lg">🏪</div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100 mb-1">Your Delivery Partner</p>
-                <p className="text-xl font-black tracking-tight">{(livePartner || order.deliveryPartner)?.name}</p>
-                <div className="flex items-center gap-1.5 mt-1 text-blue-100">
-                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">En Route to you</span>
-                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Sold by</p>
+                <p className="text-sm font-black text-gray-900">{order.vendor.shopName}</p>
               </div>
             </div>
-            {(livePartner || order.deliveryPartner)?.phone && (
-              <a 
-                href={`tel:${(livePartner || order.deliveryPartner)?.phone}`}
-                className="w-12 h-12 bg-white text-blue-600 rounded-2xl flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all"
+            {order.paymentStatus === 'PAID' && (
+              <Link
+                href={`/orders/${orderId}/invoice`}
+                className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-2 rounded-lg transition-colors"
               >
-                <Phone size={20} fill="currentColor" />
-              </a>
+                <FileText size={12} /> Invoice
+              </Link>
             )}
           </div>
-        </div>
-      )}
 
-      {/* Delivery progress */}
-      <div className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-100/60 dark:shadow-black/20 p-6 sm:p-8 mb-6 space-y-8">
-        {(displayStatus === 'OUT_FOR_DELIVERY' || displayStatus === 'READY' || displayStatus === 'DELIVERED') && (
-          <div className="animate-in fade-in zoom-in-95 duration-700">
+          <div className="space-y-4">
+            {order.items.map(item => {
+              const justReviewed = reviewedIds.has(item.productId ?? '');
+              return (
+                <div key={item.id}>
+                  <div className="flex gap-4">
+                    <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100">
+                      {item.image
+                        ? <Image src={item.image} alt={item.name} fill className="object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center"><Package size={24} className="text-gray-300" /></div>
+                      }
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-black text-gray-900 text-base leading-tight">{item.name}</p>
+                      <p className="text-xs text-gray-500 font-medium mt-1">Quantity: {item.quantity}</p>
+                      <p className="font-black text-gray-900 mt-1">₹{(item.total / item.quantity).toFixed(0)}</p>
+                    </div>
+                  </div>
+                  
+                  {isDelivered && item.productId && !justReviewed && (
+                    <button
+                      onClick={() => setReviewingProductId(reviewingProductId === item.productId ? null : item.productId!)}
+                      className="w-full mt-3 py-2 border border-gray-200 text-gray-700 font-bold text-xs uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+                    >
+                      <Star size={14} className="text-orange-500" /> Write a Review
+                    </button>
+                  )}
+                  {justReviewed && (
+                    <div className="w-full mt-3 py-2 bg-emerald-50 text-emerald-600 font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5">
+                      <CheckCircle size={14} /> Review Submitted
+                    </div>
+                  )}
+
+                  {reviewingProductId === item.productId && (
+                    <ReviewForm
+                      productId={item.productId!}
+                      productName={item.name}
+                      onDone={() => {
+                        setReviewingProductId(null);
+                        setReviewedIds(prev => new Set(prev).add(item.productId!));
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          
+          <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+            <span className="text-xs font-black text-gray-500 uppercase">Order Total</span>
+            <span className="text-xl font-black text-gray-900">₹{order.total.toFixed(0)}</span>
+          </div>
+        </div>
+
+        {/* Live Map (Only if Out for Delivery or Ready) */}
+        {(displayStatus === 'OUT_FOR_DELIVERY' || displayStatus === 'READY') && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4 animate-in fade-in zoom-in-95 duration-500">
+            <h2 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
+              <Home size={14} /> Live Delivery Map
+            </h2>
             <OrderMap status={displayStatus} orderId={order.id} />
           </div>
         )}
-        {displayStatus && <DeliveryProgress status={displayStatus} />}
-      </div>
 
-      <div className="grid lg:grid-cols-3 gap-5">
-        {/* Left column: timeline + items + reviews */}
-        <div className="lg:col-span-2 space-y-5">
-          {/* Timeline */}
-          {allTimelineEvents.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h2 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-5 flex items-center gap-1.5">
-                <Clock size={11} /> Journey Timeline
-              </h2>
-              <div className="space-y-6">
-                {allTimelineEvents.map((event, idx) => (
-                  <div key={idx} className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className={`w-5 h-5 rounded-full flex-shrink-0 ${idx === 0 ? 'bg-orange-500 ring-4 ring-orange-100' : 'bg-gray-200'}`} />
-                      {idx < allTimelineEvents.length - 1 && <div className="w-px flex-1 bg-gray-100 mt-1" />}
-                    </div>
-                    <div className={`pb-4 ${idx < allTimelineEvents.length - 1 ? '' : ''}`}>
-                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                        <OrderStatusBadge status={event.status} />
-                        <span className="text-[10px] font-bold text-gray-300">
-                          {new Date(event.createdAt).toLocaleString('en-IN', {
-                            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-                          })}
-                        </span>
-                      </div>
-                      <p className="text-sm font-bold text-gray-700">{event.message}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Order Items + Review CTA */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-50">
-              <h2 className="text-xs font-black uppercase tracking-widest text-gray-400">Items Ordered</h2>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {order.items.map(item => {
-                const justReviewed = reviewedIds.has(item.productId ?? '');
-                return (
-                  <div key={item.id} className="p-4 space-y-3">
-                    <div className="flex items-center gap-4">
-                      <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-                        {item.image
-                          ? <Image src={item.image} alt={item.name} fill className="object-cover" />
-                          : <div className="w-full h-full flex items-center justify-center"><Package size={20} className="text-gray-300" /></div>
-                        }
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-black text-gray-900 text-sm leading-tight truncate">{item.name}</p>
-                        <p className="text-xs text-gray-400 font-medium mt-0.5">Qty {item.quantity} × ₹{(item.total / item.quantity).toFixed(0)}</p>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="font-black text-gray-900">₹{item.total.toFixed(0)}</p>
-                        {isDelivered && item.productId && !justReviewed && (
-                          <button
-                            onClick={() => setReviewingProductId(
-                              reviewingProductId === item.productId ? null : item.productId!
-                            )}
-                            className="text-[10px] font-black text-amber-500 hover:text-amber-600 flex items-center gap-0.5 mt-1 ml-auto"
-                          >
-                            <Star size={10} fill="currentColor" /> Review
-                          </button>
-                        )}
-                        {justReviewed && (
-                          <span className="text-[10px] font-black text-emerald-500 flex items-center gap-0.5 mt-1 ml-auto">
-                            <CheckCircle size={10} /> Reviewed
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {/* Review form inline */}
-                    {reviewingProductId === item.productId && (
-                      <ReviewForm
-                        productId={item.productId!}
-                        productName={item.name}
-                        onDone={() => {
-                          setReviewingProductId(null);
-                          setReviewedIds(prev => new Set(prev).add(item.productId!));
-                        }}
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="px-5 py-4 bg-gray-50 flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-widest text-gray-400">Total</span>
-              <span className="text-xl font-black text-gray-900">₹{order.total.toFixed(0)}</span>
-            </div>
-          </div>
+        {/* Vertical Stepper Timeline */}
+        <div className="mb-4">
+          <VerticalDeliveryProgress 
+            status={displayStatus ?? order.status} 
+            timelineEvents={allTimelineEvents} 
+            deliveryPartner={currentPartner}
+          />
         </div>
 
-        {/* Right column: Bot Experience */}
-        <div className="space-y-5">
-          <WhatsAppChatBot order={order} />
-
-          {/* Delivery address */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Delivering To</p>
+        {/* Address and Payment Details */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Delivery Address</p>
             <p className="text-sm font-bold text-gray-800 leading-relaxed">
-              {order.address.line1}
-              {order.address.line2 && `, ${order.address.line2}`},<br />
-              {order.address.city}, {order.address.state} {order.address.pincode}
+              <span className="text-gray-900 font-black">{order.user.name}</span><br />
+              {order.address.line1}<br />
+              {order.address.line2 && <>{order.address.line2}<br /></>}
+              {order.address.city}, {order.address.pincode}
             </p>
           </div>
-
-          {/* Payment info */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Payment</p>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-gray-600">Method</span>
-              <span className="text-xs font-black text-gray-900">{order.paymentMethod}</span>
+          
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Payment Details</p>
+              <p className="text-sm font-black text-gray-800 uppercase tracking-tight">{order.paymentMethod}</p>
             </div>
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-sm font-bold text-gray-600">Status</span>
-              <span className={`text-xs font-black px-2.5 py-1 rounded-full ${
-                order.paymentStatus === 'PAID' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-              }`}>
-                {order.paymentStatus}
-              </span>
+            <div className={`mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl w-fit text-[10px] font-black uppercase tracking-widest ${
+              order.paymentStatus === 'PAID' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
+            }`}>
+              {order.paymentStatus === 'PAID' ? <CheckCircle size={12} /> : <Clock size={12} />}
+              {order.paymentStatus}
             </div>
           </div>
-
-          {/* Review nudge if delivered and not reviewed */}
-          {isDelivered && order.items.some(i => i.productId && !reviewedIds.has(i.productId)) && (
-            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 text-center space-y-3">
-              <div className="text-2xl">⭐</div>
-              <p className="font-black text-amber-800 text-sm">How was your order?</p>
-              <p className="text-xs text-amber-600">Tap &quot;Review&quot; next to any item to leave your rating</p>
-            </div>
-          )}
         </div>
+
+        {/* Support Chatbot */}
+        <WhatsAppChatBot order={order} />
       </div>
     </div>
   );
