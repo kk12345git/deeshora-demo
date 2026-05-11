@@ -794,13 +794,16 @@ export const adminRouter = createTRPCRouter({
       z.object({
         name: z.string().min(2),
         slug: z.string().min(2),
-        image: z.string().url(),
+        image: z.string().url().optional(),
         description: z.string().optional(),
         sortOrder: z.number().int().default(0),
         commissionRate: z.number().min(0).max(1).optional(),
+        isActive: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.prisma.category.findUnique({ where: { slug: input.slug } });
+      if (existing) throw new TRPCError({ code: 'CONFLICT', message: 'Category slug already exists.' });
       return ctx.prisma.category.create({ data: input });
     }),
 
@@ -820,6 +823,24 @@ export const adminRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       return ctx.prisma.category.update({ where: { id }, data });
+    }),
+
+  deleteCategory: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const category = await ctx.prisma.category.findUnique({
+        where: { id: input.id },
+        include: { _count: { select: { products: true } } },
+      });
+
+      if (!category) throw new TRPCError({ code: 'NOT_FOUND', message: 'Category not found.' });
+      if (category._count.products > 0) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot delete category with active products.' });
+      }
+
+      return ctx.prisma.category.delete({
+        where: { id: input.id },
+      });
     }),
 
   /** Admin: manually override any order's status */
@@ -1109,57 +1130,5 @@ export const adminRouter = createTRPCRouter({
        });
     }),
 
-  // ─── CATEGORY MANAGEMENT ───────────────────────────────────────────────────
 
-  createCategory: adminProcedure
-    .input(z.object({
-      name: z.string(),
-      slug: z.string(),
-      commissionRate: z.number().min(0).max(1).optional(),
-      isActive: z.boolean().optional(),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.prisma.category.findUnique({ where: { slug: input.slug } });
-      if (existing) throw new TRPCError({ code: 'CONFLICT', message: 'Category slug already exists.' });
-
-      return ctx.prisma.category.create({
-        data: input,
-      });
-    }),
-
-  updateCategory: adminProcedure
-    .input(z.object({
-      id: z.string(),
-      name: z.string().optional(),
-      slug: z.string().optional(),
-      commissionRate: z.number().min(0).max(1).optional(),
-      isActive: z.boolean().optional(),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      return ctx.prisma.category.update({
-        where: { id: input.id },
-        data: {
-          ...input,
-          id: undefined, // don't update ID
-        },
-      });
-    }),
-
-  deleteCategory: adminProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const category = await ctx.prisma.category.findUnique({
-        where: { id: input.id },
-        include: { _count: { select: { products: true } } },
-      });
-
-      if (!category) throw new TRPCError({ code: 'NOT_FOUND', message: 'Category not found.' });
-      if (category._count.products > 0) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot delete category with active products.' });
-      }
-
-      return ctx.prisma.category.delete({
-        where: { id: input.id },
-      });
-    }),
 });
