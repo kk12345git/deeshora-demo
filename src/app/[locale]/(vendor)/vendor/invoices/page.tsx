@@ -21,7 +21,7 @@ export default function VendorInvoicesPage() {
   useEffect(() => {
     setBaseUrl(window.location.origin);
   }, []);
-  const { data, isLoading } = trpc.order.vendorOrdersList.useQuery({
+  const { data, isLoading } = trpc.order.vendorOrders.useQuery({
     limit: 50,
   });
   const filteredOrders = data?.orders.filter(
@@ -93,7 +93,7 @@ export default function VendorInvoicesPage() {
               year: "numeric",
             });
             const itemCount = order.items.reduce(
-              (acc, it) => acc + it.quantity,
+              (acc: number, it: any) => acc + it.quantity,
               0,
             );
             return (

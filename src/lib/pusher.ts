@@ -52,6 +52,7 @@ export const getPusherClient = () => {
 export const CHANNELS = {
   ORDER: (orderId: string) => `private-order-${orderId}`,
   ADMIN: "private-admin",
+  VENDOR: (vendorId: string) => `private-vendor-${vendorId}`,
 };
 
 export const EVENTS = {
@@ -62,4 +63,5 @@ export const EVENTS = {
   PAYMENT_VERIFIED: "payment-verified",
   NEW_ACTIVITY: "new-activity",
   STATS_UPDATED: "stats-updated",
+  VENDOR_APPROVED: "vendor-approved",
 };

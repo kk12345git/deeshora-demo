@@ -33,7 +33,7 @@ export default function NewProductPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { data: categories } = trpc.product.categories.useQuery();
   const { data: vendorStatus, isLoading: isStatusLoading } =
-    trpc.product.myVendorStatus.useQuery();
+    trpc.vendor.myVendorStatus.useQuery();
   const [images, setImages] = useState<
     { file: File; preview: string; base64: string }[]
   >([]);

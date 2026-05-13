@@ -150,6 +150,8 @@ model Order {
   subtotal          Float
   deliveryFee       Float           @default(0)
   discount          Float           @default(0)
+  platformFee       Float           @default(0)
+  vendorAmount      Float           @default(0)
   total             Float
   notes             String?
   deliveredAt       DateTime?
@@ -301,6 +303,8 @@ model Community {
   image       String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+  vendorId    String?
+  vendor      Vendor?           @relation(fields: [vendorId], references: [id])
   members     CommunityMember[]
   posts       CommunityPost[]
 }
@@ -456,14 +460,20 @@ model Vendor {
   email           String
   city            String
   address         String?
+  coordinates     Json?
   categories      String[]
   status          VendorStatus @default(PENDING)
   commissionRate  Float        @default(0.15)
   bankAccount     String?
+  bankName        String?
+  bankAccountName String?
   ifscCode        String?
   upiId           String?
+  upiQrCode       String?
+  gstNumber       String?
   subscriptionUtr String?
   subscriptionStatus SubscriptionStatus @default(NONE)
+  subscriptionExpiresAt DateTime?
   totalEarnings   Float        @default(0)
   pendingPayout   Float        @default(0)
   createdAt       DateTime     @default(now())
@@ -473,6 +483,7 @@ model Vendor {
   products Product[]
   orders   Order[]
   payouts  Payout[]
+  communities Community[]
 }
 
 model Payout {

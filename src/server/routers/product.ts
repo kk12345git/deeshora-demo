@@ -329,14 +329,16 @@ export const productRouter = createTRPCRouter({
     .input(
       z.object({
         query: z.string().min(1).max(100),
+        city: z.string().optional(),
         limit: z.number().min(1).max(50).default(20),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const { query, limit } = input;
+      const { query, city, limit } = input;
       const q = query.trim();
       const baseWhere = {
         isActive: true,
+        ...(city ? { vendor: { city: { equals: city, mode: "insensitive" as const } } } : {}),
       };
       const words = q.split(/\s+/).filter((w) => w.length > 0);
       const nameContains = words.map((w) => ({
@@ -401,6 +403,7 @@ export const productRouter = createTRPCRouter({
             query: q,
             userId: ctx.user?.id,
             results: exactByName.length + relatedByDesc.length,
+            city: city || null,
           },
         })
         .catch(() => {});
@@ -1006,5 +1009,22 @@ export const productRouter = createTRPCRouter({
         skippedCount: skipped.length,
         skippedNames: skipped,
       };
+    }),
+  vendorProducts: protectedProcedure
+    .input(z.object({ limit: z.number().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const vendor = await ctx.prisma.vendor.findUnique({
+        where: { userId: ctx.user.id },
+      });
+      if (!vendor) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not a vendor" });
+      }
+      const products = await ctx.prisma.product.findMany({
+        where: { vendorId: vendor.id },
+        take: input?.limit,
+        include: { category: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+      });
+      return { products };
     }),
 });

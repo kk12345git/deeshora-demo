@@ -114,6 +114,8 @@ export const orderRouter = createTRPCRouter({
       const pusherEventsToTrigger: Array<() => Promise<void>> = [];
 
       const order = await ctx.prisma.$transaction(async (tx) => {
+        const firstVendorId = cart.items[0]?.product.vendorId;
+
         const orderRecord = await tx.order.create({
           data: {
             userId: user.id,
@@ -126,6 +128,9 @@ export const orderRouter = createTRPCRouter({
             paymentStatus: paymentMethod === "WALLET" ? "PAID" : "PENDING",
             deliverySlotId: input.deliverySlotId,
             status: OrderStatus.PENDING,
+            vendorId: firstVendorId,
+            platformFee: 0,
+            vendorAmount: subtotal,
             items: {
               create: itemsToCreate,
             },
@@ -168,7 +173,7 @@ export const orderRouter = createTRPCRouter({
             data: {
               userId: user.id,
               amount: -total,
-              type: "PURCHASE",
+              type: "PAYMENT",
               status: "COMPLETED",
               description: `Order payment for #${orderRecord.id.slice(-6)}`,
               reference: orderRecord.id,
@@ -442,6 +447,42 @@ export const orderRouter = createTRPCRouter({
       return { orders, nextCursor };
     }),
 
+  vendorStats: vendorProcedure.query(async ({ ctx }) => {
+    const vendor = await ctx.prisma.vendor.findUnique({
+      where: { userId: ctx.user.id },
+    });
+    if (!vendor) throw new TRPCError({ code: "NOT_FOUND" });
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [pendingOrders, todayOrders, totalRevenue] = await Promise.all([
+      ctx.prisma.order.count({
+        where: { vendorId: vendor.id, status: "PENDING" },
+      }),
+      ctx.prisma.order.count({
+        where: { vendorId: vendor.id, createdAt: { gte: today } },
+      }),
+      ctx.prisma.order.aggregate({
+        where: { vendorId: vendor.id, status: "DELIVERED" },
+        _sum: { total: true },
+      }),
+    ]);
+
+    return {
+      totalRevenue: totalRevenue._sum.total || 0,
+      pendingPayout: vendor.pendingPayout,
+      pendingOrders,
+      todayOrders,
+      avgFulfillmentMinutes: 45, // Mock
+      retentionRate: 85, // Mock
+      growthRate: 12, // Mock
+      seoScore: 75, // Mock
+      dailySeries: [], // Mock or aggregate
+      topProducts: [], // Mock or aggregate
+    };
+  }),
+
   vendorOrders: vendorProcedure
     .input(
       z.object({
@@ -467,12 +508,43 @@ export const orderRouter = createTRPCRouter({
           address: true,
           items: true,
           deliveryPartner: { select: { name: true, phone: true } },
+          vendor: { select: { shopName: true } },
         },
         orderBy: { createdAt: "desc" },
         take: limit,
       });
 
       return { orders };
+    }),
+
+  vendorOrderById: vendorProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const vendor = await ctx.prisma.vendor.findUnique({
+        where: { userId: ctx.user.id },
+      });
+      if (!vendor && ctx.user.role !== "ADMIN")
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not a vendor" });
+
+      const order = await ctx.prisma.order.findUnique({
+        where: { id: input.id },
+        include: {
+          user: { select: { name: true, phone: true } },
+          address: true,
+          items: true,
+          vendor: true,
+        },
+      });
+
+      if (!order) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
+      }
+
+      if (ctx.user.role !== "ADMIN" && order.vendorId !== vendor?.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your order" });
+      }
+
+      return order;
     }),
 
   updateStatus: vendorProcedure

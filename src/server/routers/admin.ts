@@ -113,7 +113,7 @@ export const adminRouter = createTRPCRouter({
       const orderAgg = await ctx.prisma.order.aggregate({
         where: { paymentStatus: "PAID", createdAt: { gte: since } },
         _sum: { total: true, platformFee: true },
-        _count: { id: true },
+        _count: { _all: true },
       });
 
       const [newUsers, newVendors] = await Promise.all([
@@ -155,7 +155,7 @@ export const adminRouter = createTRPCRouter({
         period: input.period,
         totalRevenue: orderAgg._sum.total ?? 0,
         platformCommission: orderAgg._sum.platformFee ?? 0,
-        totalOrders: orderAgg._count.id,
+        totalOrders: orderAgg._count._all,
         newUsers,
         newVendors,
         topVendors: formattedTopVendors,
@@ -206,7 +206,7 @@ export const adminRouter = createTRPCRouter({
         include: {
           orders: {
             where: { paymentStatus: "PAID", createdAt: { gte: since } },
-            include: { orderItems: true },
+            include: { items: true },
           },
         },
       });
@@ -218,7 +218,7 @@ export const adminRouter = createTRPCRouter({
         // Group by product
         const productMap: Record<string, { name: string; qty: number; revenue: number }> = {};
         v.orders.forEach(o => {
-          o.orderItems.forEach(item => {
+          o.items.forEach(item => {
             if (!productMap[item.productId]) {
               productMap[item.productId] = { name: item.name, qty: 0, revenue: 0 };
             }
@@ -837,12 +837,12 @@ export const adminRouter = createTRPCRouter({
         };
 
         // Simplified calculation for demo: assuming price includes 18% GST
-        const orderTaxable = order.totalAmount / 1.18;
-        const orderGst = order.totalAmount - orderTaxable;
+        const orderTaxable = order.total / 1.18;
+        const orderGst = order.total - orderTaxable;
 
         current.taxableAmount += orderTaxable;
         current.gstAmount += orderGst;
-        current.total += order.totalAmount;
+        current.total += order.total;
 
         totalTaxable += orderTaxable;
         totalGst += orderGst;

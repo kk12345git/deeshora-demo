@@ -281,7 +281,7 @@ export default function VendorSettingsPage() {
                     {" "}
                     <Input
                       name="shopName"
-                      defaultValue={profile?.shopName}
+                      defaultValue={profile?.shopName || ""}
                       placeholder="Your Cheerful Shop Name"
                     />{" "}
                   </FieldGroup>{" "}
@@ -349,7 +349,7 @@ export default function VendorSettingsPage() {
                 />{" "}
                 <Input
                   name="phone"
-                  defaultValue={profile?.phone}
+                  defaultValue={profile?.phone || ""}
                   className="pl-12"
                   placeholder="10-digit mobile"
                 />{" "}
@@ -359,7 +359,7 @@ export default function VendorSettingsPage() {
               {" "}
               <Input
                 name="city"
-                defaultValue={profile?.city}
+                defaultValue={profile?.city || ""}
                 placeholder="e.g. Thiruvottriyur"
               />{" "}
             </FieldGroup>{" "}
@@ -369,7 +369,7 @@ export default function VendorSettingsPage() {
                 {" "}
                 <Input
                   name="address"
-                  defaultValue={profile?.address}
+                  defaultValue={profile?.address || ""}
                   placeholder="Full street address"
                 />{" "}
               </FieldGroup>{" "}

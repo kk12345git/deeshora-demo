@@ -104,10 +104,10 @@ export default function OrderPoolPage() {
                     Pickup From
                   </h4>
                   <p className="font-bold text-gray-200">
-                    {order.vendor.shopName}
+                    {order.vendor?.shopName || "Deeshora Vendor"}
                   </p>
                   <p className="text-sm text-gray-400 line-clamp-1">
-                    {order.vendor.address}, {order.vendor.city}
+                    {order.vendor?.address}, {order.vendor?.city}
                   </p>
                 </div>
               </div>

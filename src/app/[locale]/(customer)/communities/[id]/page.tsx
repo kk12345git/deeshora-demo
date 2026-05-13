@@ -188,7 +188,7 @@ export default function CommunityDetailPage() {
                       <div>
                         {" "}
                         <p className="text-sm font-black text-gray-900">
-                          {community.vendor.shopName}
+                          {community.vendor?.shopName || "Community Member"}
                         </p>{" "}
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                           Admin • 2 hours ago
@@ -239,11 +239,11 @@ export default function CommunityDetailPage() {
             <div className="card p-8 bg-gray-900 text-white border-none shadow-2xl">
               {" "}
               <h3 className="text-xl font-black mb-4 tracking-tight">
-                About {community.vendor.shopName}
+                About {community.vendor?.shopName || "this Community"}
               </h3>{" "}
               <p className="text-gray-400 text-sm leading-relaxed mb-6">
                 {" "}
-                {community.vendor.description ||
+                {community.vendor?.description ||
                   "Join our community to stay updated with our latest offerings and local events."}{" "}
               </p>{" "}
               <Link

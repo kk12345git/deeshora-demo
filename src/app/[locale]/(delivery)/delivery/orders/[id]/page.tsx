@@ -114,8 +114,8 @@ export default function OrderDetailsPage({
       {/* Interactive Map Section */}
       <DeliveryMap
         pickup={[
-          (order.vendor.coordinates as any)?.lat || 13.16,
-          (order.vendor.coordinates as any)?.lng || 80.3,
+          (order.vendor?.coordinates as any)?.lat || 13.16,
+          (order.vendor?.coordinates as any)?.lng || 80.3,
         ]}
         drop={[
           (order.address.coordinates as any)?.lat || 13.17,
@@ -178,7 +178,7 @@ export default function OrderDetailsPage({
                       order.user.phone,
                       WHATSAPP_TEMPLATES.ENGLISH.LOCATION_REQUEST(
                         order.id,
-                        order.vendor.shopName,
+                        order.vendor?.shopName || "Deeshora Vendor"
                       ),
                     )}
                     target="_blank"
@@ -222,7 +222,7 @@ export default function OrderDetailsPage({
               Pickup from
             </h4>
             <p className="text-lg font-black text-white">
-              {order.vendor.shopName}
+              {order.vendor?.shopName || "Deeshora Vendor"}
             </p>
           </div>
 
@@ -233,10 +233,10 @@ export default function OrderDetailsPage({
             />
             <div>
               <p className="text-sm font-medium text-gray-300">
-                {order.vendor.address}, {order.vendor.city}
+                {order.vendor?.address}, {order.vendor?.city}
               </p>
               <a
-                href={`tel:${order.vendor.phone}`}
+                href={`tel:${order.vendor?.phone}`}
                 className="text-xs text-brand-500 font-bold mt-2 inline-block"
               >
                 Call Vendor

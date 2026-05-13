@@ -218,7 +218,7 @@ export default function VendorRegisterPage() {
                     </FieldGroup>
                     <FieldGroup label="Business Categories (Select all that apply)">
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {categories.map((cat: any) => (
+                        {categories.map((cat: { id: string; name: string }) => (
                           <button
                             key={cat.id}
                             type="button"

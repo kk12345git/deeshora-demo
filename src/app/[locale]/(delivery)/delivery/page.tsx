@@ -167,7 +167,7 @@ export default function MyTasksPage() {
                           task.user.phone,
                           WHATSAPP_TEMPLATES.ENGLISH.LOCATION_REQUEST(
                             task.id,
-                            task.vendor.shopName,
+                            task.vendor?.shopName || "Deeshora Vendor",
                           ),
                         )}
                         className="w-12 h-12 bg-gray-800 rounded-2xl flex items-center justify-center text-green-500 hover:bg-gray-700 transition-colors border border-gray-700"
@@ -180,7 +180,7 @@ export default function MyTasksPage() {
                           task.user.phone,
                           WHATSAPP_TEMPLATES.ENGLISH.DELIVERY_ARRIVAL(
                             task.id,
-                            task.vendor.shopName,
+                            task.vendor?.shopName || "Deeshora Vendor",
                           ),
                         )}
                         className="w-12 h-12 bg-gray-800 rounded-2xl flex items-center justify-center text-brand-500 hover:bg-gray-700 transition-colors border border-gray-700"
@@ -205,10 +205,10 @@ export default function MyTasksPage() {
                       Pickup
                     </h5>
                     <p className="text-sm font-bold text-gray-200 mb-1">
-                      {task.vendor.shopName}
+                      {task.vendor?.shopName || "Deeshora Vendor"}
                     </p>
                     <p className="text-xs text-gray-400 leading-relaxed font-medium">
-                      {task.vendor.address}, {task.vendor.city}
+                      {task.vendor?.address}, {task.vendor?.city}
                     </p>
                   </div>
                 </div>

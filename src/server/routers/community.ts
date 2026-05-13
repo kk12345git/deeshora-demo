@@ -41,6 +41,9 @@ export const communityRouter = createTRPCRouter({
         include: {
           posts: { orderBy: { createdAt: "desc" }, take: 20 },
           _count: { select: { members: true } },
+          vendor: {
+            select: { shopName: true, logo: true, description: true },
+          },
         },
       });
 

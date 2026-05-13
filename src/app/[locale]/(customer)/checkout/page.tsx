@@ -349,8 +349,8 @@ export default function CheckoutPage() {
                     >
                       {slot.startTime} - {slot.endTime}
                     </span>
-                    <span className="text-[9px] font-bold text-gray-500">
-                      {slot.name}
+                    <span className="text-[9px] font-bold text-gray-500 italic uppercase">
+                      Delivery Window
                     </span>
                   </button>
                 ))}

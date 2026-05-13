@@ -176,12 +176,12 @@ export default function VendorDashboardPage() {
   } = trpc.vendor.getSubscriptionStatus.useQuery();
 
   const initiateSub = trpc.vendor.initiateSubscription.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl;
       }
     },
-    onError: (err) => {
+    onError: (err: any) => {
       toast.error(err.message || "Failed to initiate subscription");
     },
   });
@@ -195,7 +195,7 @@ export default function VendorDashboardPage() {
       refetchSubStatus();
       refetchProfile();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err: any) => toast.error(err.message),
   });
 
   useEffect(() => {
@@ -281,8 +281,8 @@ export default function VendorDashboardPage() {
     );
 
   const dailySeries = stats?.dailySeries ?? [];
-  const fourteenDayRevenue = dailySeries.reduce((s, d) => s + d.revenue, 0);
-  const sparklineData = dailySeries.map((d) => d.revenue);
+  const fourteenDayRevenue = dailySeries.reduce((s: number, d: any) => s + d.revenue, 0);
+  const sparklineData = dailySeries.map((d: any) => d.revenue);
 
   return (
     <div className="space-y-8">
@@ -637,7 +637,7 @@ export default function VendorDashboardPage() {
             </div>
             <div className="divide-y divide-gray-50">
               {stats?.topProducts && stats.topProducts.length > 0 ? (
-                stats.topProducts.map((p, idx) => (
+                stats.topProducts.map((p: any, idx: number) => (
                   <div
                     key={idx}
                     className="p-6 flex items-center justify-between hover:bg-gray-50/50 transition-colors"

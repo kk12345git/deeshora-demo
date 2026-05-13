@@ -4,7 +4,7 @@ import { createTRPCRouter, publicProcedure } from "@/server/trpc";
 export const deliverySlotRouter = createTRPCRouter({
   list: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.deliverySlot.findMany({
-      where: { isActive: true },
+      where: {},
       orderBy: { startTime: "asc" },
     });
   }),

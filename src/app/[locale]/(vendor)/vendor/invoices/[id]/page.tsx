@@ -30,23 +30,23 @@ export default function VendorInvoicePrintPage() {
       </div>
     );
   }
-  if (!order) {
+  if (!order || !order.vendor) {
     return (
       <div className="text-center py-24">
-        {" "}
-        <p className="font-bold text-gray-800">Invoice not found.</p>{" "}
+        <p className="font-bold text-gray-800 text-2xl uppercase tracking-tighter">Document Not Found</p>
+        <p className="text-gray-500 mt-2">The requested invoice or vendor profile could not be retrieved.</p>
         <button
           onClick={() => router.back()}
-          className="text-brand-500 font-bold mt-4"
+          className="bg-gray-900 text-white px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest mt-8 hover:bg-brand-500 transition-all"
         >
           ← Go Back
-        </button>{" "}
+        </button>
       </div>
     );
   }
   const { vendor, user, address, items } = order;
   const subtotal = order.subtotal;
-  const totalGst = items.reduce((acc, item) => acc + (item.gstAmount ?? 0), 0);
+  const totalGst = items.reduce((acc: number, item: any) => acc + (item.gstAmount ?? 0), 0);
   const deliveryFee = order.deliveryFee;
   const grandTotal = order.total;
   const handlePrint = () => {
@@ -239,7 +239,7 @@ export default function VendorInvoicePrintPage() {
             </thead>{" "}
             <tbody className="divide-y divide-gray-100">
               {" "}
-              {items.map((item) => (
+              {items.map((item: any) => (
                 <tr key={item.id}>
                   {" "}
                   <td className="py-6 pr-4">
