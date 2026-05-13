@@ -1,6 +1,5 @@
 // src/lib/cloudinary.ts
-import { v2 as cloudinary } from 'cloudinary';
-
+import { v2 as cloudinary } from "cloudinary";
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -9,30 +8,30 @@ cloudinary.config({
   secure: true,
 });
 
-
-export const uploadImage = async (base64Image: string, folder: string = 'Daily1Mart'): Promise<string> => {
+export const uploadImage = async (
+  base64Image: string,
+  folder: string = "Deeshora",
+): Promise<string> => {
   try {
     const result = await cloudinary.uploader.upload(base64Image, {
       folder: folder,
-      resource_type: 'image',
+      resource_type: "image",
     });
     return result.secure_url;
   } catch (error) {
-    console.error('Cloudinary upload error:', error);
-    throw new Error('Failed to upload image to Cloudinary');
+    console.error("Cloudinary upload error:", error);
+    throw new Error("Failed to upload image to Cloudinary");
   }
 };
-
 
 export const deleteImage = async (publicId: string): Promise<void> => {
   try {
     await cloudinary.uploader.destroy(publicId);
   } catch (error) {
-    console.error('Cloudinary delete error:', error);
-    throw new Error('Failed to delete image from Cloudinary');
+    console.error("Cloudinary delete error:", error);
+    throw new Error("Failed to delete image from Cloudinary");
   }
 };
-
 
 export const getOptimizedUrl = (url: string, options: object = {}): string => {
   return cloudinary.url(url, {
@@ -40,6 +39,5 @@ export const getOptimizedUrl = (url: string, options: object = {}): string => {
     secure: true,
   });
 };
-
 
 export default cloudinary;

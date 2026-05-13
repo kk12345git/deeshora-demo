@@ -1,19 +1,19 @@
 // src/components/PWARegistration.tsx
-'use client';
+"use client";
 
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 export default function PWARegistration() {
   useEffect(() => {
-    if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-      window.addEventListener('load', () => {
+    if ("serviceWorker" in navigator && window.location.protocol === "https:") {
+      window.addEventListener("load", () => {
         navigator.serviceWorker
-          .register('/sw.js')
+          .register("/sw.js")
           .then((registration) => {
-            console.log('SW registered: ', registration);
+            console.log("SW registered: ", registration);
           })
           .catch((registrationError) => {
-            console.log('SW registration failed: ', registrationError);
+            console.log("SW registration failed: ", registrationError);
           });
       });
     }

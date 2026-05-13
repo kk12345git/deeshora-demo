@@ -32,17 +32,21 @@ export default function MobileBottomNav() {
               key={item.href}
               href={item.href}
               className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative ${
-                isActive ? "text-brand-600" : "text-gray-400 hover:text-gray-600"
+                isActive
+                  ? "text-brand-600"
+                  : "text-gray-400 hover:text-gray-600"
               }`}
             >
               {isActive && (
-                <motion.div 
+                <motion.div
                   layoutId="activeTab"
                   className="absolute inset-0 bg-brand-50/50 -z-10"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
-              <div className={`relative transition-transform duration-300 ${isActive ? "scale-110 -translate-y-1" : ""}`}>
+              <div
+                className={`relative transition-transform duration-300 ${isActive ? "scale-110 -translate-y-1" : ""}`}
+              >
                 <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                 {item.badge !== undefined && item.badge > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-brand-600 text-white text-[8px] font-black flex items-center justify-center shadow-lg shadow-brand-500/30">
@@ -50,7 +54,9 @@ export default function MobileBottomNav() {
                   </span>
                 )}
               </div>
-              <span className={`text-[9px] font-black mt-1 uppercase tracking-[0.1em] transition-all ${isActive ? "opacity-100 scale-105" : "opacity-60"}`}>
+              <span
+                className={`text-[9px] font-black mt-1 uppercase tracking-[0.1em] transition-all ${isActive ? "opacity-100 scale-105" : "opacity-60"}`}
+              >
                 {item.name}
               </span>
             </Link>

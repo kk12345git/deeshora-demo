@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useTransform,
+  useAnimation,
+} from "framer-motion";
 import { ChevronRight, Check } from "lucide-react";
 
 interface SwipeButtonProps {
@@ -11,7 +16,12 @@ interface SwipeButtonProps {
   disabled?: boolean;
 }
 
-export default function SwipeButton({ onComplete, label, successLabel, disabled }: SwipeButtonProps) {
+export default function SwipeButton({
+  onComplete,
+  label,
+  successLabel,
+  disabled,
+}: SwipeButtonProps) {
   const [complete, setComplete] = useState(false);
   const x = useMotionValue(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,12 +50,12 @@ export default function SwipeButton({ onComplete, label, successLabel, disabled 
   };
 
   return (
-    <div 
+    <div
       ref={containerRef}
-      className={`relative w-full h-16 bg-gray-900 rounded-2xl p-1 overflow-hidden border border-gray-800 flex items-center shadow-inner ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
+      className={`relative w-full h-16 bg-gray-900 rounded-2xl p-1 overflow-hidden border border-gray-800 flex items-center shadow-inner ${disabled ? "opacity-50 pointer-events-none" : ""}`}
     >
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <motion.span 
+        <motion.span
           style={{ opacity }}
           className="text-xs font-black uppercase tracking-[0.2em] text-gray-500"
         >
@@ -73,7 +83,7 @@ export default function SwipeButton({ onComplete, label, successLabel, disabled 
       </motion.div>
 
       {/* Progress background indicator */}
-      <motion.div 
+      <motion.div
         style={{ width: x }}
         className="absolute left-1 top-1 bottom-1 bg-blue-500/10 rounded-xl pointer-events-none"
       />

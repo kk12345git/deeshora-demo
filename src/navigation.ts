@@ -1,1 +1,9 @@
-export {Link, redirect, usePathname, useRouter, getPathname, locales, routing} from './i18n/routing';
+export {
+  Link,
+  redirect,
+  usePathname,
+  useRouter,
+  getPathname,
+  locales,
+  routing,
+} from "./i18n/routing";

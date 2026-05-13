@@ -1,20 +1,31 @@
 // src/app/(customer)/orders/[id]/invoice/page.tsx
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
-import { trpc } from '@/lib/trpc';
-import Image from 'next/image';
-import Link from 'next/link';
+import { useState, useEffect, useRef } from "react";
+import { useParams } from "next/navigation";
+import { trpc } from "@/lib/trpc";
+import Image from "next/image";
+import Link from "next/link";
 import {
-  Loader2, Printer, ArrowLeft, CheckCircle, Clock,
-  MapPin, Phone, Mail, Store, Package,
-} from 'lucide-react';
+  Loader2,
+  Printer,
+  ArrowLeft,
+  CheckCircle,
+  Clock,
+  MapPin,
+  Phone,
+  Mail,
+  Store,
+  Package,
+} from "lucide-react";
 
 export default function InvoicePage() {
   const { id } = useParams<{ id: string }>();
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const isAutoDownload = searchParams?.get('download') === 'true';
+  const searchParams =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search)
+      : null;
+  const isAutoDownload = searchParams?.get("download") === "true";
   const printRef = useRef<HTMLDivElement>(null);
   const { data: order, isLoading, error } = trpc.order.invoice.useQuery({ id });
 
@@ -40,16 +51,24 @@ export default function InvoicePage() {
   if (error || !order) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-gray-500 font-bold">Invoice not found or access denied.</p>
-        <Link href="/orders" className="btn-primary">← Back to Orders</Link>
+        <p className="text-gray-500 font-bold">
+          Invoice not found or access denied.
+        </p>
+        <Link href="/orders" className="btn-primary">
+          ← Back to Orders
+        </Link>
       </div>
     );
   }
 
   const invoiceNumber = `INV-${order.id.slice(-8).toUpperCase()}`;
-  const invoiceDate = new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-  const isPaid = order.paymentStatus === 'PAID';
-  const isCod = order.paymentMethod === 'COD';
+  const invoiceDate = new Date(order.createdAt).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const isPaid = order.paymentStatus === "PAID";
+  const isCod = order.paymentMethod === "COD";
 
   return (
     <>
@@ -65,7 +84,10 @@ export default function InvoicePage() {
 
       {/* Top bar (no-print) */}
       <div className="no-print sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between shadow-sm">
-        <Link href={`/orders/${id}`} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-brand-500 transition-colors">
+        <Link
+          href={`/orders/${id}`}
+          className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-brand-500 transition-colors"
+        >
           <ArrowLeft size={18} /> Back to Order
         </Link>
         <button
@@ -78,7 +100,11 @@ export default function InvoicePage() {
 
       {/* Invoice body */}
       <div className="min-h-screen bg-gray-50 py-10 px-4 flex justify-center">
-        <div id="invoice-content" ref={printRef} className="w-full max-w-2xl bg-white rounded-3xl shadow-xl overflow-hidden">
+        <div
+          id="invoice-content"
+          ref={printRef}
+          className="w-full max-w-2xl bg-white rounded-3xl shadow-xl overflow-hidden"
+        >
           {/* Header band */}
           <div className="h-2 bg-gradient-to-r from-brand-400 via-brand-500 to-rose-500" />
 
@@ -90,17 +116,25 @@ export default function InvoicePage() {
                   <Store size={28} className="text-brand-500" />
                 </div>
                 <div>
-                  <p className="font-black text-xl text-gray-900">Daily1Mart</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Platform Official Invoice</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Thiruvottriyur, Chennai</p>
+                  <p className="font-black text-xl text-gray-900">Deeshora</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Platform Official Invoice
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Thiruvottriyur, Chennai
+                  </p>
                   <p className="text-xs text-gray-500">+91 8939318865</p>
                 </div>
               </div>
 
               <div className="text-right">
                 <p className="text-2xl font-black text-gray-900">TAX INVOICE</p>
-                <p className="text-sm font-bold text-brand-500 mt-1">{invoiceNumber}</p>
-                <p className="text-xs text-gray-400 mt-1">Date: {invoiceDate}</p>
+                <p className="text-sm font-bold text-brand-500 mt-1">
+                  {invoiceNumber}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Date: {invoiceDate}
+                </p>
                 <div className="flex flex-col items-end gap-2 mt-2">
                   {isPaid ? (
                     <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-black px-3 py-1.5 rounded-full">
@@ -112,7 +146,7 @@ export default function InvoicePage() {
                         <Clock size={12} /> PAYMENT PENDING
                       </div>
                       {!isPaid && (
-                        <Link 
+                        <Link
                           href={`/orders/${id}`}
                           className="no-print text-[10px] font-black text-white bg-brand-500 hover:bg-brand-600 px-4 py-2 rounded-xl shadow-lg shadow-brand-500/20 transition-all uppercase tracking-tight"
                         >
@@ -122,7 +156,9 @@ export default function InvoicePage() {
                     </>
                   )}
                   {isCod && !isPaid && (
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cash on Delivery</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      Cash on Delivery
+                    </p>
                   )}
                 </div>
               </div>
@@ -134,23 +170,34 @@ export default function InvoicePage() {
             {/* Billed To */}
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Billed To</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">
+                  Billed To
+                </p>
                 <p className="font-black text-gray-900">{order.user.name}</p>
                 {order.user.phone && (
-                  <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-1"><Phone size={11} /> {order.user.phone}</p>
+                  <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-1">
+                    <Phone size={11} /> {order.user.phone}
+                  </p>
                 )}
                 {order.user.email && (
-                  <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5"><Mail size={11} /> {order.user.email}</p>
+                  <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
+                    <Mail size={11} /> {order.user.email}
+                  </p>
                 )}
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Delivery Address</p>
-                <p className="font-bold text-gray-800 text-sm">{order.address.label}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">
+                  Delivery Address
+                </p>
+                <p className="font-bold text-gray-800 text-sm">
+                  {order.address.label}
+                </p>
                 <p className="text-xs text-gray-500 flex items-start gap-1.5 mt-1">
                   <MapPin size={11} className="mt-0.5 flex-shrink-0" />
                   <span>
                     {order.address.line1}
-                    {order.address.line2 ? `, ${order.address.line2}` : ''}<br />
+                    {order.address.line2 ? `, ${order.address.line2}` : ""}
+                    <br />
                     {order.address.city} — {order.address.pincode}
                   </span>
                 </p>
@@ -162,10 +209,18 @@ export default function InvoicePage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 rounded-xl">
-                    <th className="text-left py-3 px-4 text-[10px] font-black uppercase tracking-widest text-gray-400 rounded-l-xl">Item</th>
-                    <th className="text-center py-3 px-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Qty</th>
-                    <th className="text-right py-3 px-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Unit Price</th>
-                    <th className="text-right py-3 px-4 text-[10px] font-black uppercase tracking-widest text-gray-400 rounded-r-xl">Total</th>
+                    <th className="text-left py-3 px-4 text-[10px] font-black uppercase tracking-widest text-gray-400 rounded-l-xl">
+                      Item
+                    </th>
+                    <th className="text-center py-3 px-4 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                      Qty
+                    </th>
+                    <th className="text-right py-3 px-4 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                      Unit Price
+                    </th>
+                    <th className="text-right py-3 px-4 text-[10px] font-black uppercase tracking-widest text-gray-400 rounded-r-xl">
+                      Total
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -175,20 +230,35 @@ export default function InvoicePage() {
                         <div className="flex items-center gap-3">
                           {item.image && (
                             <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-gray-50 flex-shrink-0">
-                              <Image src={item.image} alt={item.name} fill className="object-cover" />
+                              <Image
+                                src={item.image}
+                                alt={item.name}
+                                fill
+                                className="object-cover"
+                              />
                             </div>
                           )}
                           <div>
-                            <p className="font-bold text-gray-800">{item.name}</p>
+                            <p className="font-bold text-gray-800">
+                              {item.name}
+                            </p>
                             {item.mrp > item.price && (
-                              <p className="text-xs text-gray-400 line-through">MRP ₹{item.mrp}</p>
+                              <p className="text-xs text-gray-400 line-through">
+                                MRP ₹{item.mrp}
+                              </p>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-center text-gray-600 font-medium">{item.quantity}</td>
-                      <td className="py-3 px-4 text-right text-gray-600 font-medium">₹{item.price.toFixed(2)}</td>
-                      <td className="py-3 px-4 text-right font-black text-gray-900">₹{item.total.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-center text-gray-600 font-medium">
+                        {item.quantity}
+                      </td>
+                      <td className="py-3 px-4 text-right text-gray-600 font-medium">
+                        ₹{item.price.toFixed(2)}
+                      </td>
+                      <td className="py-3 px-4 text-right font-black text-gray-900">
+                        ₹{item.total.toFixed(2)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -200,11 +270,17 @@ export default function InvoicePage() {
               <div className="w-64 space-y-2">
                 <div className="flex justify-between text-sm text-gray-500">
                   <span>Subtotal</span>
-                  <span className="font-bold">₹{order.subtotal.toFixed(2)}</span>
+                  <span className="font-bold">
+                    ₹{order.subtotal.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-500">
                   <span>Delivery Fee</span>
-                  <span className="font-bold">{order.deliveryFee === 0 ? '🎉 FREE' : `₹${order.deliveryFee.toFixed(2)}`}</span>
+                  <span className="font-bold">
+                    {order.deliveryFee === 0
+                      ? "🎉 FREE"
+                      : `₹${order.deliveryFee.toFixed(2)}`}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-500">
                   <span>Platform Fee</span>
@@ -213,11 +289,14 @@ export default function InvoicePage() {
                 <div className="h-px bg-gray-200" />
                 <div className="flex justify-between text-lg font-black text-gray-900">
                   <span>Grand Total</span>
-                  <span className="text-brand-600">₹{order.total.toFixed(2)}</span>
+                  <span className="text-brand-600">
+                    ₹{order.total.toFixed(2)}
+                  </span>
                 </div>
                 {isPaid && order.paymentId && (
                   <div className="text-xs text-gray-400 text-right">
-                    Payment ID: <code className="font-mono">{order.paymentId}</code>
+                    Payment ID:{" "}
+                    <code className="font-mono">{order.paymentId}</code>
                   </div>
                 )}
               </div>
@@ -226,13 +305,27 @@ export default function InvoicePage() {
             {/* Order Timeline */}
             {order.timeline.length > 0 && (
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-3">Order Timeline</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-3">
+                  Order Timeline
+                </p>
                 <div className="space-y-2">
-                  {order.timeline.map(event => (
-                    <div key={event.id} className="flex items-center gap-3 text-xs">
+                  {order.timeline.map((event) => (
+                    <div
+                      key={event.id}
+                      className="flex items-center gap-3 text-xs"
+                    >
                       <div className="w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0" />
-                      <span className="text-gray-400">{new Date(event.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                      <span className="text-gray-600 font-medium">{event.message}</span>
+                      <span className="text-gray-400">
+                        {new Date(event.createdAt).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      <span className="text-gray-600 font-medium">
+                        {event.message}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -241,9 +334,17 @@ export default function InvoicePage() {
 
             {/* Footer */}
             <div className="border-t border-gray-100 pt-6 text-center space-y-1">
-              <p className="text-xs font-black text-gray-500">Thank you for shopping with Daily1Mart!</p>
-              <p className="text-xs text-gray-400">This is a computer-generated invoice and does not require a signature.</p>
-              <p className="text-xs text-gray-400">Daily1Mart · Thiruvottriyur, Chennai · Support: support@daily1mart.in</p>
+              <p className="text-xs font-black text-gray-500">
+                Thank you for shopping with Deeshora!
+              </p>
+              <p className="text-xs text-gray-400">
+                This is a computer-generated invoice and does not require a
+                signature.
+              </p>
+              <p className="text-xs text-gray-400">
+                Deeshora · Thiruvottriyur, Chennai · Support:
+                support@deeshora.in
+              </p>
             </div>
           </div>
         </div>

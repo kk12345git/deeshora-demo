@@ -1,0 +1,15 @@
+name: Process Daily Subscriptions
+
+on:
+  schedule:
+    # Run every day at 00:00 UTC (5:30 AM IST)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit Subscription Processing Endpoint
+        run: |
+          curl -X GET "${{ secrets.APP_URL }}/api/cron/process-subscriptions?key=${{ secrets.CRON_SECRET }}"

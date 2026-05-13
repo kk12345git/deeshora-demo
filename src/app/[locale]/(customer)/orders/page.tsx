@@ -1,59 +1,65 @@
-'use client';
+"use client";
 // src/app/(customer)/orders/page.tsx
 
-import { useState } from 'react';
-import { trpc } from '@/lib/trpc';
-import { Link } from '@/navigation';
-import Image from 'next/image';
-import { OrderStatusBadge } from '@/components/customer/OrderStatus';
+import { useState } from "react";
+import { trpc } from "@/lib/trpc";
+import { Link } from "@/navigation";
+import Image from "next/image";
+import { OrderStatusBadge } from "@/components/customer/OrderStatus";
 import {
-  Package, ArrowRight, ShoppingBag, Loader2,
-  Clock, CheckCircle, IndianRupee, Store,
-} from 'lucide-react';
-import { OrderStatus } from '@prisma/client';
-import toast from 'react-hot-toast';
-import { useRouter } from '@/navigation';
+  Package,
+  ArrowRight,
+  ShoppingBag,
+  Loader2,
+  Clock,
+  CheckCircle,
+  IndianRupee,
+  Store,
+} from "lucide-react";
+import { OrderStatus } from "@prisma/client";
+import toast from "react-hot-toast";
+import { useRouter } from "@/navigation";
 
-const STATUS_TABS: { key: OrderStatus | 'ALL'; label: string }[] = [
-  { key: 'ALL', label: 'All Orders' },
-  { key: 'PENDING', label: 'Pending' },
-  { key: 'CONFIRMED', label: 'Confirmed' },
-  { key: 'PREPARING', label: 'Preparing' },
-  { key: 'OUT_FOR_DELIVERY', label: 'On the Way' },
-  { key: 'DELIVERED', label: 'Delivered' },
-  { key: 'CANCELLED', label: 'Cancelled' },
+const STATUS_TABS: { key: OrderStatus | "ALL"; label: string }[] = [
+  { key: "ALL", label: "All Orders" },
+  { key: "PENDING", label: "Pending" },
+  { key: "CONFIRMED", label: "Confirmed" },
+  { key: "PREPARING", label: "Preparing" },
+  { key: "OUT_FOR_DELIVERY", label: "On the Way" },
+  { key: "DELIVERED", label: "Delivered" },
+  { key: "CANCELLED", label: "Cancelled" },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  PENDING: 'from-amber-500/10 to-amber-500/5 border-amber-200',
-  CONFIRMED: 'from-blue-500/10 to-blue-500/5 border-blue-200',
-  PREPARING: 'from-purple-500/10 to-purple-500/5 border-purple-200',
-  READY: 'from-indigo-500/10 to-indigo-500/5 border-indigo-200',
-  OUT_FOR_DELIVERY: 'from-brand-500/10 to-brand-500/5 border-brand-200',
-  DELIVERED: 'from-emerald-500/10 to-emerald-500/5 border-emerald-200',
-  CANCELLED: 'from-red-500/10 to-red-500/5 border-red-200',
-  REFUNDED: 'from-gray-500/10 to-gray-500/5 border-gray-200',
+  PENDING: "from-amber-500/10 to-amber-500/5 border-amber-200",
+  CONFIRMED: "from-blue-500/10 to-blue-500/5 border-blue-200",
+  PREPARING: "from-purple-500/10 to-purple-500/5 border-purple-200",
+  READY: "from-indigo-500/10 to-indigo-500/5 border-indigo-200",
+  OUT_FOR_DELIVERY: "from-brand-500/10 to-brand-500/5 border-brand-200",
+  DELIVERED: "from-emerald-500/10 to-emerald-500/5 border-emerald-200",
+  CANCELLED: "from-red-500/10 to-red-500/5 border-red-200",
+  REFUNDED: "from-gray-500/10 to-gray-500/5 border-gray-200",
 };
 
 const STATUS_DOT: Record<string, string> = {
-  PENDING: 'bg-amber-400',
-  CONFIRMED: 'bg-blue-400',
-  PREPARING: 'bg-purple-400',
-  READY: 'bg-indigo-400',
-  OUT_FOR_DELIVERY: 'bg-brand-400 animate-pulse',
-  DELIVERED: 'bg-emerald-500',
-  CANCELLED: 'bg-red-400',
-  REFUNDED: 'bg-gray-400',
+  PENDING: "bg-amber-400",
+  CONFIRMED: "bg-blue-400",
+  PREPARING: "bg-purple-400",
+  READY: "bg-indigo-400",
+  OUT_FOR_DELIVERY: "bg-brand-400 animate-pulse",
+  DELIVERED: "bg-emerald-500",
+  CANCELLED: "bg-red-400",
+  REFUNDED: "bg-gray-400",
 };
 
 export default function OrdersPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<OrderStatus | 'ALL'>('ALL');
+  const [activeTab, setActiveTab] = useState<OrderStatus | "ALL">("ALL");
 
   const reorderMutation = trpc.order.reorder.useMutation({
     onSuccess: () => {
-      toast.success('Items added to cart!');
-      router.push('/cart');
+      toast.success("Items added to cart!");
+      router.push("/cart");
     },
     onError: (err) => toast.error(err.message),
   });
@@ -65,12 +71,21 @@ export default function OrdersPage() {
   const { data, isLoading } = trpc.order.myOrders.useQuery({ limit: 50 });
   const allOrders = data?.orders ?? [];
 
-  const filtered = activeTab === 'ALL'
-    ? allOrders
-    : allOrders.filter(o => o.status === activeTab);
+  const filtered =
+    activeTab === "ALL"
+      ? allOrders
+      : allOrders.filter((o) => o.status === activeTab);
 
-  const activeCount = allOrders.filter(o =>
-    (['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY'] as string[]).includes(o.status as string)
+  const activeCount = allOrders.filter((o) =>
+    (
+      [
+        "PENDING",
+        "CONFIRMED",
+        "PREPARING",
+        "READY",
+        "OUT_FOR_DELIVERY",
+      ] as string[]
+    ).includes(o.status as string),
   ).length;
 
   return (
@@ -78,7 +93,9 @@ export default function OrdersPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-1">
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">My Orders</h1>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+            My Orders
+          </h1>
           {activeCount > 0 && (
             <span className="flex items-center gap-2 text-xs font-black text-brand-600 bg-brand-50 border border-brand-100 px-3 py-1.5 rounded-full">
               <span className="w-2 h-2 bg-brand-500 rounded-full animate-pulse" />
@@ -86,25 +103,29 @@ export default function OrdersPage() {
             </span>
           )}
         </div>
-        <p className="text-gray-400 text-sm">Track and manage all your Daily1Mart orders</p>
+        <p className="text-gray-400 text-sm">
+          Track and manage all your Deeshora orders
+        </p>
       </div>
 
       {/* Status Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
-        {STATUS_TABS.map(tab => (
+        {STATUS_TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`flex-shrink-0 text-xs font-black px-4 py-2 rounded-xl transition-all ${
               activeTab === tab.key
-                ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20'
-                : 'bg-white text-gray-500 border border-gray-100 hover:border-brand-200 hover:text-brand-500'
+                ? "bg-brand-500 text-white shadow-lg shadow-brand-500/20"
+                : "bg-white text-gray-500 border border-gray-100 hover:border-brand-200 hover:text-brand-500"
             }`}
           >
             {tab.label}
-            {tab.key !== 'ALL' && (
-              <span className={`ml-1.5 text-[10px] ${activeTab === tab.key ? 'text-brand-100' : 'text-gray-300'}`}>
-                {allOrders.filter(o => o.status === tab.key).length || ''}
+            {tab.key !== "ALL" && (
+              <span
+                className={`ml-1.5 text-[10px] ${activeTab === tab.key ? "text-brand-100" : "text-gray-300"}`}
+              >
+                {allOrders.filter((o) => o.status === tab.key).length || ""}
               </span>
             )}
           </button>
@@ -115,7 +136,9 @@ export default function OrdersPage() {
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <Loader2 className="w-10 h-10 animate-spin text-brand-500" />
-          <p className="text-gray-400 font-medium text-sm">Loading your orders...</p>
+          <p className="text-gray-400 font-medium text-sm">
+            Loading your orders...
+          </p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 text-center">
@@ -123,14 +146,16 @@ export default function OrdersPage() {
             <ShoppingBag size={36} className="text-gray-300" />
           </div>
           <h3 className="font-black text-gray-700 text-lg">
-            {activeTab === 'ALL' ? 'No orders yet!' : `No ${activeTab.toLowerCase().replace(/_/g, ' ')} orders`}
+            {activeTab === "ALL"
+              ? "No orders yet!"
+              : `No ${activeTab.toLowerCase().replace(/_/g, " ")} orders`}
           </h3>
           <p className="text-gray-400 text-sm mt-2 max-w-xs">
-            {activeTab === 'ALL'
+            {activeTab === "ALL"
               ? "When you place orders from local shops, they&apos;ll show up here."
-              : 'Try a different status filter above.'}
+              : "Try a different status filter above."}
           </p>
-          {activeTab === 'ALL' && (
+          {activeTab === "ALL" && (
             <Link href="/" className="btn-primary mt-6">
               Start Shopping <ArrowRight size={16} className="ml-1" />
             </Link>
@@ -138,10 +163,18 @@ export default function OrdersPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {filtered.map(order => {
-            const colorClass = STATUS_COLORS[order.status] ?? 'border-gray-100';
-            const dotClass = STATUS_DOT[order.status] ?? 'bg-gray-400';
-            const isActive = (['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY'] as string[]).includes(order.status as string);
+          {filtered.map((order) => {
+            const colorClass = STATUS_COLORS[order.status] ?? "border-gray-100";
+            const dotClass = STATUS_DOT[order.status] ?? "bg-gray-400";
+            const isActive = (
+              [
+                "PENDING",
+                "CONFIRMED",
+                "PREPARING",
+                "READY",
+                "OUT_FOR_DELIVERY",
+              ] as string[]
+            ).includes(order.status as string);
 
             return (
               <Link
@@ -174,22 +207,29 @@ export default function OrdersPage() {
                       </span>
                       <OrderStatusBadge status={order.status} />
                       {isActive && (
-                        <span className={`w-1.5 h-1.5 rounded-full ${dotClass} flex-shrink-0`} />
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${dotClass} flex-shrink-0`}
+                        />
                       )}
                     </div>
 
                     <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium mb-2">
                       <Store size={11} className="text-gray-400" />
-                      <span>Daily1Mart</span>
+                      <span>Deeshora</span>
                     </div>
 
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-1 text-gray-700">
                         <Clock size={12} className="text-gray-400" />
                         <span className="text-xs font-medium">
-                          {new Date(order.createdAt).toLocaleDateString('en-IN', {
-                            day: 'numeric', month: 'short', year: 'numeric',
-                          })}
+                          {new Date(order.createdAt).toLocaleDateString(
+                            "en-IN",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )}
                         </span>
                       </div>
 
@@ -199,7 +239,8 @@ export default function OrdersPage() {
                           <span>{(order as any).total.toFixed(2)}</span>
                         </div>
                         <span className="text-xs font-bold text-gray-400">
-                          {(order as any).items?.length ?? 1} item{((order as any).items?.length ?? 1) > 1 ? 's' : ''}
+                          {(order as any).items?.length ?? 1} item
+                          {((order as any).items?.length ?? 1) > 1 ? "s" : ""}
                         </span>
                         <ArrowRight
                           size={16}
@@ -211,7 +252,7 @@ export default function OrdersPage() {
                 </div>
 
                 {/* Delivered footer */}
-                {order.status === 'DELIVERED' && (
+                {order.status === "DELIVERED" && (
                   <div className="mt-4 pt-3 border-t border-emerald-100 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs text-emerald-600 font-bold">
                       <CheckCircle size={13} />

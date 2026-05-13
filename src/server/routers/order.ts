@@ -1,12 +1,17 @@
 // src/server/routers/order.ts
-import { z } from 'zod';
-import { createTRPCRouter, protectedProcedure, adminProcedure } from '@/server/trpc';
-import { TRPCError } from '@trpc/server';
-import { pusherServer, CHANNELS, EVENTS } from '@/lib/pusher';
-import { OrderStatus } from '@prisma/client';
-import { logActivity } from '@/lib/activity';
+import { z } from "zod";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  adminProcedure,
+  vendorProcedure,
+} from "@/server/trpc";
+import { TRPCError } from "@trpc/server";
+import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher";
+import { OrderStatus } from "@prisma/client";
+import { logActivity } from "@/lib/activity";
 
-import { initiatePayment } from '@/lib/payments';
+import { initiatePayment } from "@/lib/payments";
 
 export const orderRouter = createTRPCRouter({
   placeOrder: protectedProcedure
@@ -14,9 +19,11 @@ export const orderRouter = createTRPCRouter({
       z.object({
         addressId: z.string(),
         notes: z.string().optional(),
-        paymentMethod: z.enum(['COD', 'UPI', 'PHONEPE', 'MANUAL_UPI', 'WALLET']).default('COD'),
+        paymentMethod: z
+          .enum(["COD", "UPI", "PHONEPE", "MANUAL_UPI", "WALLET"])
+          .default("COD"),
         deliverySlotId: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
@@ -26,7 +33,10 @@ export const orderRouter = createTRPCRouter({
         where: { id: addressId, userId: user.id },
       });
       if (!address) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Address not found.' });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Address not found.",
+        });
       }
 
       const cart = await ctx.prisma.cart.findUnique({
@@ -43,35 +53,48 @@ export const orderRouter = createTRPCRouter({
       });
 
       if (!cart || cart.items.length === 0) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Your cart is empty.' });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Your cart is empty.",
+        });
       }
 
       // Validate all items are still active
       for (const item of cart.items) {
         if (!item.product.isActive) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
+            code: "BAD_REQUEST",
             message: `"${item.product.name}" is no longer available.`,
           });
         }
         if (item.product.stock < item.quantity) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
+            code: "BAD_REQUEST",
             message: `"${item.product.name}" has insufficient stock (only ${item.product.stock} left).`,
           });
         }
       }
 
-      const subtotal = cart.items.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+      const subtotal = cart.items.reduce(
+        (acc, item) => acc + item.product.price * item.quantity,
+        0,
+      );
 
       const config = await ctx.prisma.siteConfig.findMany();
-      const deliveryFeeConfig = config.find((c) => c.key === 'delivery_fee');
-      const freeDeliveryConfig = config.find((c) => c.key === 'free_delivery_above');
+      const deliveryFeeConfig = config.find((c) => c.key === "delivery_fee");
+      const freeDeliveryConfig = config.find(
+        (c) => c.key === "free_delivery_above",
+      );
 
-      const baseDeliveryFee = deliveryFeeConfig ? parseFloat(deliveryFeeConfig.value) : 40;
-      const freeDeliveryThreshold = freeDeliveryConfig ? parseFloat(freeDeliveryConfig.value) : 299;
+      const baseDeliveryFee = deliveryFeeConfig
+        ? parseFloat(deliveryFeeConfig.value)
+        : 40;
+      const freeDeliveryThreshold = freeDeliveryConfig
+        ? parseFloat(freeDeliveryConfig.value)
+        : 299;
 
-      const deliveryFee = subtotal >= freeDeliveryThreshold ? 0 : baseDeliveryFee;
+      const deliveryFee =
+        subtotal >= freeDeliveryThreshold ? 0 : baseDeliveryFee;
       const total = subtotal + deliveryFee;
 
       const itemsToCreate = cart.items.map((item) => ({
@@ -83,7 +106,9 @@ export const orderRouter = createTRPCRouter({
         quantity: item.quantity,
         total: item.product.price * item.quantity,
         gstRate: item.product.gstRate ?? 0,
-        gstAmount: ((item.product.price * item.quantity) * (item.product.gstRate ?? 0)) / 100,
+        gstAmount:
+          (item.product.price * item.quantity * (item.product.gstRate ?? 0)) /
+          100,
       }));
 
       const pusherEventsToTrigger: Array<() => Promise<void>> = [];
@@ -98,7 +123,7 @@ export const orderRouter = createTRPCRouter({
             total,
             notes,
             paymentMethod,
-            paymentStatus: paymentMethod === 'WALLET' ? 'PAID' : 'PENDING',
+            paymentStatus: paymentMethod === "WALLET" ? "PAID" : "PENDING",
             deliverySlotId: input.deliverySlotId,
             status: OrderStatus.PENDING,
             items: {
@@ -107,30 +132,35 @@ export const orderRouter = createTRPCRouter({
             timeline: {
               create: {
                 status: OrderStatus.PENDING,
-                message: paymentMethod === 'COD' ? 'Order placed via Cash on Delivery.' : paymentMethod === 'WALLET' ? 'Order placed using Wallet balance.' : 'Order placed via UPI Payment.',
+                message:
+                  paymentMethod === "COD"
+                    ? "Order placed via Cash on Delivery."
+                    : paymentMethod === "WALLET"
+                      ? "Order placed using Wallet balance."
+                      : "Order placed via UPI Payment.",
               },
             },
           },
         });
 
         // Handle Wallet payment
-        if (paymentMethod === 'WALLET') {
+        if (paymentMethod === "WALLET") {
           const userWithWallet = await tx.user.findUnique({
             where: { id: user.id },
-            select: { walletBalance: true }
+            select: { walletBalance: true },
           });
 
           if (!userWithWallet || userWithWallet.walletBalance < total) {
-            throw new TRPCError({ 
-              code: 'BAD_REQUEST', 
-              message: 'Insufficient wallet balance.' 
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Insufficient wallet balance.",
             });
           }
 
           // Deduct from wallet
           await tx.user.update({
             where: { id: user.id },
-            data: { walletBalance: { decrement: total } }
+            data: { walletBalance: { decrement: total } },
           });
 
           // Log wallet transaction
@@ -138,11 +168,11 @@ export const orderRouter = createTRPCRouter({
             data: {
               userId: user.id,
               amount: -total,
-              type: 'PURCHASE',
-              status: 'COMPLETED',
+              type: "PURCHASE",
+              status: "COMPLETED",
               description: `Order payment for #${orderRecord.id.slice(-6)}`,
               reference: orderRecord.id,
-            }
+            },
           });
         }
 
@@ -154,7 +184,7 @@ export const orderRouter = createTRPCRouter({
 
           if (updated.count === 0) {
             throw new TRPCError({
-              code: 'CONFLICT',
+              code: "CONFLICT",
               message: `"${item.product.name}" just ran out of stock. Please remove it from your cart and try again.`,
             });
           }
@@ -165,20 +195,30 @@ export const orderRouter = createTRPCRouter({
               stock: true,
               lowStockThreshold: true,
               name: true,
-            }
+            },
           });
 
-          if (productAfterUpdate && productAfterUpdate.stock <= productAfterUpdate.lowStockThreshold) {
+          if (
+            productAfterUpdate &&
+            productAfterUpdate.stock <= productAfterUpdate.lowStockThreshold
+          ) {
             // Notify Admin
             pusherEventsToTrigger.push(async () => {
               try {
                 await pusherServer.trigger(
                   CHANNELS.ADMIN,
                   EVENTS.LOW_STOCK_ALERT,
-                  { productId: item.productId, stock: productAfterUpdate.stock, name: productAfterUpdate.name }
+                  {
+                    productId: item.productId,
+                    stock: productAfterUpdate.stock,
+                    name: productAfterUpdate.name,
+                  },
                 );
               } catch (pusherErr) {
-                console.error('[Order] Pusher low stock alert failed:', pusherErr);
+                console.error(
+                  "[Order] Pusher low stock alert failed:",
+                  pusherErr,
+                );
               }
             });
           }
@@ -186,21 +226,20 @@ export const orderRouter = createTRPCRouter({
 
         pusherEventsToTrigger.push(async () => {
           try {
-            await pusherServer.trigger(
-              CHANNELS.ADMIN,
-              EVENTS.NEW_ORDER,
-              { orderId: orderRecord.id, customerName: user.name }
-            );
+            await pusherServer.trigger(CHANNELS.ADMIN, EVENTS.NEW_ORDER, {
+              orderId: orderRecord.id,
+              customerName: user.name,
+            });
           } catch (pusherErr) {
-            console.error('[Order] Pusher notify failed for admin:', pusherErr);
+            console.error("[Order] Pusher notify failed for admin:", pusherErr);
           }
         });
 
         await logActivity({
-          type: 'ORDER',
-          action: 'CREATE',
+          type: "ORDER",
+          action: "CREATE",
           entityId: orderRecord.id,
-          entityType: 'Order',
+          entityType: "Order",
           actorId: user.id,
           actorName: user.name,
           message: `User ${user.name} placed a new order #${orderRecord.id.slice(-6)}`,
@@ -212,7 +251,9 @@ export const orderRouter = createTRPCRouter({
         return orderRecord;
       });
 
-      Promise.all(pusherEventsToTrigger.map(fn => fn())).catch(e => console.error("Pusher events failed", e));
+      Promise.all(pusherEventsToTrigger.map((fn) => fn())).catch((e) =>
+        console.error("Pusher events failed", e),
+      );
 
       return {
         success: true,
@@ -222,63 +263,75 @@ export const orderRouter = createTRPCRouter({
     }),
 
   initiatePayment: protectedProcedure
-    .input(z.object({
-      orderId: z.string(),
-      provider: z.enum(['PHONEPE', 'MANUAL_UPI']),
-    }))
+    .input(
+      z.object({
+        orderId: z.string(),
+        provider: z.enum(["PHONEPE", "MANUAL_UPI"]),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const order = await ctx.prisma.order.findUnique({
         where: { id: input.orderId, userId: ctx.user.id },
-        include: { user: true }
+        include: { user: true },
       });
 
-      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+      if (!order)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found." });
 
       return await initiatePayment(input.provider, {
         orderId: order.id,
         amount: order.total,
         customerName: order.user.name,
         customerEmail: order.user.email,
-        customerPhone: order.user.phone || '',
+        customerPhone: order.user.phone || "",
         callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/orders/${order.id}`,
       });
     }),
 
   submitUtr: protectedProcedure
-    .input(z.object({
-      orderId: z.string(),
-      utrNumber: z.string().regex(/^\d{12}$/, 'UTR must be exactly 12 digits (numeric)'),
-    }))
+    .input(
+      z.object({
+        orderId: z.string(),
+        utrNumber: z
+          .string()
+          .regex(/^\d{12}$/, "UTR must be exactly 12 digits (numeric)"),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const order = await ctx.prisma.order.findUnique({
-        where: { id: input.orderId, userId: ctx.user.id }
+        where: { id: input.orderId, userId: ctx.user.id },
       });
 
-      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+      if (!order)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found." });
 
       const updated = await ctx.prisma.order.update({
         where: { id: input.orderId },
         data: {
           utrNumber: input.utrNumber,
-          paymentMethod: 'MANUAL_UPI',
-          paymentStatus: 'PENDING',
+          paymentMethod: "MANUAL_UPI",
+          paymentStatus: "PENDING",
           timeline: {
             create: {
               status: order.status,
               message: `UTR ${input.utrNumber} submitted for verification.`,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       try {
         await pusherServer.trigger(
           CHANNELS.ADMIN,
           EVENTS.NEW_PAYMENT_VERIFICATION,
-          { orderId: order.id, utrNumber: input.utrNumber, customerName: ctx.user.name }
+          {
+            orderId: order.id,
+            utrNumber: input.utrNumber,
+            customerName: ctx.user.name,
+          },
         );
       } catch (err) {
-        console.error('[Order] Pusher admin notify failed for UTR:', err);
+        console.error("[Order] Pusher admin notify failed for UTR:", err);
       }
 
       return updated;
@@ -289,7 +342,7 @@ export const orderRouter = createTRPCRouter({
       z.object({
         limit: z.number().min(1).max(50).nullish(),
         cursor: z.string().nullish(),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const limit = input.limit ?? 10;
@@ -301,7 +354,7 @@ export const orderRouter = createTRPCRouter({
           items: { take: 1, select: { image: true } },
         },
         cursor: cursor ? { id: cursor } : undefined,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
 
       let nextCursor: typeof cursor | undefined = undefined;
@@ -321,12 +374,14 @@ export const orderRouter = createTRPCRouter({
           address: true,
           user: { select: { name: true, phone: true } },
           items: { include: { product: { select: { slug: true } } } },
-          timeline: { orderBy: { createdAt: 'desc' } },
-          deliveryPartner: { select: { name: true, phone: true, avatar: true } },
+          timeline: { orderBy: { createdAt: "desc" } },
+          deliveryPartner: {
+            select: { name: true, phone: true, avatar: true },
+          },
         },
       });
       if (!order) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found." });
       }
       return order;
     }),
@@ -339,17 +394,18 @@ export const orderRouter = createTRPCRouter({
           id: input.id,
           OR: [
             { userId: ctx.user.id },
-            { user: { role: 'ADMIN' } } // Admins can view invoices
+            { user: { role: "ADMIN" } }, // Admins can view invoices
           ],
         },
         include: {
           address: true,
           user: { select: { name: true, phone: true, email: true } },
           items: true,
-          timeline: { orderBy: { createdAt: 'asc' } },
+          timeline: { orderBy: { createdAt: "asc" } },
         },
       });
-      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+      if (!order)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found." });
       return order;
     }),
 
@@ -360,7 +416,7 @@ export const orderRouter = createTRPCRouter({
         limit: z.number().min(1).max(50).nullish(),
         cursor: z.string().nullish(),
         status: z.nativeEnum(OrderStatus).optional(),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const limit = input.limit ?? 10;
@@ -375,7 +431,7 @@ export const orderRouter = createTRPCRouter({
           deliveryPartner: { select: { name: true, phone: true } },
         },
         cursor: cursor ? { id: cursor } : undefined,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
 
       let nextCursor: typeof cursor | undefined = undefined;
@@ -386,48 +442,85 @@ export const orderRouter = createTRPCRouter({
       return { orders, nextCursor };
     }),
 
-  updateStatus: adminProcedure
+  vendorOrders: vendorProcedure
+    .input(z.object({ status: z.nativeEnum(OrderStatus).optional(), limit: z.number().optional() }))
+    .query(async ({ ctx, input }) => {
+      const vendor = await ctx.prisma.vendor.findUnique({ where: { userId: ctx.user.id } });
+      if (!vendor && ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Not a vendor' });
+
+      const { status, limit = 10 } = input;
+      const orders = await ctx.prisma.order.findMany({
+        where: {
+          vendorId: vendor?.id,
+          status: status,
+        },
+        include: {
+          user: { select: { name: true, phone: true } },
+          address: true,
+          items: true,
+          deliveryPartner: { select: { name: true, phone: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      });
+
+      return { orders };
+    }),
+
+  updateStatus: vendorProcedure
     .input(
       z.object({
         orderId: z.string(),
         status: z.nativeEnum(OrderStatus),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { orderId, status } = input;
+      
       const order = await ctx.prisma.order.findFirst({
         where: { id: orderId },
         include: { user: { select: { phone: true } } },
       });
 
       if (!order) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found." });
+      }
+
+      // If vendor, check ownership
+      if (ctx.user.role === 'VENDOR') {
+        const vendor = await ctx.prisma.vendor.findUnique({ where: { userId: ctx.user.id } });
+        if (!vendor || order.vendorId !== vendor.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Not your order' });
+        }
       }
 
       const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-        PENDING: ['CONFIRMED', 'CANCELLED'],
-        CONFIRMED: ['PREPARING'],
-        PREPARING: ['READY'],
-        READY: ['OUT_FOR_DELIVERY'],
-        OUT_FOR_DELIVERY: ['DELIVERED'],
+        PENDING: ["CONFIRMED", "CANCELLED"],
+        CONFIRMED: ["PREPARING"],
+        PREPARING: ["READY"],
+        READY: ["OUT_FOR_DELIVERY"],
+        OUT_FOR_DELIVERY: ["DELIVERED"],
         DELIVERED: [],
         CANCELLED: [],
         REFUNDED: [],
       };
 
       if (!validTransitions[order.status].includes(status)) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid status transition from ${order.status} to ${status}.` });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Invalid status transition from ${order.status} to ${status}.`,
+        });
       }
 
       const messages: Record<OrderStatus, string> = {
-        CONFIRMED: 'Admin has confirmed your order.',
-        PREPARING: 'Your order is being prepared.',
-        READY: 'Your order is ready for pickup.',
-        OUT_FOR_DELIVERY: 'Your order is out for delivery.',
-        DELIVERED: 'Your order has been delivered.',
-        CANCELLED: 'Your order has been cancelled by the admin.',
-        PENDING: '',
-        REFUNDED: '',
+        CONFIRMED: "Order has been confirmed.",
+        PREPARING: "Your order is being prepared.",
+        READY: "Your order is ready for pickup.",
+        OUT_FOR_DELIVERY: "Your order is out for delivery.",
+        DELIVERED: "Your order has been delivered.",
+        CANCELLED: "Your order has been cancelled.",
+        PENDING: "",
+        REFUNDED: "",
       };
 
       const updatedOrder = await ctx.prisma.$transaction(async (tx) => {
@@ -435,8 +528,11 @@ export const orderRouter = createTRPCRouter({
           where: { id: orderId },
           data: {
             status,
-            deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
-            paymentStatus: status === 'DELIVERED' && order.paymentMethod === 'COD' ? 'PAID' : order.paymentStatus,
+            deliveredAt: status === "DELIVERED" ? new Date() : undefined,
+            paymentStatus:
+              status === "DELIVERED" && order.paymentMethod === "COD"
+                ? "PAID"
+                : order.paymentStatus,
             timeline: {
               create: {
                 status,
@@ -446,46 +542,55 @@ export const orderRouter = createTRPCRouter({
           },
         });
 
-        if (status === 'DELIVERED' && order.status !== 'DELIVERED') {
+        // Referral logic
+        if (status === "DELIVERED" && order.status !== "DELIVERED") {
           const userWithReferrer = await tx.user.findUnique({
             where: { id: order.userId },
-            select: { referredById: true, _count: { select: { orders: { where: { status: 'DELIVERED' } } } } }
+            select: {
+              referredById: true,
+              _count: {
+                select: { orders: { where: { status: "DELIVERED" } } },
+              },
+            },
           });
 
-          if (userWithReferrer?.referredById && userWithReferrer._count.orders === 0) {
+          if (
+            userWithReferrer?.referredById &&
+            userWithReferrer._count.orders === 0
+          ) {
             const referrerId = userWithReferrer.referredById;
             const couponCode = `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-            
+
             await tx.coupon.create({
               data: {
                 code: couponCode,
-                type: 'FIXED',
+                type: "FIXED",
                 value: 50,
                 minOrder: 200,
                 maxUses: 1,
-              }
+              },
             });
 
             await tx.notification.create({
               data: {
                 userId: referrerId,
-                title: 'Referral Reward! 🎁',
+                title: "Referral Reward! 🎁",
                 message: `Your friend's first order was delivered! You've earned a ₹50 coupon: ${couponCode}`,
-                type: 'SYSTEM',
-                link: '/profile',
-              }
+                type: "SYSTEM",
+                link: "/profile",
+              },
             });
           }
         }
 
         await logActivity({
-          type: 'ORDER',
-          action: 'STATUS_UPDATE',
+          type: "ORDER",
+          action: "STATUS_UPDATE",
           entityId: orderId,
-          entityType: 'Order',
+          entityType: "Order",
           actorId: ctx.user.id,
-          actorName: 'Admin',
-          message: `Order #${orderId.slice(-6)} status updated to ${status} by admin`,
+          actorName: ctx.user.name,
+          message: `Order #${orderId.slice(-6)} status updated to ${status}`,
           metadata: { status },
         });
 
@@ -496,29 +601,44 @@ export const orderRouter = createTRPCRouter({
         await pusherServer.trigger(
           CHANNELS.ORDER(orderId),
           EVENTS.ORDER_STATUS_UPDATED,
-          { status, message: messages[status] }
+          { status, message: messages[status] },
         );
       } catch (pusherErr) {
-        console.error('[Order] Pusher status update failed:', orderId, pusherErr);
+        console.error(
+          "[Order] Pusher status update failed:",
+          orderId,
+          pusherErr,
+        );
       }
 
       return {
         ...updatedOrder,
         userPhone: order.user.phone,
-        shopName: 'Daily1Mart',
+        shopName: "Deeshora",
       };
     }),
 
-  verifyPayment: adminProcedure
-    .input(z.object({
-      orderId: z.string(),
-      status: z.enum(['PAID', 'FAILED']),
-    }))
+  verifyPayment: vendorProcedure
+    .input(
+      z.object({
+        orderId: z.string(),
+        status: z.enum(["PAID", "FAILED"]),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const order = await ctx.prisma.order.findFirst({
         where: { id: input.orderId },
       });
-      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
+      if (!order)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
+
+      // Ownership check for vendors
+      if (ctx.user.role === 'VENDOR') {
+        const vendor = await ctx.prisma.vendor.findUnique({ where: { userId: ctx.user.id } });
+        if (!vendor || order.vendorId !== vendor.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Not your order' });
+        }
+      }
 
       const updated = await ctx.prisma.order.update({
         where: { id: input.orderId },
@@ -528,18 +648,18 @@ export const orderRouter = createTRPCRouter({
             create: {
               status: order.status,
               message: `Payment marked as ${input.status}.`,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       await logActivity({
-        type: 'ORDER',
-        action: 'UPDATE',
+        type: "ORDER",
+        action: "UPDATE",
         entityId: order.id,
-        entityType: 'Order',
+        entityType: "Order",
         actorId: ctx.user.id,
-        actorName: 'Admin',
+        actorName: ctx.user.name,
         message: `Payment verified as ${input.status} for order #${order.id.slice(-6)}`,
         metadata: { paymentStatus: input.status },
       });
@@ -548,10 +668,13 @@ export const orderRouter = createTRPCRouter({
         await pusherServer.trigger(
           CHANNELS.ORDER(input.orderId),
           EVENTS.PAYMENT_VERIFIED,
-          { status: input.status, message: `Payment verified as ${input.status}.` }
+          {
+            status: input.status,
+            message: `Payment verified as ${input.status}.`,
+          },
         );
       } catch (err) {
-        console.error('Pusher verify failed', err);
+        console.error("Pusher verify failed", err);
       }
 
       return updated;
@@ -566,7 +689,7 @@ export const orderRouter = createTRPCRouter({
       });
 
       if (!order) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
       }
 
       await ctx.prisma.$transaction(async (tx) => {
@@ -580,14 +703,16 @@ export const orderRouter = createTRPCRouter({
 
         for (const item of order.items) {
           // Verify product exists and is active
-          const product = await tx.product.findUnique({ where: { id: item.productId } });
+          const product = await tx.product.findUnique({
+            where: { id: item.productId },
+          });
           if (product && product.isActive) {
             await tx.cartItem.create({
               data: {
                 cartId: cart.id,
                 productId: item.productId,
                 quantity: item.quantity,
-              }
+              },
             });
           }
         }

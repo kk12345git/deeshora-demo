@@ -1,25 +1,24 @@
 // src/app/api/webhooks/clerk/route.ts
-import { Webhook } from 'svix';
-import { headers } from 'next/headers';
-import { WebhookEvent } from '@clerk/nextjs/server';
-import prisma from '@/lib/prisma';
-import { NextResponse } from 'next/server';
-import { UserRole } from '@prisma/client';
-
+import { Webhook } from "svix";
+import { headers } from "next/headers";
+import { WebhookEvent } from "@clerk/nextjs/server";
+import prisma from "@/lib/prisma";
+import { NextResponse } from "next/server";
+import { UserRole } from "@prisma/client";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
-
   if (!WEBHOOK_SECRET) {
-    throw new Error('Please add CLERK_WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local');
+    throw new Error(
+      "Please add CLERK_WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local",
+    );
   }
 
-  const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '')
-    .split(',')
+  const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-
 
   // Get the headers
   const headerPayload = await headers();
@@ -27,26 +26,21 @@ export async function POST(req: Request) {
   const svix_timestamp = headerPayload.get("svix-timestamp");
   const svix_signature = headerPayload.get("svix-signature");
 
-
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new Response('Error occured -- no svix headers', {
+    return new Response("Error occured -- no svix headers", {
       status: 400,
     });
   }
-
 
   // Get the body
   const payload = await req.json();
   const body = JSON.stringify(payload);
 
-
   // Create a new Svix instance with your secret.
   const wh = new Webhook(WEBHOOK_SECRET);
 
-
   let evt: WebhookEvent;
-
 
   // Verify the payload with the headers
   try {
@@ -56,24 +50,34 @@ export async function POST(req: Request) {
       "svix-signature": svix_signature,
     }) as WebhookEvent;
   } catch (err) {
-    console.error('Error verifying webhook:', err);
-    return new Response('Error occured', {
+    console.error("Error verifying webhook:", err);
+    return new Response("Error occured", {
       status: 400,
     });
   }
 
-
   const eventType = evt.type;
 
-
-  if (eventType === 'user.created') {
-    const { id, email_addresses, first_name, last_name, image_url, public_metadata } = evt.data;
+  if (eventType === "user.created") {
+    const {
+      id,
+      email_addresses,
+      first_name,
+      last_name,
+      image_url,
+      public_metadata,
+    } = evt.data;
     const email = email_addresses[0]?.email_address;
-    const name = `${first_name ?? ''} ${last_name ?? ''}`.trim() || email?.split('@')[0] || 'User';
-    
+    const name =
+      `${first_name ?? ""} ${last_name ?? ""}`.trim() ||
+      email?.split("@")[0] ||
+      "User";
+
     // Check if email is in admin list, otherwise use Clerk metadata or default to CUSTOMER
     const isAdmin = email && ADMIN_EMAILS.includes(email.toLowerCase());
-    const role = isAdmin ? 'ADMIN' : ((public_metadata?.role as UserRole) || 'CUSTOMER');
+    const role = isAdmin
+      ? "ADMIN"
+      : (public_metadata?.role as UserRole) || "CUSTOMER";
 
     await prisma.user.upsert({
       where: { clerkId: id },
@@ -94,32 +98,43 @@ export async function POST(req: Request) {
 
     // Trigger Pusher for Admin dashboard refresh
     try {
-      const { pusherServer, CHANNELS, EVENTS } = await import('@/lib/pusher');
-      const { logActivity } = await import('@/lib/activity');
-      
-      await pusherServer.trigger(CHANNELS.ADMIN, 'user-created', { name, email });
-      
+      const { pusherServer, CHANNELS, EVENTS } = await import("@/lib/pusher");
+      const { logActivity } = await import("@/lib/activity");
+
+      await pusherServer.trigger(CHANNELS.ADMIN, "user-created", {
+        name,
+        email,
+      });
+
       await logActivity({
-        type: 'USER',
-        action: 'CREATE',
+        type: "USER",
+        action: "CREATE",
         actorId: id,
         actorName: name,
         message: `New user registered: ${name} (${email})`,
         metadata: { email, role },
       });
     } catch (err) {
-      console.error('[ClerkWebhook] Activity logging failed:', err);
+      console.error("[ClerkWebhook] Activity logging failed:", err);
     }
 
-    return NextResponse.json({ message: 'User created' }, { status: 201 });
-
+    return NextResponse.json({ message: "User created" }, { status: 201 });
   }
 
-
-  if (eventType === 'user.updated') {
-    const { id, email_addresses, first_name, last_name, image_url, public_metadata } = evt.data;
+  if (eventType === "user.updated") {
+    const {
+      id,
+      email_addresses,
+      first_name,
+      last_name,
+      image_url,
+      public_metadata,
+    } = evt.data;
     const email = email_addresses[0]?.email_address;
-    const name = `${first_name ?? ''} ${last_name ?? ''}`.trim() || email?.split('@')[0] || 'User';
+    const name =
+      `${first_name ?? ""} ${last_name ?? ""}`.trim() ||
+      email?.split("@")[0] ||
+      "User";
     const role = public_metadata?.role as UserRole | undefined;
 
     // Use upsert to handle the race condition where user.updated fires
@@ -131,7 +146,7 @@ export async function POST(req: Request) {
         email: email,
         name,
         avatar: image_url,
-        role: role || 'CUSTOMER',
+        role: role || "CUSTOMER",
       },
       update: {
         email: email,
@@ -140,23 +155,24 @@ export async function POST(req: Request) {
         ...(role && { role }),
       },
     });
-    return NextResponse.json({ message: 'User updated' }, { status: 200 });
+    return NextResponse.json({ message: "User updated" }, { status: 200 });
   }
 
-
-  if (eventType === 'user.deleted') {
+  if (eventType === "user.deleted") {
     const { id } = evt.data;
     try {
       await prisma.user.delete({
         where: { clerkId: id },
       });
-      return NextResponse.json({ message: 'User deleted' }, { status: 200 });
+      return NextResponse.json({ message: "User deleted" }, { status: 200 });
     } catch (error) {
-      console.error('Error deleting user:', error);
-      return NextResponse.json({ message: 'User not found for deletion' }, { status: 404 });
+      console.error("Error deleting user:", error);
+      return NextResponse.json(
+        { message: "User not found for deletion" },
+        { status: 404 },
+      );
     }
   }
 
-
-  return new Response('', { status: 200 });
+  return new Response("", { status: 200 });
 }

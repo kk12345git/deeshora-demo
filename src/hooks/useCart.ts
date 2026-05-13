@@ -1,9 +1,8 @@
 // src/hooks/useCart.ts
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { trpc } from '@/lib/trpc';
-import toast from 'react-hot-toast';
-
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { trpc } from "@/lib/trpc";
+import toast from "react-hot-toast";
 
 export interface CartItem {
   productId: string;
@@ -12,13 +11,12 @@ export interface CartItem {
   price: number;
   quantity: number;
   stock: number;
-  type: 'PHYSICAL' | 'DIGITAL' | 'COMMUNITY_ACCESS';
+  type: "PHYSICAL" | "DIGITAL" | "COMMUNITY_ACCESS";
 }
-
 
 interface CartState {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void;
+  addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   setItems: (items: CartItem[]) => void;
@@ -27,13 +25,14 @@ interface CartState {
   total: () => number;
 }
 
-
 export const useCart = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
       addItem: (item, quantity = 1) => {
-        const existingItem = get().items.find((i) => i.productId === item.productId);
+        const existingItem = get().items.find(
+          (i) => i.productId === item.productId,
+        );
         if (existingItem) {
           const newQuantity = existingItem.quantity + quantity;
           if (newQuantity > item.stock) {
@@ -42,7 +41,9 @@ export const useCart = create<CartState>()(
           }
           set((state) => ({
             items: state.items.map((i) =>
-              i.productId === item.productId ? { ...i, quantity: newQuantity } : i
+              i.productId === item.productId
+                ? { ...i, quantity: newQuantity }
+                : i,
             ),
           }));
         } else {
@@ -60,7 +61,7 @@ export const useCart = create<CartState>()(
         set((state) => ({
           items: state.items.filter((item) => item.productId !== productId),
         }));
-        toast.success('Item removed from cart');
+        toast.success("Item removed from cart");
       },
       updateQuantity: (productId, quantity) => {
         if (quantity === 0) {
@@ -69,12 +70,14 @@ export const useCart = create<CartState>()(
         }
         const itemToUpdate = get().items.find((i) => i.productId === productId);
         if (itemToUpdate && quantity > itemToUpdate.stock) {
-          toast.error(`Only ${itemToUpdate.stock} units available for ${itemToUpdate.name}`);
+          toast.error(
+            `Only ${itemToUpdate.stock} units available for ${itemToUpdate.name}`,
+          );
           return;
         }
         set((state) => ({
           items: state.items.map((item) =>
-            item.productId === productId ? { ...item, quantity } : item
+            item.productId === productId ? { ...item, quantity } : item,
           ),
         }));
       },
@@ -84,12 +87,15 @@ export const useCart = create<CartState>()(
         return get().items.reduce((sum, item) => sum + item.quantity, 0);
       },
       total: () => {
-        return get().items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        return get().items.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0,
+        );
       },
     }),
     {
-      name: 'Daily1Mart-cart',
+      name: "Deeshora-cart",
       storage: createJSONStorage(() => localStorage),
-    }
-  )
+    },
+  ),
 );

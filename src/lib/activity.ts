@@ -1,9 +1,26 @@
 // src/lib/activity.ts
-import prisma from './prisma';
-import { pusherServer, CHANNELS, EVENTS } from './pusher';
+import prisma from "./prisma";
+import { pusherServer, CHANNELS, EVENTS } from "./pusher";
 
-type ActivityType = 'ORDER' | 'VENDOR' | 'USER' | 'SYSTEM' | 'PAYMENT' | 'PRODUCT' | 'SEARCH';
-type ActivityAction = 'STATUS_UPDATE' | 'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVAL' | 'PAYOUT' | 'LOGIN' | 'SUBSCRIPTION' | 'QUERY' | 'PAYMENT_VERIFY';
+type ActivityType =
+  | "ORDER"
+  | "VENDOR"
+  | "USER"
+  | "SYSTEM"
+  | "PAYMENT"
+  | "PRODUCT"
+  | "SEARCH";
+type ActivityAction =
+  | "STATUS_UPDATE"
+  | "CREATE"
+  | "UPDATE"
+  | "DELETE"
+  | "APPROVAL"
+  | "PAYOUT"
+  | "LOGIN"
+  | "SUBSCRIPTION"
+  | "QUERY"
+  | "PAYMENT_VERIFY";
 
 interface LogActivityParams {
   type: ActivityType;
@@ -44,12 +61,12 @@ export async function logActivity(params: LogActivityParams) {
       // Also trigger a general stats update event
       await pusherServer.trigger(CHANNELS.ADMIN, EVENTS.STATS_UPDATED, {});
     } catch (pusherErr) {
-      console.error('[ActivityLog] Pusher trigger failed:', pusherErr);
+      console.error("[ActivityLog] Pusher trigger failed:", pusherErr);
     }
 
     return log;
   } catch (error) {
-    console.error('[ActivityLog] Error logging activity:', error);
+    console.error("[ActivityLog] Error logging activity:", error);
     // Don't throw — activity logging shouldn't break the main flow
   }
 }

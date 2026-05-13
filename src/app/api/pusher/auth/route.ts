@@ -1,31 +1,26 @@
 // src/app/api/pusher/auth/route.ts
-import { pusherServer } from '@/lib/pusher';
-import { auth } from '@clerk/nextjs/server';
-import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-
+import { pusherServer } from "@/lib/pusher";
+import { auth } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) {
-    return new NextResponse('Unauthorized', { status: 401 });
+    return new NextResponse("Unauthorized", { status: 401 });
   }
-
 
   const user = await prisma.user.findUnique({ where: { clerkId: userId } });
   if (!user) {
-    return new NextResponse('User not found', { status: 404 });
+    return new NextResponse("User not found", { status: 404 });
   }
-
 
   const { socket_id: socketId, channel_name: channel } = await req.json();
 
-
   let isAuthorized = false;
 
-
-  if (channel.startsWith('private-order-')) {
-    const orderId = channel.replace('private-order-', '');
+  if (channel.startsWith("private-order-")) {
+    const orderId = channel.replace("private-order-", "");
     const order = await prisma.order.findFirst({
       where: { id: orderId, userId: user.id },
     });
@@ -34,21 +29,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
-
-
-
-
-  if (channel === 'private-admin') {
-    if (user.role === 'ADMIN') {
+  if (channel === "private-admin") {
+    if (user.role === "ADMIN") {
       isAuthorized = true;
     }
   }
 
-
   if (!isAuthorized) {
-    return new NextResponse('Forbidden', { status: 403 });
+    return new NextResponse("Forbidden", { status: 403 });
   }
-
 
   const authResponse = pusherServer.authorizeChannel(socketId, channel);
   return NextResponse.json(authResponse);

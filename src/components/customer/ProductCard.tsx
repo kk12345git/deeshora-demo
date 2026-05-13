@@ -1,36 +1,60 @@
 "use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { Link } from '@/navigation';
-import { Star, Plus, Minus, ShoppingCart, Store, ShoppingBag, Sparkles, TrendingUp, X, CheckCircle2, Globe, Laptop, Users } from 'lucide-react';
-import { useCart, CartItem } from '@/hooks/useCart';
-import { useOnboarding } from '@/hooks/useOnboarding';
-import OnboardingModal from './OnboardingModal';
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { Link } from "@/navigation";
+import {
+  Star,
+  Plus,
+  Minus,
+  ShoppingCart,
+  Store,
+  ShoppingBag,
+  Sparkles,
+  TrendingUp,
+  X,
+  CheckCircle2,
+  Globe,
+  Laptop,
+  Users,
+} from "lucide-react";
+import { useCart, CartItem } from "@/hooks/useCart";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import OnboardingModal from "./OnboardingModal";
 
-import { useUser } from '@clerk/nextjs';
-import { trpc } from '@/lib/trpc';
-import { ProductSummary } from '@/types';
+import { useUser } from "@clerk/nextjs";
+import { trpc } from "@/lib/trpc";
+import { ProductSummary } from "@/types";
 
 interface ProductCardProps {
   product: ProductSummary;
   priority?: boolean;
 }
 
-export default function ProductCard({ product, priority = false }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  priority = false,
+}: ProductCardProps) {
   const { isSignedIn } = useUser();
   const { items, addItem, updateQuantity } = useCart();
-  const { requireOnboarding, isModalOpen, closeModal, handleOnboardingSuccess } = useOnboarding();
+  const {
+    requireOnboarding,
+    isModalOpen,
+    closeModal,
+    handleOnboardingSuccess,
+  } = useOnboarding();
   const cartItem = items.find((item) => item.productId === product.id);
 
   const addItemMutation = trpc.cart.addItem.useMutation();
   const updateQuantityMutation = trpc.cart.updateQuantity.useMutation();
 
-  const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100);
+  const discount = Math.round(
+    ((product.mrp - product.price) / product.mrp) * 100,
+  );
 
   const addToCart = async () => {
     // 1. Local Update
-    const item: Omit<CartItem, 'quantity'> = {
+    const item: Omit<CartItem, "quantity"> = {
       productId: product.id,
       name: product.name,
       image: product.images[0],
@@ -48,7 +72,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           quantity: 1,
         });
       } catch (err) {
-        console.error('Cart sync error:', err);
+        console.error("Cart sync error:", err);
       }
     }
   };
@@ -65,7 +89,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           quantity: qty,
         });
       } catch (err) {
-        console.error('Cart quantity sync error:', err);
+        console.error("Cart quantity sync error:", err);
       }
     }
   };
@@ -75,7 +99,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -8, transition: { duration: 0.3 } }}
@@ -86,9 +110,12 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
         onClose={closeModal}
         onSuccess={handleOnboardingSuccess}
       />
-      
+
       {/* Image Container */}
-      <Link href={`/product/${product.slug}`} className="relative aspect-square overflow-hidden block">
+      <Link
+        href={`/product/${product.slug}`}
+        className="relative aspect-square overflow-hidden block"
+      >
         {product.images[0] ? (
           <Image
             src={product.images[0]}
@@ -100,62 +127,75 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           />
         ) : (
           <div className="w-full h-full bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center">
-            <ShoppingBag size={40} className="text-brand-200 dark:text-brand-800" />
+            <ShoppingBag
+              size={40}
+              className="text-brand-200 dark:text-brand-800"
+            />
           </div>
         )}
-        
+
         {/* Badges */}
         <div className="absolute top-4 left-4 flex flex-col gap-2">
-            {product.isFeatured && (
-                <div className="badge bg-emerald-500 text-white shadow-lg">
-                    Featured
-                </div>
-            )}
-            {product.type === 'DIGITAL' && (
-                <div className="badge bg-blue-500 text-white shadow-lg flex items-center gap-1">
-                    <Laptop size={10} />
-                    Digital
-                </div>
-            )}
-            {product.type === 'COMMUNITY_ACCESS' && (
-                <div className="badge bg-purple-500 text-white shadow-lg flex items-center gap-1">
-                    <Users size={10} />
-                    Community
-                </div>
-            )}
-            {product.isCombo && (
-                <div className="badge bg-brand-500 text-white shadow-lg flex items-center gap-1">
-                    <Sparkles size={10} />
-                    Combo Pack
-                </div>
-            )}
+          {product.isFeatured && (
+            <div className="badge bg-emerald-500 text-white shadow-lg">
+              Featured
+            </div>
+          )}
+          {product.type === "DIGITAL" && (
+            <div className="badge bg-blue-500 text-white shadow-lg flex items-center gap-1">
+              <Laptop size={10} />
+              Digital
+            </div>
+          )}
+          {product.type === "COMMUNITY_ACCESS" && (
+            <div className="badge bg-purple-500 text-white shadow-lg flex items-center gap-1">
+              <Users size={10} />
+              Community
+            </div>
+          )}
+          {product.isCombo && (
+            <div className="badge bg-brand-500 text-white shadow-lg flex items-center gap-1">
+              <Sparkles size={10} />
+              Combo Pack
+            </div>
+          )}
         </div>
 
         {product.stock === 0 && (
-            <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] flex items-center justify-center">
-                <span className="badge bg-gray-900 text-white px-4 py-2">Out of Stock</span>
-            </div>
+          <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] flex items-center justify-center">
+            <span className="badge bg-gray-900 text-white px-4 py-2">
+              Out of Stock
+            </span>
+          </div>
         )}
       </Link>
 
       {/* Content */}
       <div className="p-3 sm:p-6 flex flex-col flex-grow space-y-1.5 sm:space-y-3">
         <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 text-[8px] sm:text-[10px] font-black uppercase text-brand-600 tracking-wider">
-                <Store size={10} className="sm:size-3" />
-                <span className="truncate max-w-[60px] sm:max-w-none">Daily1Mart</span>
-                <CheckCircle2 size={10} className="text-blue-500 fill-blue-500/10 hidden sm:block" />
-            </div>
-            <div className="flex items-center gap-1 px-1 sm:px-1.5 py-0.5 bg-gray-50 dark:bg-gray-800 rounded-md sm:rounded-lg">
-                <Star size={8} className="text-yellow-400 fill-current sm:size-3" />
-                <span className="text-[8px] sm:text-[10px] font-bold text-gray-700 dark:text-gray-300">
-                    {product.rating?.toFixed(1) || "5.0"}
-                </span>
-            </div>
+          <div className="flex items-center gap-1 text-[8px] sm:text-[10px] font-black uppercase text-brand-600 tracking-wider">
+            <Store size={10} className="sm:size-3" />
+            <span className="truncate max-w-[60px] sm:max-w-none">
+              Deeshora
+            </span>
+            <CheckCircle2
+              size={10}
+              className="text-blue-500 fill-blue-500/10 hidden sm:block"
+            />
+          </div>
+          <div className="flex items-center gap-1 px-1 sm:px-1.5 py-0.5 bg-gray-50 dark:bg-gray-800 rounded-md sm:rounded-lg">
+            <Star size={8} className="text-yellow-400 fill-current sm:size-3" />
+            <span className="text-[8px] sm:text-[10px] font-bold text-gray-700 dark:text-gray-300">
+              {product.rating?.toFixed(1) || "5.0"}
+            </span>
+          </div>
         </div>
 
         <h3 className="text-xs sm:text-base font-bold text-gray-900 dark:text-white line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem]">
-          <Link href={`/product/${product.slug}`} className="hover:text-brand-500 transition-colors uppercase tracking-tight">
+          <Link
+            href={`/product/${product.slug}`}
+            className="hover:text-brand-500 transition-colors uppercase tracking-tight"
+          >
             {product.name}
           </Link>
         </h3>
@@ -163,41 +203,52 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
         <div className="flex items-center justify-between pt-1 sm:pt-2">
           <div className="space-y-0.5">
             <div className="flex items-center gap-1 sm:gap-2">
-                <p className="text-lg sm:text-2xl font-black text-gray-950 dark:text-white tracking-tighter">₹{product.price}</p>
-                {product.mrp > product.price && (
-                    <p className="text-[10px] sm:text-sm text-gray-400 dark:text-gray-500 line-through">₹{product.mrp}</p>
-                )}
+              <p className="text-lg sm:text-2xl font-black text-gray-950 dark:text-white tracking-tighter">
+                ₹{product.price}
+              </p>
+              {product.mrp > product.price && (
+                <p className="text-[10px] sm:text-sm text-gray-400 dark:text-gray-500 line-through">
+                  ₹{product.mrp}
+                </p>
+              )}
             </div>
-            <p className="text-[8px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest">{product.unit || "per piece"}</p>
+            <p className="text-[8px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              {product.unit || "per piece"}
+            </p>
           </div>
 
           <div className="relative group-hover:scale-110 transition-transform active:scale-90">
-            {product.stock > 0 && (
-                cartItem ? (
-                    <div className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
-                        <button
-                            onClick={() => handleUpdateQuantity(product.id, cartItem.quantity - 1)}
-                            className="p-2.5 text-brand-600 hover:bg-brand-50 dark:hover:bg-gray-700 transition-colors"
-                        >
-                            <Minus size={16} strokeWidth={3} />
-                        </button>
-                        <span className="px-1 text-sm font-black w-6 text-center dark:text-white">{cartItem.quantity}</span>
-                        <button
-                            onClick={() => handleUpdateQuantity(product.id, cartItem.quantity + 1)}
-                            className="p-2.5 text-brand-600 hover:bg-brand-50 transition-colors"
-                        >
-                            <Plus size={16} strokeWidth={3} />
-                        </button>
-                    </div>
-                ) : (
-                    <button 
-                        onClick={handleAddToCart} 
-                        className="w-10 sm:w-12 h-10 sm:h-12 bg-gray-900 text-white rounded-xl sm:rounded-2xl flex items-center justify-center hover:bg-brand-500 transition-all shadow-xl shadow-gray-950/20 active:scale-95"
-                    >
-                        <Plus size={20} className="sm:size-6" />
-                    </button>
-                )
-            )}
+            {product.stock > 0 &&
+              (cartItem ? (
+                <div className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
+                  <button
+                    onClick={() =>
+                      handleUpdateQuantity(product.id, cartItem.quantity - 1)
+                    }
+                    className="p-2.5 text-brand-600 hover:bg-brand-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <Minus size={16} strokeWidth={3} />
+                  </button>
+                  <span className="px-1 text-sm font-black w-6 text-center dark:text-white">
+                    {cartItem.quantity}
+                  </span>
+                  <button
+                    onClick={() =>
+                      handleUpdateQuantity(product.id, cartItem.quantity + 1)
+                    }
+                    className="p-2.5 text-brand-600 hover:bg-brand-50 transition-colors"
+                  >
+                    <Plus size={16} strokeWidth={3} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleAddToCart}
+                  className="w-10 sm:w-12 h-10 sm:h-12 bg-gray-900 text-white rounded-xl sm:rounded-2xl flex items-center justify-center hover:bg-brand-500 transition-all shadow-xl shadow-gray-950/20 active:scale-95"
+                >
+                  <Plus size={20} className="sm:size-6" />
+                </button>
+              ))}
           </div>
         </div>
       </div>

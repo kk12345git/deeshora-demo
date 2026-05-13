@@ -1,19 +1,17 @@
 // src/server/trpc.ts
-import { initTRPC, TRPCError } from '@trpc/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
-import superjson from 'superjson';
-import prisma from '@/lib/prisma';
-import { User, UserRole } from '@prisma/client';
-import { clerkClient } from '@clerk/nextjs/server';
-
+import { initTRPC, TRPCError } from "@trpc/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import superjson from "superjson";
+import prisma from "@/lib/prisma";
+import { User, UserRole } from "@prisma/client";
+import { clerkClient } from "@clerk/nextjs/server";
 
 // ─── C1: Admin emails from environment variable, NOT hard-coded ───────────────
 // Set ADMIN_EMAILS="a@b.com,c@d.com" in your .env file
-const ADMIN_EMAILS: string[] = (process.env.ADMIN_EMAILS ?? '')
-  .split(',')
+const ADMIN_EMAILS: string[] = (process.env.ADMIN_EMAILS ?? "")
+  .split(",")
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
-
 
 export const createTRPCContext = async (opts: { headers: Headers }) => {
   const { userId } = await auth();
@@ -36,10 +34,10 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
     try {
       const clerkUser = await currentUser();
       if (clerkUser) {
-        const email = clerkUser.emailAddresses[0]?.emailAddress ?? '';
-        const firstName = clerkUser.firstName ?? '';
-        const lastName = clerkUser.lastName ?? '';
-        const name = `${firstName} ${lastName}`.trim() || email.split('@')[0];
+        const email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
+        const firstName = clerkUser.firstName ?? "";
+        const lastName = clerkUser.lastName ?? "";
+        const name = `${firstName} ${lastName}`.trim() || email.split("@")[0];
 
         const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
 
@@ -50,11 +48,11 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
             email: email.toLowerCase(),
             name,
             avatar: clerkUser.imageUrl,
-            role: isAdmin ? 'ADMIN' : 'CUSTOMER',
+            role: isAdmin ? "ADMIN" : "CUSTOMER",
           },
           update: {
             // Only force-upgrade to ADMIN if email matches; never downgrade here
-            role: isAdmin ? 'ADMIN' : undefined,
+            role: isAdmin ? "ADMIN" : undefined,
           },
         });
 
@@ -63,10 +61,13 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
           try {
             const clerk = await clerkClient();
             await clerk.users.updateUserMetadata(userId, {
-              publicMetadata: { role: 'ADMIN' },
+              publicMetadata: { role: "ADMIN" },
             });
           } catch (e) {
-            console.error('[tRPC] Failed to sync Admin metadata on creation:', e);
+            console.error(
+              "[tRPC] Failed to sync Admin metadata on creation:",
+              e,
+            );
           }
 
           // Vendor creation removed
@@ -74,49 +75,57 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
       }
     } catch (e) {
       // Non-fatal — protected routes will throw UNAUTHORIZED if user is null
-      console.error('[tRPC] Failed to auto-create user:', e);
+      console.error("[tRPC] Failed to auto-create user:", e);
     }
   } else {
     // ─── C2: Existing user — only write to DB/Clerk when role actually needs to change ──
 
     const isAdminByEmail = ADMIN_EMAILS.includes(user.email.toLowerCase());
-    const isAdminByRole = user.role === 'ADMIN';
+    const isAdminByRole = user.role === "ADMIN";
     const isAdmin = isAdminByEmail || isAdminByRole;
 
     if (isAdmin) {
       // 1. Upgrade DB role if somehow not ADMIN yet
-      if (user.role !== 'ADMIN') {
+      if (user.role !== "ADMIN") {
         user = await prisma.user.update({
           where: { id: user.id },
-          data: { role: 'ADMIN' },
+          data: { role: "ADMIN" },
         });
       }
 
       // 2. Sync Clerk metadata if missing or wrong
       const { sessionClaims } = await auth();
-      if ((sessionClaims?.metadata as any)?.role !== 'ADMIN') {
+      if ((sessionClaims?.metadata as any)?.role !== "ADMIN") {
         try {
           const clerk = await clerkClient();
           await clerk.users.updateUserMetadata(userId, {
-            publicMetadata: { role: 'ADMIN' },
+            publicMetadata: { role: "ADMIN" },
           });
           console.log(`[tRPC] Synced ADMIN role to Clerk for ${user.email}`);
         } catch (e) {
-          console.error('[tRPC] Failed to sync Clerk metadata for existing admin:', e);
+          console.error(
+            "[tRPC] Failed to sync Clerk metadata for existing admin:",
+            e,
+          );
         }
       }
-    } else if (user.role === 'DELIVERY_PARTNER') {
+    } else if (user.role === "DELIVERY_PARTNER") {
       // Sync DELIVERY_PARTNER role to Clerk
       const { sessionClaims } = await auth();
-      if ((sessionClaims?.metadata as any)?.role !== 'DELIVERY_PARTNER') {
+      if ((sessionClaims?.metadata as any)?.role !== "DELIVERY_PARTNER") {
         try {
           const clerk = await clerkClient();
           await clerk.users.updateUserMetadata(userId, {
-            publicMetadata: { role: 'DELIVERY_PARTNER' },
+            publicMetadata: { role: "DELIVERY_PARTNER" },
           });
-          console.log(`[tRPC] Synced DELIVERY_PARTNER role to Clerk for ${user.email}`);
+          console.log(
+            `[tRPC] Synced DELIVERY_PARTNER role to Clerk for ${user.email}`,
+          );
         } catch (e) {
-          console.error('[tRPC] Failed to sync Clerk metadata for delivery partner:', e);
+          console.error(
+            "[tRPC] Failed to sync Clerk metadata for delivery partner:",
+            e,
+          );
         }
       }
     }
@@ -130,7 +139,6 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   };
 };
 
-
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
   errorFormatter({ shape }) {
@@ -138,16 +146,13 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
   },
 });
 
-
 export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
-
 
 /**
  * Public (unauthenticated) procedure
  */
 export const publicProcedure = t.procedure;
-
 
 /**
  * Reusable middleware to ensure
@@ -155,7 +160,7 @@ export const publicProcedure = t.procedure;
  */
 const isAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.userId || !ctx.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' });
+    throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({
     ctx: {
@@ -166,32 +171,51 @@ const isAuthed = t.middleware(({ ctx, next }) => {
   });
 });
 
-
 /**
  * Protected (authenticated) procedure
  */
 export const protectedProcedure = t.procedure.use(isAuthed);
 
-
-
-
 /**
  * Delivery procedure
  */
-export const deliveryProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  if (ctx.user.role !== UserRole.DELIVERY_PARTNER && ctx.user.role !== UserRole.ADMIN) {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not a delivery partner.' });
-  }
-  return next({ ctx });
-});
-
+export const deliveryProcedure = protectedProcedure.use(
+  async ({ ctx, next }) => {
+    if (
+      ctx.user.role !== UserRole.DELIVERY_PARTNER &&
+      ctx.user.role !== UserRole.ADMIN
+    ) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "You are not a delivery partner.",
+      });
+    }
+    return next({ ctx });
+  },
+);
 
 /**
  * Admin procedure
  */
 export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== 'ADMIN') {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not an admin.' });
+  if (ctx.user.role !== "ADMIN") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You are not an admin.",
+    });
+  }
+  return next({ ctx });
+});
+
+/**
+ * Vendor procedure
+ */
+export const vendorProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  if (ctx.user.role !== "VENDOR" && ctx.user.role !== "ADMIN") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You are not a vendor.",
+    });
   }
   return next({ ctx });
 });

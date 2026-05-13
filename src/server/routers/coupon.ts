@@ -1,33 +1,51 @@
 // src/server/routers/coupon.ts
-import { z } from 'zod';
-import { createTRPCRouter, protectedProcedure, adminProcedure } from '@/server/trpc';
-import { TRPCError } from '@trpc/server';
-import { DiscountType } from '@prisma/client';
+import { z } from "zod";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  adminProcedure,
+} from "@/server/trpc";
+import { TRPCError } from "@trpc/server";
+import { DiscountType } from "@prisma/client";
 
 export const couponRouter = createTRPCRouter({
   /** Protected: validate a coupon code against a cart total (auth required to prevent code enumeration) */
   validate: protectedProcedure
-    .input(z.object({ code: z.string().trim().toUpperCase(), cartTotal: z.number() }))
+    .input(
+      z.object({
+        code: z.string().trim().toUpperCase(),
+        cartTotal: z.number(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const coupon = await ctx.prisma.coupon.findUnique({
         where: { code: input.code },
       });
 
       if (!coupon || !coupon.isActive) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Coupon code not found or expired.' });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Coupon code not found or expired.",
+        });
       }
 
       if (coupon.expiresAt && coupon.expiresAt < new Date()) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'This coupon has expired.' });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This coupon has expired.",
+        });
       }
 
       if (coupon.maxUses > 0 && coupon.usedCount >= coupon.maxUses) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'This coupon has reached its usage limit.' });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This coupon has reached its usage limit.",
+        });
       }
 
       if (input.cartTotal < coupon.minOrder) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
+          code: "BAD_REQUEST",
           message: `Minimum order of ₹${coupon.minOrder.toFixed(0)} required for this coupon.`,
         });
       }
@@ -54,7 +72,7 @@ export const couponRouter = createTRPCRouter({
   /** Admin: list all coupons */
   list: adminProcedure.query(async ({ ctx }) => {
     return ctx.prisma.coupon.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: { _count: { select: { orders: true } } },
     });
   }),
@@ -69,11 +87,17 @@ export const couponRouter = createTRPCRouter({
         minOrder: z.number().min(0).default(0),
         maxUses: z.number().int().min(0).default(0),
         expiresAt: z.string().datetime().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const exists = await ctx.prisma.coupon.findUnique({ where: { code: input.code } });
-      if (exists) throw new TRPCError({ code: 'CONFLICT', message: 'Coupon code already exists.' });
+      const exists = await ctx.prisma.coupon.findUnique({
+        where: { code: input.code },
+      });
+      if (exists)
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Coupon code already exists.",
+        });
 
       return ctx.prisma.coupon.create({
         data: {

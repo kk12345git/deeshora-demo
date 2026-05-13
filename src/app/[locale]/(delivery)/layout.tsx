@@ -3,12 +3,22 @@
 import { useUser } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { Loader2, Package, ClipboardList, User, IndianRupee } from "lucide-react";
+import {
+  Loader2,
+  Package,
+  ClipboardList,
+  User,
+  IndianRupee,
+} from "lucide-react";
 import { Link } from "@/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
-export default function DeliveryLayout({ children }: { children: React.ReactNode }) {
+export default function DeliveryLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
   const pathname = usePathname();
@@ -16,12 +26,21 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push("/sign-in");
-    } else if (isLoaded && user?.publicMetadata?.role !== "DELIVERY_PARTNER" && user?.publicMetadata?.role !== "ADMIN") {
+    } else if (
+      isLoaded &&
+      user?.publicMetadata?.role !== "DELIVERY_PARTNER" &&
+      user?.publicMetadata?.role !== "ADMIN"
+    ) {
       router.push("/");
     }
   }, [isLoaded, isSignedIn, user, router]);
 
-  if (!isLoaded || !isSignedIn || (user?.publicMetadata?.role !== "DELIVERY_PARTNER" && user?.publicMetadata?.role !== "ADMIN")) {
+  if (
+    !isLoaded ||
+    !isSignedIn ||
+    (user?.publicMetadata?.role !== "DELIVERY_PARTNER" &&
+      user?.publicMetadata?.role !== "ADMIN")
+  ) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <Loader2 className="animate-spin text-blue-500 w-12 h-12" />
@@ -42,13 +61,20 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
       <header className="bg-gray-900/50 backdrop-blur-xl border-b border-gray-800 sticky top-0 z-40 px-6 py-4">
         <div className="flex items-center justify-between max-w-lg mx-auto w-full">
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center text-white font-black italic shadow-lg shadow-blue-500/20">
-                D
-             </div>
-             <h1 className="text-xl font-bold tracking-tight">Delivery Hub</h1>
+            <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center text-white font-black italic shadow-lg shadow-blue-500/20">
+              D
+            </div>
+            <h1 className="text-xl font-bold tracking-tight">Delivery Hub</h1>
           </div>
           <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 overflow-hidden relative">
-             {user.imageUrl && <Image src={user.imageUrl} alt="Profile" fill className="object-cover" />}
+            {user.imageUrl && (
+              <Image
+                src={user.imageUrl}
+                alt="Profile"
+                fill
+                className="object-cover"
+              />
+            )}
           </div>
         </div>
       </header>
@@ -78,13 +104,19 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
                 key={tab.name}
                 href={tab.href}
                 className={`flex flex-col items-center gap-1 transition-all ${
-                  isActive ? "text-blue-500" : "text-gray-500 hover:text-gray-300"
+                  isActive
+                    ? "text-blue-500"
+                    : "text-gray-500 hover:text-gray-300"
                 }`}
               >
-                <div className={`p-2 rounded-xl transition-all ${isActive ? "bg-blue-500/10" : ""}`}>
+                <div
+                  className={`p-2 rounded-xl transition-all ${isActive ? "bg-blue-500/10" : ""}`}
+                >
                   <Icon size={24} />
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider">{tab.name}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">
+                  {tab.name}
+                </span>
               </Link>
             );
           })}

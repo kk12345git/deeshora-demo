@@ -1,6 +1,6 @@
 // src/lib/payments/types.ts
 
-export type PaymentProvider = 'PHONEPE' | 'RAZORPAY' | 'MANUAL_UPI';
+export type PaymentProvider = "PHONEPE" | "RAZORPAY" | "MANUAL_UPI";
 
 export interface PaymentInitiateRequest {
   orderId: string;
@@ -16,8 +16,8 @@ export interface PaymentInitiateResponse {
   success: boolean;
   paymentId: string;
   redirectUrl?: string; // For hosted gateways
-  payload?: any;       // For SDK based gateways (e.g. Razorpay)
-  qrUrl?: string;      // For manual UPI
+  payload?: any; // For SDK based gateways (e.g. Razorpay)
+  qrUrl?: string; // For manual UPI
   message?: string;
 }
 
@@ -29,7 +29,7 @@ export interface PaymentVerifyRequest {
 
 export interface PaymentVerifyResponse {
   success: boolean;
-  status: 'PAID' | 'FAILED' | 'PENDING';
+  status: "PAID" | "FAILED" | "PENDING";
   transactionId?: string;
   message?: string;
 }

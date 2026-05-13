@@ -1,13 +1,13 @@
-import { z } from 'zod';
-import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
-import { TransactionType, TransactionStatus } from '@prisma/client';
-import { TRPCError } from '@trpc/server';
+import { z } from "zod";
+import { createTRPCRouter, protectedProcedure } from "@/server/trpc";
+import { TransactionType, TransactionStatus } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 
 export const walletRouter = createTRPCRouter({
   getTransactions: protectedProcedure.query(async ({ ctx }) => {
     return ctx.prisma.walletTransaction.findMany({
       where: { userId: ctx.user.id },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }),
 
@@ -21,13 +21,15 @@ export const walletRouter = createTRPCRouter({
 
   // Add money to wallet with bonus logic
   addMoney: protectedProcedure
-    .input(z.object({
-      amount: z.number().min(10),
-      transactionId: z.string().optional(), // For manual tracking
-    }))
+    .input(
+      z.object({
+        amount: z.number().min(10),
+        transactionId: z.string().optional(), // For manual tracking
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const { amount } = input;
-      
+
       // Bonus logic: Pay 100, get 110 (10% bonus)
       // We'll generalize this: bonus = floor(amount / 100) * 10
       const bonus = Math.floor(amount / 100) * 10;
@@ -37,7 +39,7 @@ export const walletRouter = createTRPCRouter({
         // 1. Update user balance
         await tx.user.update({
           where: { id: ctx.user.id },
-          data: { walletBalance: { increment: totalToCredit } }
+          data: { walletBalance: { increment: totalToCredit } },
         });
 
         // 2. Log transaction
@@ -47,9 +49,9 @@ export const walletRouter = createTRPCRouter({
             amount: totalToCredit,
             type: TransactionType.RECHARGE,
             status: TransactionStatus.COMPLETED,
-            description: `Wallet top-up of ₹${amount}${bonus > 0 ? \` with ₹\${bonus} bonus\` : ''}`,
+            description: `Wallet top-up of ₹${amount}${bonus > 0 ? ` with ₹${bonus} bonus` : ""}`,
             reference: input.transactionId,
-          }
+          },
         });
       });
     }),

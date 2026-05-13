@@ -39,6 +39,7 @@ model User {
   referredBy           User?               @relation("UserReferral", fields: [referredById], references: [id])
   referrals            User[]              @relation("UserReferral")
   walletTransactions   WalletTransaction[]
+  vendor               Vendor?
 }
 
 model Address {
@@ -56,6 +57,7 @@ model Address {
   coordinates Json?
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   orders      Order[]
+  subscriptions OrderSubscription[]
 
   @@index([userId])
 }
@@ -101,6 +103,9 @@ model Product {
   orderItems        OrderItem[]
   category          Category    @relation(fields: [categoryId], references: [id])
   reviews           Review[]
+  subscriptions     OrderSubscription[]
+  vendorId          String?
+  vendor            Vendor?     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
   @@index([categoryId])
   @@index([name])
@@ -162,6 +167,8 @@ model Order {
   user              User            @relation(fields: [userId], references: [id])
   items             OrderItem[]
   timeline          OrderTimeline[]
+  vendorId          String?
+  vendor            Vendor?       @relation(fields: [vendorId], references: [id])
 
   @@index([userId])
   @@index([status])
@@ -343,9 +350,11 @@ model WalletTransaction {
   userId    String
   amount    Float
   type      TransactionType
-  status    TransactionStatus @default(COMPLETED)
-  metadata  Json?
-  createdAt DateTime          @default(now())
+  status      TransactionStatus @default(COMPLETED)
+  description String?
+  reference   String?
+  metadata    Json?
+  createdAt   DateTime          @default(now())
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -364,6 +373,7 @@ model OrderSubscription {
   id        String   @id @default(cuid())
   userId    String
   productId String
+  addressId String?
   frequency String
   quantity  Int      @default(1)
   isActive  Boolean  @default(true)
@@ -371,12 +381,15 @@ model OrderSubscription {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  address   Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
 }
 
 enum UserRole {
   CUSTOMER
   ADMIN
   DELIVERY_PARTNER
+  VENDOR
 }
 
 enum OrderStatus {
@@ -429,4 +442,58 @@ enum TransactionStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+model Vendor {
+  id              String       @id @default(cuid())
+  userId          String       @unique
+  shopName        String
+  description     String?
+  logo            String?
+  coverImage      String?
+  phone           String
+  email           String
+  city            String
+  address         String?
+  categories      String[]
+  status          VendorStatus @default(PENDING)
+  commissionRate  Float        @default(0.15)
+  bankAccount     String?
+  ifscCode        String?
+  upiId           String?
+  subscriptionUtr String?
+  subscriptionStatus SubscriptionStatus @default(NONE)
+  totalEarnings   Float        @default(0)
+  pendingPayout   Float        @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products Product[]
+  orders   Order[]
+  payouts  Payout[]
+}
+
+model Payout {
+  id          String   @id @default(cuid())
+  vendorId    String
+  amount      Float
+  status      String   @default("PENDING")
+  utrNumber   String?
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  vendor Vendor @relation(fields: [vendorId], references: [id])
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+}
+
+enum SubscriptionStatus {
+  NONE
+  PENDING
+  ACTIVE
 }

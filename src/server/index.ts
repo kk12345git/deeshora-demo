@@ -1,15 +1,16 @@
-import { createTRPCRouter } from '@/server/trpc';
-import { productRouter } from './routers/product';
-import { orderRouter } from './routers/order';
-import { cartRouter } from './routers/cart';
-import { adminRouter } from './routers/admin';
-import { userRouter } from './routers/user';
-import { couponRouter } from './routers/coupon';
-import { deliveryRouter } from './routers/delivery';
-import { communityRouter } from './routers/community';
-import { walletRouter } from './routers/wallet';
-import { deliverySlotRouter } from './routers/deliverySlot';
-import { subscriptionRouter } from './routers/subscription';
+import { createTRPCRouter } from "@/server/trpc";
+import { productRouter } from "./routers/product";
+import { orderRouter } from "./routers/order";
+import { cartRouter } from "./routers/cart";
+import { adminRouter } from "./routers/admin";
+import { userRouter } from "./routers/user";
+import { couponRouter } from "./routers/coupon";
+import { deliveryRouter } from "./routers/delivery";
+import { communityRouter } from "./routers/community";
+import { walletRouter } from "./routers/wallet";
+import { deliverySlotRouter } from "./routers/deliverySlot";
+import { subscriptionRouter } from "./routers/subscription";
+import { vendorRouter } from "./routers/vendor";
 
 export const appRouter = createTRPCRouter({
   product: productRouter,
@@ -23,7 +24,7 @@ export const appRouter = createTRPCRouter({
   wallet: walletRouter,
   deliverySlot: deliverySlotRouter,
   subscription: subscriptionRouter,
+  vendor: vendorRouter,
 });
-
 
 export type AppRouter = typeof appRouter;

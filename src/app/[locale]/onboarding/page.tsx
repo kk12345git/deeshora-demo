@@ -3,7 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { UserRound, Store, Truck, ArrowRight, Loader2, Sparkles, ShieldCheck, Zap } from "lucide-react";
+import {
+  UserRound,
+  Store,
+  Truck,
+  ArrowRight,
+  Loader2,
+  Sparkles,
+  ShieldCheck,
+  Zap,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "react-hot-toast";
 import { useUser } from "@clerk/nextjs";
@@ -20,7 +29,7 @@ export default function OnboardingPage() {
     onSuccess: async (res) => {
       toast.success("Profile updated successfully!");
       if (user) await user.reload();
-      
+
       if (res.role === "DELIVERY_PARTNER") {
         router.push("/delivery/register");
       } else {
@@ -29,7 +38,7 @@ export default function OnboardingPage() {
     },
     onError: (err) => {
       toast.error(err.message || "Something went wrong");
-    }
+    },
   });
 
   const roles = [
@@ -37,30 +46,32 @@ export default function OnboardingPage() {
       id: "CUSTOMER",
       title: "Customer",
       subtitle: "Daily Shopper",
-      description: "Get essentials delivered for ₹1 and explore amazing combo deals.",
+      description:
+        "Get essentials delivered for ₹1 and explore amazing combo deals.",
       icon: UserRound,
       color: "from-brand-500 to-pink-600",
       lightColor: "bg-brand-50",
       textColor: "text-brand-600",
-      features: ["₹1 Store Access", "Combo Deals", "Wallet Rewards"]
+      features: ["₹1 Store Access", "Combo Deals", "Wallet Rewards"],
     },
     {
       id: "DELIVERY_PARTNER",
       title: "Delivery Hub",
       subtitle: "Delivery Warrior",
-      description: "Join our network, deliver local goods, and earn competitive payouts.",
+      description:
+        "Join our network, deliver local goods, and earn competitive payouts.",
       icon: Truck,
       color: "from-pink-500 to-brand-600",
       lightColor: "bg-pink-50",
       textColor: "text-pink-600",
-      features: ["Flexible Hours", "Weekly Earnings", "Local Support"]
-    }
+      features: ["Flexible Hours", "Weekly Earnings", "Local Support"],
+    },
   ];
 
   const occupations: Record<string, string[]> = {
-    "Male": ["Student", "Employee"],
-    "Female": ["Student", "Employee", "Housewife"],
-    "Others": []
+    Male: ["Student", "Employee"],
+    Female: ["Student", "Employee", "Housewife"],
+    Others: [],
   };
 
   const handleContinue = () => {
@@ -71,10 +82,10 @@ export default function OnboardingPage() {
         setRoleMutation.mutate({ role: "DELIVERY_PARTNER" });
       }
     } else {
-      setRoleMutation.mutate({ 
+      setRoleMutation.mutate({
         role: "CUSTOMER",
         gender: gender || undefined,
-        occupation: occupation || undefined
+        occupation: occupation || undefined,
       });
     }
   };
@@ -95,28 +106,32 @@ export default function OnboardingPage() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 dark:bg-brand-950/20 text-brand-600 dark:text-brand-400 text-xs font-black uppercase tracking-widest mb-6"
           >
             <Sparkles size={14} />
-            Welcome to Daily1Mart
+            Welcome to Deeshora
           </motion.div>
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 dark:text-white tracking-tighter mb-4"
           >
             {step === 1 ? (
-              <>Tell us who <span className="text-brand-500">you are.</span></>
+              <>
+                Tell us who <span className="text-brand-500">you are.</span>
+              </>
             ) : (
-              <>Complete your <span className="text-brand-500">profile.</span></>
+              <>
+                Complete your <span className="text-brand-500">profile.</span>
+              </>
             )}
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="text-gray-500 dark:text-gray-400 text-lg md:text-xl max-w-2xl mx-auto font-medium"
           >
-            {step === 1 
-              ? "Select your role to personalize your experience." 
+            {step === 1
+              ? "Select your role to personalize your experience."
               : "Help us understand your needs for a better shopping experience."}
           </motion.p>
         </div>
@@ -138,9 +153,13 @@ export default function OnboardingPage() {
                 }`}
               >
                 {/* Icon Container */}
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all duration-500 ${
-                  selectedRole === role.id ? `bg-gradient-to-br ${role.color} text-white rotate-6` : `${role.lightColor} ${role.textColor}`
-                }`}>
+                <div
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all duration-500 ${
+                    selectedRole === role.id
+                      ? `bg-gradient-to-br ${role.color} text-white rotate-6`
+                      : `${role.lightColor} ${role.textColor}`
+                  }`}
+                >
                   <role.icon size={32} />
                 </div>
 
@@ -148,13 +167,21 @@ export default function OnboardingPage() {
                 <div className="flex-grow space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">{role.title}</h3>
-                      <p className={`text-xs font-black uppercase tracking-widest ${selectedRole === role.id ? "text-brand-500" : "text-gray-400"}`}>
+                      <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+                        {role.title}
+                      </h3>
+                      <p
+                        className={`text-xs font-black uppercase tracking-widest ${selectedRole === role.id ? "text-brand-500" : "text-gray-400"}`}
+                      >
                         {role.subtitle}
                       </p>
                     </div>
                     {selectedRole === role.id && (
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-6 h-6 bg-brand-500 rounded-full flex items-center justify-center text-white">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-6 h-6 bg-brand-500 rounded-full flex items-center justify-center text-white"
+                      >
                         <ShieldCheck size={14} />
                       </motion.div>
                     )}
@@ -166,7 +193,10 @@ export default function OnboardingPage() {
                   {/* Features List */}
                   <div className="pt-4 space-y-2">
                     {role.features.map((feature, fidx) => (
-                      <div key={fidx} className="flex items-center gap-2 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                      <div
+                        key={fidx}
+                        className="flex items-center gap-2 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest"
+                      >
                         <Zap size={10} className="text-brand-400" />
                         {feature}
                       </div>
@@ -175,9 +205,13 @@ export default function OnboardingPage() {
                 </div>
 
                 {/* Selection Indicator */}
-                <div className={`absolute bottom-6 right-8 transition-all duration-300 ${
-                  selectedRole === role.id ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
-                }`}>
+                <div
+                  className={`absolute bottom-6 right-8 transition-all duration-300 ${
+                    selectedRole === role.id
+                      ? "opacity-100 translate-x-0"
+                      : "opacity-0 -translate-x-4"
+                  }`}
+                >
                   <ArrowRight className="text-brand-500" size={24} />
                 </div>
               </motion.div>
@@ -187,15 +221,20 @@ export default function OnboardingPage() {
           <div className="max-w-2xl mx-auto space-y-10 mb-12">
             {/* Gender Selection */}
             <div className="space-y-4">
-              <label className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 block ml-2">Select Gender</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 block ml-2">
+                Select Gender
+              </label>
               <div className="grid grid-cols-3 gap-4">
                 {["Male", "Female", "Others"].map((g) => (
                   <button
                     key={g}
-                    onClick={() => { setGender(g); setOccupation(null); }}
+                    onClick={() => {
+                      setGender(g);
+                      setOccupation(null);
+                    }}
                     className={`p-4 rounded-2xl border-2 font-bold transition-all ${
-                      gender === g 
-                        ? "border-brand-500 bg-brand-50 text-brand-600 shadow-lg" 
+                      gender === g
+                        ? "border-brand-500 bg-brand-50 text-brand-600 shadow-lg"
                         : "border-gray-100 bg-white text-gray-500 hover:border-brand-200"
                     }`}
                   >
@@ -207,16 +246,22 @@ export default function OnboardingPage() {
 
             {/* Occupation Selection */}
             {gender && occupations[gender].length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                <label className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 block ml-2">Select Occupation</label>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-4"
+              >
+                <label className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 block ml-2">
+                  Select Occupation
+                </label>
                 <div className="flex flex-wrap gap-4">
                   {occupations[gender].map((occ) => (
                     <button
                       key={occ}
                       onClick={() => setOccupation(occ)}
                       className={`px-6 py-3 rounded-2xl border-2 font-bold transition-all ${
-                        occupation === occ 
-                          ? "border-brand-500 bg-brand-50 text-brand-600 shadow-lg" 
+                        occupation === occ
+                          ? "border-brand-500 bg-brand-50 text-brand-600 shadow-lg"
                           : "border-gray-100 bg-white text-gray-500 hover:border-brand-200"
                       }`}
                     >
@@ -228,25 +273,33 @@ export default function OnboardingPage() {
             )}
 
             {gender === "Others" && (
-               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-gray-400 font-medium">
-                  Thank you! You can proceed to confirm.
-               </motion.p>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center text-gray-400 font-medium"
+              >
+                Thank you! You can proceed to confirm.
+              </motion.p>
             )}
           </div>
         )}
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
           className="flex flex-col items-center gap-4"
         >
           <button
-            disabled={!selectedRole || setRoleMutation.isPending || (step === 2 && !gender && selectedRole === "CUSTOMER")}
+            disabled={
+              !selectedRole ||
+              setRoleMutation.isPending ||
+              (step === 2 && !gender && selectedRole === "CUSTOMER")
+            }
             onClick={handleContinue}
             className={`group relative flex items-center justify-center gap-3 px-12 py-5 rounded-[2rem] font-black text-lg transition-all duration-500 overflow-hidden ${
-              selectedRole 
-                ? "bg-gray-900 text-white shadow-2xl hover:bg-black hover:scale-105 active:scale-95" 
+              selectedRole
+                ? "bg-gray-900 text-white shadow-2xl hover:bg-black hover:scale-105 active:scale-95"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >
@@ -254,8 +307,13 @@ export default function OnboardingPage() {
               <Loader2 className="animate-spin" size={24} />
             ) : (
               <>
-                {step === 1 && selectedRole === "CUSTOMER" ? "Next Step" : "Confirm & Start"}
-                <ArrowRight className="group-hover:translate-x-2 transition-transform duration-300" size={24} />
+                {step === 1 && selectedRole === "CUSTOMER"
+                  ? "Next Step"
+                  : "Confirm & Start"}
+                <ArrowRight
+                  className="group-hover:translate-x-2 transition-transform duration-300"
+                  size={24}
+                />
               </>
             )}
             {selectedRole && (
@@ -263,9 +321,12 @@ export default function OnboardingPage() {
             )}
           </button>
           {step === 2 && (
-             <button onClick={() => setStep(1)} className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-brand-500">
-                Back to Role Selection
-             </button>
+            <button
+              onClick={() => setStep(1)}
+              className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-brand-500"
+            >
+              Back to Role Selection
+            </button>
           )}
           <p className="text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">
             This choice can be updated later in your profile settings.

@@ -67,13 +67,13 @@ async function main() {
 
   // ── Seed Admin as Sole Vendor ─────────────────────────────────────────
   console.log('🏪 Seeding Admin as sole vendor...');
-  const adminEmail = 'admin@daily1mart.in'; 
+  const adminEmail = 'admin@deeshora.in'; 
   const adminUser = await prisma.user.upsert({
     where: { email: adminEmail },
     create: {
-      clerkId: 'admin_daily1mart_v1',
+      clerkId: 'admin_deeshora_v1',
       email: adminEmail,
-      name: 'Daily1Mart Admin',
+      name: 'Deeshora Admin',
       role: 'ADMIN',
     },
     update: { role: 'ADMIN' },
@@ -157,7 +157,7 @@ async function main() {
     {
       type: 'SYSTEM',
       action: 'INITIALIZATION',
-      message: 'Daily1Mart Platform Monitoring System Initialized.',
+      message: 'Deeshora Platform Monitoring System Initialized.',
       metadata: { version: '2.0.0', environment: 'production' },
     },
     {

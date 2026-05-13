@@ -1,10 +1,15 @@
-import { z } from 'zod';
-import { createTRPCRouter, adminProcedure, publicProcedure, protectedProcedure } from '@/server/trpc';
-import { TRPCError } from '@trpc/server';
-import { UserRole, OrderStatus, Prisma } from '@prisma/client';
-import { uploadImage } from '@/lib/cloudinary';
-import slugify from 'slugify';
-import { logActivity } from '@/lib/activity';
+import { z } from "zod";
+import {
+  createTRPCRouter,
+  adminProcedure,
+  publicProcedure,
+  protectedProcedure,
+} from "@/server/trpc";
+import { TRPCError } from "@trpc/server";
+import { UserRole, OrderStatus, Prisma, VendorStatus, SubscriptionStatus } from "@prisma/client";
+import { uploadImage } from "@/lib/cloudinary";
+import slugify from "slugify";
+import { logActivity } from "@/lib/activity";
 
 export const adminRouter = createTRPCRouter({
   stats: adminProcedure.query(async ({ ctx }) => {
@@ -14,26 +19,34 @@ export const adminRouter = createTRPCRouter({
 
     try {
       totalUsers = await ctx.prisma.user.count();
-      totalDeliveryPartners = await ctx.prisma.user.count({ where: { role: 'DELIVERY_PARTNER' } });
-      onlinePartners = await ctx.prisma.user.count({ where: { role: 'DELIVERY_PARTNER', isDeliveryOnline: true } });
+      totalDeliveryPartners = await ctx.prisma.user.count({
+        where: { role: "DELIVERY_PARTNER" },
+      });
+      onlinePartners = await ctx.prisma.user.count({
+        where: { role: "DELIVERY_PARTNER", isDeliveryOnline: true },
+      });
     } catch (e) {
-      console.error('[AdminStats] Counts failed:', e);
+      console.error("[AdminStats] Counts failed:", e);
     }
 
     const totalOrders = await ctx.prisma.order.count();
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayOrders = await ctx.prisma.order.count({ where: { createdAt: { gte: today } } });
+    const todayOrders = await ctx.prisma.order.count({
+      where: { createdAt: { gte: today } },
+    });
 
     const platformRevenue = await ctx.prisma.order.aggregate({
-      where: { paymentStatus: 'PAID' },
+      where: { paymentStatus: "PAID" },
       _sum: { total: true },
     });
 
     let monthlyRevenueData: Array<{ month: string; revenue: number }> = [];
     try {
-      monthlyRevenueData = await ctx.prisma.$queryRaw<Array<{ month: string; revenue: number }>>`
+      monthlyRevenueData = await ctx.prisma.$queryRaw<
+        Array<{ month: string; revenue: number }>
+      >`
         SELECT
           to_char(date_trunc('month', "createdAt"), 'YYYY-MM') as month,
           CAST(SUM(total) AS FLOAT8) as revenue
@@ -43,7 +56,7 @@ export const adminRouter = createTRPCRouter({
         ORDER BY 1;
       `;
     } catch (e) {
-      console.error('[AdminStats] Raw query failed:', e);
+      console.error("[AdminStats] Raw query failed:", e);
     }
 
     return {
@@ -62,33 +75,48 @@ export const adminRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return ctx.prisma.activityLog.findMany({
         take: input.limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
     }),
 
   platformAnalytics: adminProcedure
-    .input(z.object({ period: z.enum(['MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'ANNUAL']).default('ANNUAL') }))
+    .input(
+      z.object({
+        period: z
+          .enum(["MONTHLY", "QUARTERLY", "HALF_YEARLY", "ANNUAL"])
+          .default("ANNUAL"),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const now = new Date();
       let since: Date;
       switch (input.period) {
-        case 'QUARTERLY':   since = new Date(now.getFullYear(), now.getMonth() - 2, 1); break;
-        case 'HALF_YEARLY': since = new Date(now.getFullYear(), now.getMonth() - 5, 1); break;
-        case 'ANNUAL':      since = new Date(now.getFullYear() - 1, now.getMonth(), 1); break;
-        default:            since = new Date(now.getFullYear(), now.getMonth(), 1);
+        case "QUARTERLY":
+          since = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+          break;
+        case "HALF_YEARLY":
+          since = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+          break;
+        case "ANNUAL":
+          since = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+          break;
+        default:
+          since = new Date(now.getFullYear(), now.getMonth(), 1);
       }
 
       const orderAgg = await ctx.prisma.order.aggregate({
-        where: { paymentStatus: 'PAID', createdAt: { gte: since } },
+        where: { paymentStatus: "PAID", createdAt: { gte: since } },
         _sum: { total: true },
         _count: { id: true },
       });
 
       let newUsers = 0;
       try {
-        newUsers = await ctx.prisma.user.count({ where: { createdAt: { gte: since }, role: 'CUSTOMER' } });
+        newUsers = await ctx.prisma.user.count({
+          where: { createdAt: { gte: since }, role: "CUSTOMER" },
+        });
       } catch (e) {
-        console.error('[PlatformAnalytics] Counts failed:', e);
+        console.error("[PlatformAnalytics] Counts failed:", e);
       }
 
       return {
@@ -104,7 +132,13 @@ export const adminRouter = createTRPCRouter({
   }),
 
   getSettings: protectedProcedure.query(async ({ ctx }) => {
-    const keys = ['business_whatsapp', 'delivery_partners', 'delivery_fee', 'free_delivery_above', 'platform_fixed_fee'];
+    const keys = [
+      "business_whatsapp",
+      "delivery_partners",
+      "delivery_fee",
+      "free_delivery_above",
+      "platform_fixed_fee",
+    ];
     return ctx.prisma.siteConfig.findMany({
       where: { key: { in: keys } },
     });
@@ -115,7 +149,7 @@ export const adminRouter = createTRPCRouter({
       z.object({
         key: z.string(),
         value: z.string(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.siteConfig.upsert({
@@ -132,7 +166,7 @@ export const adminRouter = createTRPCRouter({
         cursor: z.string().nullish(),
         search: z.string().optional(),
         categoryId: z.string().optional(),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const limit = input.limit ?? 20;
@@ -143,8 +177,8 @@ export const adminRouter = createTRPCRouter({
           categoryId,
           OR: search
             ? [
-                { name: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } },
+                { name: { contains: search, mode: "insensitive" } },
+                { description: { contains: search, mode: "insensitive" } },
               ]
             : undefined,
         },
@@ -152,7 +186,7 @@ export const adminRouter = createTRPCRouter({
           category: { select: { name: true } },
         },
         cursor: cursor ? { id: cursor } : undefined,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
 
       let nextCursor: typeof cursor | undefined = undefined;
@@ -166,8 +200,8 @@ export const adminRouter = createTRPCRouter({
           categoryId,
           OR: search
             ? [
-                { name: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } },
+                { name: { contains: search, mode: "insensitive" } },
+                { description: { contains: search, mode: "insensitive" } },
               ]
             : undefined,
         },
@@ -186,13 +220,13 @@ export const adminRouter = createTRPCRouter({
         stock: z.number().int().min(0),
         unit: z.string(),
         categoryId: z.string(),
-        images: z.array(z.string().startsWith('data:image/')).min(1),
+        images: z.array(z.string().startsWith("data:image/")).min(1),
         isFeatured: z.boolean().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const imageUrls = await Promise.all(
-        input.images.map((base64) => uploadImage(base64, 'products'))
+        input.images.map((base64) => uploadImage(base64, "products")),
       );
 
       const slug = `${slugify(input.name, { lower: true, strict: true })}-${Date.now()}`;
@@ -226,7 +260,7 @@ export const adminRouter = createTRPCRouter({
         categoryId: z.string().optional(),
         isFeatured: z.boolean().optional(),
         isActive: z.boolean().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
@@ -236,10 +270,10 @@ export const adminRouter = createTRPCRouter({
       });
 
       await logActivity({
-        type: 'PRODUCT',
-        action: 'UPDATE',
+        type: "PRODUCT",
+        action: "UPDATE",
         entityId: id,
-        entityType: 'Product',
+        entityType: "Product",
         actorId: ctx.user.id,
         actorName: ctx.user.name,
         message: `Admin updated product: ${updated.name}`,
@@ -254,24 +288,27 @@ export const adminRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const product = await ctx.prisma.product.findUnique({
         where: { id: input.id },
-        include: { _count: { select: { orderItems: true } } }
+        include: { _count: { select: { orderItems: true } } },
       });
 
       if (!product) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found' });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Product not found",
+        });
       }
 
       if (product._count.orderItems > 0) {
         const deactivated = await ctx.prisma.product.update({
           where: { id: input.id },
-          data: { isActive: false, isFeatured: false }
+          data: { isActive: false, isFeatured: false },
         });
 
         await logActivity({
-          type: 'PRODUCT',
-          action: 'UPDATE',
+          type: "PRODUCT",
+          action: "UPDATE",
           entityId: input.id,
-          entityType: 'Product',
+          entityType: "Product",
           actorId: ctx.user.id,
           actorName: ctx.user.name,
           message: `Admin deactivated product (has order history): ${product.name}`,
@@ -280,13 +317,15 @@ export const adminRouter = createTRPCRouter({
         return deactivated;
       }
 
-      const deleted = await ctx.prisma.product.delete({ where: { id: input.id } });
+      const deleted = await ctx.prisma.product.delete({
+        where: { id: input.id },
+      });
 
       await logActivity({
-        type: 'PRODUCT',
-        action: 'DELETE',
+        type: "PRODUCT",
+        action: "DELETE",
         entityId: input.id,
-        entityType: 'Product',
+        entityType: "Product",
         actorId: ctx.user.id,
         actorName: ctx.user.name,
         message: `Admin deleted product: ${product.name}`,
@@ -300,27 +339,31 @@ export const adminRouter = createTRPCRouter({
   getServiceAreas: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.serviceArea.findMany({
       where: { isActive: true },
-      orderBy: [{ isServiceable: 'desc' }, { sortOrder: 'asc' }, { label: 'asc' }],
+      orderBy: [
+        { isServiceable: "desc" },
+        { sortOrder: "asc" },
+        { label: "asc" },
+      ],
     });
   }),
 
   getAllServiceAreas: adminProcedure.query(async ({ ctx }) => {
     return ctx.prisma.serviceArea.findMany({
-      orderBy: [{ isServiceable: 'desc' }, { sortOrder: 'asc' }],
+      orderBy: [{ isServiceable: "desc" }, { sortOrder: "asc" }],
     });
   }),
 
   createServiceArea: adminProcedure
     .input(
       z.object({
-        label: z.string().min(2, 'Label required'),
-        value: z.string().min(2, 'Value required'),
-        zone: z.string().min(2, 'Zone required'),
+        label: z.string().min(2, "Label required"),
+        value: z.string().min(2, "Value required"),
+        zone: z.string().min(2, "Zone required"),
         pincode: z.string().optional(),
         isServiceable: z.boolean().default(true),
         sortOrder: z.number().int().default(0),
         coordinates: z.any().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.serviceArea.create({
@@ -339,7 +382,7 @@ export const adminRouter = createTRPCRouter({
         isActive: z.boolean().optional(),
         sortOrder: z.number().int().optional(),
         coordinates: z.any().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
@@ -356,7 +399,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // ─── CATEGORY MANAGEMENT ───────────────────────────────────────────────
-  
+
   createCategory: adminProcedure
     .input(
       z.object({
@@ -366,11 +409,17 @@ export const adminRouter = createTRPCRouter({
         description: z.string().optional(),
         sortOrder: z.number().int().default(0),
         isActive: z.boolean().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.prisma.category.findUnique({ where: { slug: input.slug } });
-      if (existing) throw new TRPCError({ code: 'CONFLICT', message: 'Category slug already exists.' });
+      const existing = await ctx.prisma.category.findUnique({
+        where: { slug: input.slug },
+      });
+      if (existing)
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Category slug already exists.",
+        });
       return ctx.prisma.category.create({ data: input });
     }),
 
@@ -384,7 +433,7 @@ export const adminRouter = createTRPCRouter({
         description: z.string().optional(),
         sortOrder: z.number().int().optional(),
         isActive: z.boolean().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
@@ -399,9 +448,16 @@ export const adminRouter = createTRPCRouter({
         include: { _count: { select: { products: true } } },
       });
 
-      if (!category) throw new TRPCError({ code: 'NOT_FOUND', message: 'Category not found.' });
+      if (!category)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Category not found.",
+        });
       if (category._count.products > 0) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot delete category with active products.' });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot delete category with active products.",
+        });
       }
 
       return ctx.prisma.category.delete({
@@ -414,24 +470,27 @@ export const adminRouter = createTRPCRouter({
       z.object({
         orderId: z.string(),
         status: z.nativeEnum(OrderStatus),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { pusherServer, CHANNELS, EVENTS } = await import('@/lib/pusher');
+      const { pusherServer, CHANNELS, EVENTS } = await import("@/lib/pusher");
       const { orderId, status } = input;
 
-      const order = await ctx.prisma.order.findUnique({ where: { id: orderId } });
-      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+      const order = await ctx.prisma.order.findUnique({
+        where: { id: orderId },
+      });
+      if (!order)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found." });
 
       const messages: Record<OrderStatus, string> = {
-        CONFIRMED:        'Order confirmed by admin.',
-        PREPARING:        'Your order is being prepared.',
-        READY:            'Your order is ready for pickup.',
-        OUT_FOR_DELIVERY: 'Your order is out for delivery.',
-        DELIVERED:        'Your order has been delivered.',
-        CANCELLED:        'Your order has been cancelled.',
-        REFUNDED:         'Your order has been refunded.',
-        PENDING:          '',
+        CONFIRMED: "Order confirmed by admin.",
+        PREPARING: "Your order is being prepared.",
+        READY: "Your order is ready for pickup.",
+        OUT_FOR_DELIVERY: "Your order is out for delivery.",
+        DELIVERED: "Your order has been delivered.",
+        CANCELLED: "Your order has been cancelled.",
+        REFUNDED: "Your order has been refunded.",
+        PENDING: "",
       };
 
       const updated = await ctx.prisma.$transaction(async (tx) => {
@@ -439,7 +498,7 @@ export const adminRouter = createTRPCRouter({
           where: { id: orderId },
           data: {
             status,
-            deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
+            deliveredAt: status === "DELIVERED" ? new Date() : undefined,
             timeline: {
               create: { status, message: messages[status] },
             },
@@ -453,17 +512,21 @@ export const adminRouter = createTRPCRouter({
         await pusherServer.trigger(
           CHANNELS.ORDER(orderId),
           EVENTS.ORDER_STATUS_UPDATED,
-          { status, message: messages[status] }
+          { status, message: messages[status] },
         );
       } catch (pusherErr) {
-        console.error('[Admin] Pusher notify failed for order:', orderId, pusherErr);
+        console.error(
+          "[Admin] Pusher notify failed for order:",
+          orderId,
+          pusherErr,
+        );
       }
 
       await logActivity({
-        type: 'ORDER',
-        action: 'STATUS_UPDATE',
+        type: "ORDER",
+        action: "STATUS_UPDATE",
         entityId: orderId,
-        entityType: 'Order',
+        entityType: "Order",
         actorId: ctx.user.id,
         actorName: ctx.user.name,
         message: `Order #${orderId.slice(-6)} status updated to ${status}`,
@@ -474,15 +537,18 @@ export const adminRouter = createTRPCRouter({
     }),
 
   verifyOrderPayment: adminProcedure
-    .input(z.object({
-      orderId: z.string(),
-      status: z.enum(['PAID', 'FAILED']),
-    }))
+    .input(
+      z.object({
+        orderId: z.string(),
+        status: z.enum(["PAID", "FAILED"]),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const order = await ctx.prisma.order.findUnique({
         where: { id: input.orderId },
       });
-      if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
+      if (!order)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
 
       const updated = await ctx.prisma.order.update({
         where: { id: input.orderId },
@@ -491,22 +557,35 @@ export const adminRouter = createTRPCRouter({
           timeline: {
             create: {
               status: order.status,
-              message: input.status === 'PAID' ? 'Payment verified by admin.' : 'Payment verification failed.',
-            }
-          }
-        }
+              message:
+                input.status === "PAID"
+                  ? "Payment verified by admin."
+                  : "Payment verification failed.",
+            },
+          },
+        },
       });
 
       try {
-        const { pusherServer, CHANNELS, EVENTS } = await import('@/lib/pusher');
-        await pusherServer.trigger(CHANNELS.ORDER(input.orderId), EVENTS.ORDER_STATUS_UPDATED, { status: order.status, message: input.status === 'PAID' ? 'Payment confirmed by platform!' : 'Payment failed.' });
+        const { pusherServer, CHANNELS, EVENTS } = await import("@/lib/pusher");
+        await pusherServer.trigger(
+          CHANNELS.ORDER(input.orderId),
+          EVENTS.ORDER_STATUS_UPDATED,
+          {
+            status: order.status,
+            message:
+              input.status === "PAID"
+                ? "Payment confirmed by platform!"
+                : "Payment failed.",
+          },
+        );
       } catch (e) {}
 
       await logActivity({
-        type: 'ORDER',
-        action: 'PAYMENT_VERIFY',
+        type: "ORDER",
+        action: "PAYMENT_VERIFY",
         entityId: input.orderId,
-        entityType: 'Order',
+        entityType: "Order",
         actorId: ctx.user.id,
         actorName: ctx.user.name,
         message: `Admin verified payment for order #${input.orderId.slice(-6)} as ${input.status}`,
@@ -519,28 +598,38 @@ export const adminRouter = createTRPCRouter({
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       if (input.userId === ctx.user.id) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot delete your own admin account.' });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You cannot delete your own admin account.",
+        });
       }
 
-      const user = await ctx.prisma.user.findUnique({ where: { id: input.userId } });
-      if (!user) throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found.' });
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+      });
+      if (!user)
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found." });
 
       try {
-        const { clerkClient } = await import('@clerk/nextjs/server');
+        const { clerkClient } = await import("@clerk/nextjs/server");
         const clerk = await clerkClient();
         await clerk.users.deleteUser(user.clerkId);
       } catch (err) {
-        console.error('[Admin] Failed to delete Clerk user:', err);
-        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to delete user from auth provider. Please try again.' });
+        console.error("[Admin] Failed to delete Clerk user:", err);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            "Failed to delete user from auth provider. Please try again.",
+        });
       }
 
       await ctx.prisma.user.delete({ where: { id: input.userId } });
 
       await logActivity({
-        type: 'USER',
-        action: 'DELETE',
+        type: "USER",
+        action: "DELETE",
         entityId: input.userId,
-        entityType: 'User',
+        entityType: "User",
         actorId: ctx.user.id,
         actorName: ctx.user.name,
         message: `Admin deleted user account for ${user.name} (${user.email})`,
@@ -550,72 +639,91 @@ export const adminRouter = createTRPCRouter({
     }),
 
   gstReport: adminProcedure
-    .input(z.object({ period: z.enum(['MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'ANNUAL']).default('MONTHLY') }))
+    .input(
+      z.object({
+        period: z
+          .enum(["MONTHLY", "QUARTERLY", "HALF_YEARLY", "ANNUAL"])
+          .default("MONTHLY"),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const now = new Date();
       let since: Date;
       switch (input.period) {
-        case 'QUARTERLY':   since = new Date(now.getFullYear(), now.getMonth() - 2, 1); break;
-        case 'HALF_YEARLY': since = new Date(now.getFullYear(), now.getMonth() - 5, 1); break;
-        case 'ANNUAL':      since = new Date(now.getFullYear() - 1, now.getMonth(), 1); break;
-        default:            since = new Date(now.getFullYear(), now.getMonth(), 1);
+        case "QUARTERLY":
+          since = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+          break;
+        case "HALF_YEARLY":
+          since = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+          break;
+        case "ANNUAL":
+          since = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+          break;
+        default:
+          since = new Date(now.getFullYear(), now.getMonth(), 1);
       }
 
       const items = await ctx.prisma.orderItem.findMany({
-        where: { order: { paymentStatus: 'PAID', createdAt: { gte: since } } },
-        include: { order: { select: { id: true, total: true } } }
+        where: { order: { paymentStatus: "PAID", createdAt: { gte: since } } },
+        include: { order: { select: { id: true, total: true } } },
       });
 
       let totalGst = 0;
       let totalTaxable = 0;
 
-      items.forEach(item => {
+      items.forEach((item) => {
         const taxable = item.price * item.quantity;
         totalGst += item.gstAmount;
         totalTaxable += taxable;
       });
 
       return {
-        summary: { totalGst, totalTaxable, period: input.period, vendorsCount: 0 },
-        vendors: []
+        summary: {
+          totalGst,
+          totalTaxable,
+          period: input.period,
+          vendorsCount: 0,
+        },
+        vendors: [],
       };
     }),
 
   getPendingVerifications: adminProcedure.query(async ({ ctx }) => {
     const pendingOrders = await ctx.prisma.order.findMany({
-      where: { paymentStatus: 'PENDING', utrNumber: { not: null } },
+      where: { paymentStatus: "PENDING", utrNumber: { not: null } },
       include: { user: { select: { name: true } } },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
-    
+
     return { pendingOrders, pendingSubscriptions: [] };
   }),
 
   approvePayment: adminProcedure
     .input(z.object({ orderId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-       const existingOrder = await ctx.prisma.order.findUnique({
-         where: { id: input.orderId },
-         select: { paymentStatus: true }
-       });
-       if (!existingOrder) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
+      const existingOrder = await ctx.prisma.order.findUnique({
+        where: { id: input.orderId },
+        select: { paymentStatus: true },
+      });
+      if (!existingOrder)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found." });
 
-       return ctx.prisma.$transaction(async (tx) => {
-         const order = await tx.order.update({
-           where: { id: input.orderId },
-           data: {
-             paymentStatus: 'PAID',
-             status: 'CONFIRMED',
-             timeline: {
-               create: {
-                 status: 'CONFIRMED',
-                 message: 'Payment verified manually by admin. Order confirmed.'
-               }
-             }
-           }
-         });
-         return order;
-       });
+      return ctx.prisma.$transaction(async (tx) => {
+        const order = await tx.order.update({
+          where: { id: input.orderId },
+          data: {
+            paymentStatus: "PAID",
+            status: "CONFIRMED",
+            timeline: {
+              create: {
+                status: "CONFIRMED",
+                message: "Payment verified manually by admin. Order confirmed.",
+              },
+            },
+          },
+        });
+        return order;
+      });
     }),
 
   users: adminProcedure
@@ -625,7 +733,7 @@ export const adminRouter = createTRPCRouter({
         cursor: z.string().nullish(),
         role: z.nativeEnum(UserRole).optional(),
         search: z.string().optional(),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const limit = input.limit ?? 20;
@@ -635,12 +743,15 @@ export const adminRouter = createTRPCRouter({
         where: {
           role,
           OR: search
-            ? [{ name: { contains: search, mode: 'insensitive' } }, { email: { contains: search, mode: 'insensitive' } }]
+            ? [
+                { name: { contains: search, mode: "insensitive" } },
+                { email: { contains: search, mode: "insensitive" } },
+              ]
             : undefined,
         },
         include: { _count: { select: { orders: true } } },
         cursor: cursor ? { id: cursor } : undefined,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
 
       let nextCursor: typeof cursor | undefined = undefined;
@@ -656,27 +767,135 @@ export const adminRouter = createTRPCRouter({
       z.object({
         userId: z.string(),
         role: z.nativeEnum(UserRole),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { userId, role } = input;
-      
+
       const user = await ctx.prisma.user.update({
         where: { id: userId },
         data: { role },
       });
 
       try {
-        const { clerkClient } = await import('@clerk/nextjs/server');
+        const { clerkClient } = await import("@clerk/nextjs/server");
         const clerk = await clerkClient();
         await clerk.users.updateUserMetadata(user.clerkId, {
-          publicMetadata: { role }
+          publicMetadata: { role },
         });
       } catch (err) {
-        console.error('[Admin] Failed to sync Clerk metadata:', err);
+        console.error("[Admin] Failed to sync Clerk metadata:", err);
       }
 
       return user;
+    }),
+
+  vendors: adminProcedure
+    .input(z.object({ status: z.nativeEnum(VendorStatus).optional(), limit: z.number().optional() }))
+    .query(async ({ ctx, input }) => {
+      const { status } = input;
+      return ctx.prisma.vendor.findMany({
+        where: status ? { status } : undefined,
+        include: {
+          user: { select: { name: true, email: true, avatar: true } },
+          _count: { select: { products: true, orders: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    }),
+
+  updateVendorStatus: adminProcedure
+    .input(z.object({ vendorId: z.string(), status: z.nativeEnum(VendorStatus) }))
+    .mutation(async ({ ctx, input }) => {
+      const vendor = await ctx.prisma.vendor.update({
+        where: { id: input.vendorId },
+        data: { status: input.status },
+        include: { user: true }
+      });
+
+      // If approved, ensure user role is VENDOR
+      if (input.status === 'APPROVED') {
+        await ctx.prisma.user.update({
+          where: { id: vendor.userId },
+          data: { role: 'VENDOR' }
+        });
+        
+        try {
+          const { clerkClient } = await import("@clerk/nextjs/server");
+          const clerk = await clerkClient();
+          await clerk.users.updateUserMetadata(vendor.user.clerkId, {
+            publicMetadata: { role: 'VENDOR' },
+          });
+        } catch (err) {
+          console.error("[Admin] Failed to sync Clerk metadata for vendor:", err);
+        }
+      }
+
+      return vendor;
+    }),
+
+  confirmVendorPayment: adminProcedure
+    .input(z.object({ vendorId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.vendor.update({
+        where: { id: input.vendorId },
+        data: { 
+          subscriptionStatus: 'ACTIVE',
+          status: 'APPROVED'
+        }
+      });
+    }),
+
+  updateVendorCommission: adminProcedure
+    .input(z.object({ vendorId: z.string(), rate: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.vendor.update({
+        where: { id: input.vendorId },
+        data: { commissionRate: input.rate / 100 }
+      });
+    }),
+
+  createVendor: adminProcedure
+    .input(z.object({
+      userId: z.string(),
+      shopName: z.string().min(3),
+      phone: z.string(),
+      email: z.string().email(),
+      city: z.string(),
+      categories: z.array(z.string()),
+      commissionRate: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { userId, ...vendorData } = input;
+      
+      // 1. Create the vendor record
+      const vendor = await ctx.prisma.vendor.create({
+        data: {
+          userId,
+          ...vendorData,
+          status: 'APPROVED',
+          subscriptionStatus: 'ACTIVE',
+        }
+      });
+
+      // 2. Update user role
+      const user = await ctx.prisma.user.update({
+        where: { id: userId },
+        data: { role: 'VENDOR' }
+      });
+
+      // 3. Sync Clerk
+      try {
+        const { clerkClient } = await import("@clerk/nextjs/server");
+        const clerk = await clerkClient();
+        await clerk.users.updateUserMetadata(user.clerkId, {
+          publicMetadata: { role: 'VENDOR' },
+        });
+      } catch (err) {
+        console.error("[Admin] Failed to sync Clerk metadata for new vendor:", err);
+      }
+
+      return vendor;
     }),
 
   orders: adminProcedure
@@ -685,7 +904,7 @@ export const adminRouter = createTRPCRouter({
         limit: z.number().min(1).max(100).nullish(),
         cursor: z.string().nullish(),
         status: z.nativeEnum(OrderStatus).optional(),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const limit = input.limit ?? 15;
@@ -698,7 +917,7 @@ export const adminRouter = createTRPCRouter({
           items: { take: 3, select: { name: true, price: true } },
         },
         cursor: cursor ? { id: cursor } : undefined,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
 
       let nextCursor: typeof cursor | undefined = undefined;
@@ -708,5 +927,4 @@ export const adminRouter = createTRPCRouter({
       }
       return { orders, nextCursor };
     }),
-
 });
