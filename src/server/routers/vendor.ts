@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-} from "@/server/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/trpc";
 import { TRPCError } from "@trpc/server";
 
 export const vendorRouter = createTRPCRouter({
@@ -16,9 +13,9 @@ export const vendorRouter = createTRPCRouter({
             email: true,
             avatar: true,
             phone: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     if (!vendor) {
@@ -32,16 +29,18 @@ export const vendorRouter = createTRPCRouter({
   }),
 
   updateProfile: protectedProcedure
-    .input(z.object({
-      shopName: z.string().optional(),
-      description: z.string().optional(),
-      phone: z.string().optional(),
-      address: z.string().optional(),
-      city: z.string().optional(),
-      upiId: z.string().optional(),
-      bankAccount: z.string().optional(),
-      ifscCode: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        shopName: z.string().optional(),
+        description: z.string().optional(),
+        phone: z.string().optional(),
+        address: z.string().optional(),
+        city: z.string().optional(),
+        upiId: z.string().optional(),
+        bankAccount: z.string().optional(),
+        ifscCode: z.string().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.vendor.update({
         where: { userId: ctx.auth.userId },

@@ -32,7 +32,7 @@
     --brand-800: 91 33 182;
     --brand-900: 76 29 149;
     --brand-950: 46 16 101;
-    
+
     /* Secondary: Vibrant Pink for accents */
     --accent-500: 212 29 109;
   }
@@ -72,7 +72,12 @@
     font-family: var(--font-manrope), sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-plus-jakarta), sans-serif;
   }
 }
@@ -110,9 +115,15 @@
   }
 
   @keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
+    0% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+    100% {
+      transform: translateY(0px);
+    }
   }
 
   .text-gradient {
@@ -128,8 +139,12 @@
   }
 
   @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
   }
   .animate-shimmer {
     animation: shimmer 2s infinite;

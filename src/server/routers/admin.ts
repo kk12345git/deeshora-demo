@@ -6,7 +6,13 @@ import {
   protectedProcedure,
 } from "@/server/trpc";
 import { TRPCError } from "@trpc/server";
-import { UserRole, OrderStatus, Prisma, VendorStatus, SubscriptionStatus } from "@prisma/client";
+import {
+  UserRole,
+  OrderStatus,
+  Prisma,
+  VendorStatus,
+  SubscriptionStatus,
+} from "@prisma/client";
 import { uploadImage } from "@/lib/cloudinary";
 import slugify from "slugify";
 import { logActivity } from "@/lib/activity";
@@ -106,24 +112,139 @@ export const adminRouter = createTRPCRouter({
 
       const orderAgg = await ctx.prisma.order.aggregate({
         where: { paymentStatus: "PAID", createdAt: { gte: since } },
-        _sum: { total: true },
+        _sum: { total: true, platformFee: true },
         _count: { id: true },
       });
 
-      let newUsers = 0;
-      try {
-        newUsers = await ctx.prisma.user.count({
+      const [newUsers, newVendors] = await Promise.all([
+        ctx.prisma.user.count({
           where: { createdAt: { gte: since }, role: "CUSTOMER" },
-        });
-      } catch (e) {
-        console.error("[PlatformAnalytics] Counts failed:", e);
-      }
+        }),
+        ctx.prisma.user.count({
+          where: { createdAt: { gte: since }, role: "VENDOR" },
+        }),
+      ]);
+
+      const topVendors = await ctx.prisma.vendor.findMany({
+        take: 5,
+        include: {
+          _count: {
+            select: {
+              orders: {
+                where: { paymentStatus: "PAID", createdAt: { gte: since } },
+              },
+            },
+          },
+          orders: {
+            where: { paymentStatus: "PAID", createdAt: { gte: since } },
+            select: { total: true },
+          },
+        },
+      });
+
+      const formattedTopVendors = topVendors
+        .map((v) => ({
+          vendorId: v.id,
+          shopName: v.shopName,
+          _sum: { total: v.orders.reduce((acc, o) => acc + o.total, 0) },
+          _count: { orders: v._count.orders },
+        }))
+        .sort((a, b) => b._sum.total - a._sum.total);
 
       return {
         period: input.period,
         totalRevenue: orderAgg._sum.total ?? 0,
+        platformCommission: orderAgg._sum.platformFee ?? 0,
         totalOrders: orderAgg._count.id,
         newUsers,
+        newVendors,
+        topVendors: formattedTopVendors,
+      };
+    }),
+
+  vendorAnalytics: adminProcedure
+    .input(
+      z.object({
+        period: z
+          .enum(["MONTHLY", "QUARTERLY", "HALF_YEARLY", "ANNUAL"])
+          .default("ANNUAL"),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+      let since: Date;
+      switch (input.period) {
+        case "QUARTERLY":
+          since = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+          break;
+        case "HALF_YEARLY":
+          since = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+          break;
+        case "ANNUAL":
+          since = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+          break;
+        default:
+          since = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+
+      // 1. Monthly Breakdown
+      const monthlyData = await ctx.prisma.$queryRaw<
+        Array<{ month: string; revenue: number; orders: number }>
+      >`
+        SELECT 
+          to_char(date_trunc('month', "createdAt"), 'YYYY-MM') as month,
+          CAST(SUM(total) AS FLOAT8) as revenue,
+          CAST(COUNT(id) AS INTEGER) as orders
+        FROM "Order"
+        WHERE "paymentStatus" = 'PAID' AND "createdAt" >= ${since}
+        GROUP BY 1
+        ORDER BY 1 ASC;
+      `;
+
+      // 2. Vendor Stats
+      const vendors = await ctx.prisma.vendor.findMany({
+        include: {
+          orders: {
+            where: { paymentStatus: "PAID", createdAt: { gte: since } },
+            include: { orderItems: true },
+          },
+        },
+      });
+
+      const vendorStats = vendors.map((v) => {
+        const revenue = v.orders.reduce((acc, o) => acc + o.total, 0);
+        const commission = v.orders.reduce((acc, o) => acc + o.platformFee, 0);
+        
+        // Group by product
+        const productMap: Record<string, { name: string; qty: number; revenue: number }> = {};
+        v.orders.forEach(o => {
+          o.orderItems.forEach(item => {
+            if (!productMap[item.productId]) {
+              productMap[item.productId] = { name: item.name, qty: 0, revenue: 0 };
+            }
+            productMap[item.productId].qty += item.quantity;
+            productMap[item.productId].revenue += item.price * item.quantity;
+          });
+        });
+
+        const topProducts = Object.values(productMap)
+          .sort((a, b) => b.revenue - a.revenue)
+          .slice(0, 4);
+
+        return {
+          vendorId: v.id,
+          shopName: v.shopName,
+          revenue,
+          orders: v.orders.length,
+          vendorEarnings: revenue - commission,
+          commission,
+          topProducts,
+        };
+      }).sort((a, b) => b.revenue - a.revenue);
+
+      return {
+        monthlyBreakdown: monthlyData,
+        vendorStats,
       };
     }),
 
@@ -166,15 +287,17 @@ export const adminRouter = createTRPCRouter({
         cursor: z.string().nullish(),
         search: z.string().optional(),
         categoryId: z.string().optional(),
+        vendorId: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
       const limit = input.limit ?? 20;
-      const { cursor, search, categoryId } = input;
+      const { cursor, search, categoryId, vendorId } = input;
       const products = await ctx.prisma.product.findMany({
         take: limit + 1,
         where: {
           categoryId,
+          vendorId,
           OR: search
             ? [
                 { name: { contains: search, mode: "insensitive" } },
@@ -183,7 +306,8 @@ export const adminRouter = createTRPCRouter({
             : undefined,
         },
         include: {
-          category: { select: { name: true } },
+          category: { select: { name: true, commissionRate: true } },
+          vendor: { select: { shopName: true, commissionRate: true, city: true } },
         },
         cursor: cursor ? { id: cursor } : undefined,
         orderBy: { createdAt: "desc" },
@@ -198,6 +322,7 @@ export const adminRouter = createTRPCRouter({
       const total = await ctx.prisma.product.count({
         where: {
           categoryId,
+          vendorId,
           OR: search
             ? [
                 { name: { contains: search, mode: "insensitive" } },
@@ -222,6 +347,8 @@ export const adminRouter = createTRPCRouter({
         categoryId: z.string(),
         images: z.array(z.string().startsWith("data:image/")).min(1),
         isFeatured: z.boolean().optional(),
+        commissionRate: z.number().min(0).max(1).optional(),
+        vendorId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -243,6 +370,8 @@ export const adminRouter = createTRPCRouter({
           categoryId: input.categoryId,
           images: imageUrls,
           isFeatured: input.isFeatured ?? false,
+          commissionRate: input.commissionRate,
+          vendorId: input.vendorId,
         },
       });
     }),
@@ -260,6 +389,8 @@ export const adminRouter = createTRPCRouter({
         categoryId: z.string().optional(),
         isFeatured: z.boolean().optional(),
         isActive: z.boolean().optional(),
+        commissionRate: z.number().min(0).max(1).optional(),
+        vendorId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -409,6 +540,7 @@ export const adminRouter = createTRPCRouter({
         description: z.string().optional(),
         sortOrder: z.number().int().default(0),
         isActive: z.boolean().optional(),
+        commissionRate: z.number().min(0).max(1).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -433,6 +565,7 @@ export const adminRouter = createTRPCRouter({
         description: z.string().optional(),
         sortOrder: z.number().int().optional(),
         isActive: z.boolean().optional(),
+        commissionRate: z.number().min(0).max(1).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -641,61 +774,112 @@ export const adminRouter = createTRPCRouter({
   gstReport: adminProcedure
     .input(
       z.object({
-        period: z
-          .enum(["MONTHLY", "QUARTERLY", "HALF_YEARLY", "ANNUAL"])
-          .default("MONTHLY"),
+        period: z.enum(["MONTHLY", "QUARTERLY", "HALF_YEARLY", "ANNUAL"]),
       }),
     )
     .query(async ({ ctx, input }) => {
       const now = new Date();
-      let since: Date;
+      let since = new Date();
+
       switch (input.period) {
+        case "MONTHLY":
+          since.setMonth(now.getMonth() - 1);
+          break;
         case "QUARTERLY":
-          since = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+          since.setMonth(now.getMonth() - 3);
           break;
         case "HALF_YEARLY":
-          since = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+          since.setMonth(now.getMonth() - 6);
           break;
         case "ANNUAL":
-          since = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+          since.setFullYear(now.getFullYear() - 1);
           break;
-        default:
-          since = new Date(now.getFullYear(), now.getMonth(), 1);
       }
 
-      const items = await ctx.prisma.orderItem.findMany({
-        where: { order: { paymentStatus: "PAID", createdAt: { gte: since } } },
-        include: { order: { select: { id: true, total: true } } },
+      const orders = await ctx.prisma.order.findMany({
+        where: {
+          createdAt: { gte: since },
+          paymentStatus: "PAID",
+        },
+        include: {
+          vendor: {
+            select: {
+              shopName: true,
+              gstNumber: true,
+            },
+          },
+        },
       });
 
-      let totalGst = 0;
-      let totalTaxable = 0;
+      const vendorMap = new Map<
+        string,
+        {
+          shopName: string;
+          gstNumber: string;
+          taxableAmount: number;
+          gstAmount: number;
+          total: number;
+        }
+      >();
 
-      items.forEach((item) => {
-        const taxable = item.price * item.quantity;
-        totalGst += item.gstAmount;
-        totalTaxable += taxable;
+      let totalTaxable = 0;
+      let totalGst = 0;
+
+      orders.forEach((order) => {
+        const vendorKey = order.vendorId || "platform";
+        const vendorData = order.vendor;
+        const current = vendorMap.get(vendorKey) || {
+          shopName: vendorData?.shopName || "Platform",
+          gstNumber: vendorData?.gstNumber || "No GSTIN",
+          taxableAmount: 0,
+          gstAmount: 0,
+          total: 0,
+        };
+
+        // Simplified calculation for demo: assuming price includes 18% GST
+        const orderTaxable = order.totalAmount / 1.18;
+        const orderGst = order.totalAmount - orderTaxable;
+
+        current.taxableAmount += orderTaxable;
+        current.gstAmount += orderGst;
+        current.total += order.totalAmount;
+
+        totalTaxable += orderTaxable;
+        totalGst += orderGst;
+
+        vendorMap.set(vendorKey, current);
       });
 
       return {
         summary: {
           totalGst,
           totalTaxable,
-          period: input.period,
-          vendorsCount: 0,
+          vendorsCount: vendorMap.size,
         },
-        vendors: [],
+        vendors: Array.from(vendorMap.values()),
       };
     }),
 
   getPendingVerifications: adminProcedure.query(async ({ ctx }) => {
-    const pendingOrders = await ctx.prisma.order.findMany({
-      where: { paymentStatus: "PENDING", utrNumber: { not: null } },
-      include: { user: { select: { name: true } } },
-      orderBy: { createdAt: "desc" },
-    });
+    const [pendingOrders, pendingSubscriptions] = await Promise.all([
+      ctx.prisma.order.findMany({
+        where: { paymentStatus: "PENDING", utrNumber: { not: null } },
+        include: {
+          user: { select: { name: true } },
+          vendor: { select: { shopName: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      ctx.prisma.vendor.findMany({
+        where: {
+          subscriptionStatus: "PENDING",
+          subscriptionUtr: { not: null },
+        },
+        orderBy: { updatedAt: "desc" },
+      }),
+    ]);
 
-    return { pendingOrders, pendingSubscriptions: [] };
+    return { pendingOrders, pendingSubscriptions };
   }),
 
   approvePayment: adminProcedure
@@ -723,6 +907,24 @@ export const adminRouter = createTRPCRouter({
           },
         });
         return order;
+      });
+    }),
+
+  approveSubscription: adminProcedure
+    .input(z.object({ vendorId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const vendor = await ctx.prisma.vendor.findUnique({
+        where: { id: input.vendorId },
+      });
+      if (!vendor)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Vendor not found." });
+
+      return ctx.prisma.vendor.update({
+        where: { id: input.vendorId },
+        data: {
+          subscriptionStatus: "ACTIVE",
+          status: "APPROVED",
+        },
       });
     }),
 
@@ -791,43 +993,61 @@ export const adminRouter = createTRPCRouter({
     }),
 
   vendors: adminProcedure
-    .input(z.object({ status: z.nativeEnum(VendorStatus).optional(), limit: z.number().optional() }))
+    .input(
+      z.object({
+        status: z.nativeEnum(VendorStatus).optional(),
+        limit: z.number().optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const { status } = input;
-      return ctx.prisma.vendor.findMany({
+      const vendors = await ctx.prisma.vendor.findMany({
         where: status ? { status } : undefined,
         include: {
           user: { select: { name: true, email: true, avatar: true } },
           _count: { select: { products: true, orders: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
+      return { vendors };
     }),
 
   updateVendorStatus: adminProcedure
-    .input(z.object({ vendorId: z.string(), status: z.nativeEnum(VendorStatus) }))
+    .input(
+      z.object({
+        vendorId: z.string(),
+        status: z.enum(["PENDING", "APPROVED", "SUSPENDED"]),
+        commissionRate: z.number().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const vendor = await ctx.prisma.vendor.update({
         where: { id: input.vendorId },
-        data: { status: input.status },
-        include: { user: true }
+        data: {
+          status: input.status,
+          commissionRate: input.commissionRate,
+        },
+        include: { user: true },
       });
 
       // If approved, ensure user role is VENDOR
-      if (input.status === 'APPROVED') {
+      if (input.status === "APPROVED") {
         await ctx.prisma.user.update({
           where: { id: vendor.userId },
-          data: { role: 'VENDOR' }
+          data: { role: "VENDOR" },
         });
-        
+
         try {
           const { clerkClient } = await import("@clerk/nextjs/server");
           const clerk = await clerkClient();
           await clerk.users.updateUserMetadata(vendor.user.clerkId, {
-            publicMetadata: { role: 'VENDOR' },
+            publicMetadata: { role: "VENDOR" },
           });
         } catch (err) {
-          console.error("[Admin] Failed to sync Clerk metadata for vendor:", err);
+          console.error(
+            "[Admin] Failed to sync Clerk metadata for vendor:",
+            err,
+          );
         }
       }
 
@@ -839,10 +1059,10 @@ export const adminRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.vendor.update({
         where: { id: input.vendorId },
-        data: { 
-          subscriptionStatus: 'ACTIVE',
-          status: 'APPROVED'
-        }
+        data: {
+          subscriptionStatus: "ACTIVE",
+          status: "APPROVED",
+        },
       });
     }),
 
@@ -851,37 +1071,39 @@ export const adminRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.vendor.update({
         where: { id: input.vendorId },
-        data: { commissionRate: input.rate / 100 }
+        data: { commissionRate: input.rate / 100 },
       });
     }),
 
   createVendor: adminProcedure
-    .input(z.object({
-      userId: z.string(),
-      shopName: z.string().min(3),
-      phone: z.string(),
-      email: z.string().email(),
-      city: z.string(),
-      categories: z.array(z.string()),
-      commissionRate: z.number().optional(),
-    }))
+    .input(
+      z.object({
+        userId: z.string(),
+        shopName: z.string().min(3),
+        phone: z.string(),
+        email: z.string().email(),
+        city: z.string(),
+        categories: z.array(z.string()),
+        commissionRate: z.number().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const { userId, ...vendorData } = input;
-      
+
       // 1. Create the vendor record
       const vendor = await ctx.prisma.vendor.create({
         data: {
           userId,
           ...vendorData,
-          status: 'APPROVED',
-          subscriptionStatus: 'ACTIVE',
-        }
+          status: "APPROVED",
+          subscriptionStatus: "ACTIVE",
+        },
       });
 
       // 2. Update user role
       const user = await ctx.prisma.user.update({
         where: { id: userId },
-        data: { role: 'VENDOR' }
+        data: { role: "VENDOR" },
       });
 
       // 3. Sync Clerk
@@ -889,10 +1111,13 @@ export const adminRouter = createTRPCRouter({
         const { clerkClient } = await import("@clerk/nextjs/server");
         const clerk = await clerkClient();
         await clerk.users.updateUserMetadata(user.clerkId, {
-          publicMetadata: { role: 'VENDOR' },
+          publicMetadata: { role: "VENDOR" },
         });
       } catch (err) {
-        console.error("[Admin] Failed to sync Clerk metadata for new vendor:", err);
+        console.error(
+          "[Admin] Failed to sync Clerk metadata for new vendor:",
+          err,
+        );
       }
 
       return vendor;
@@ -915,6 +1140,7 @@ export const adminRouter = createTRPCRouter({
         include: {
           user: { select: { name: true, email: true } },
           items: { take: 3, select: { name: true, price: true } },
+          vendor: { select: { shopName: true, city: true } },
         },
         cursor: cursor ? { id: cursor } : undefined,
         orderBy: { createdAt: "desc" },
@@ -926,5 +1152,60 @@ export const adminRouter = createTRPCRouter({
         nextCursor = nextItem!.id;
       }
       return { orders, nextCursor };
+    }),
+
+  payouts: adminProcedure
+    .input(z.object({ limit: z.number().default(50) }))
+    .query(async ({ ctx, input }) => {
+      const payouts = await ctx.prisma.payout.findMany({
+        take: input.limit,
+        include: { vendor: { select: { shopName: true } } },
+        orderBy: { createdAt: "desc" },
+      });
+      return { payouts };
+    }),
+
+  processPayout: adminProcedure
+    .input(
+      z.object({
+        vendorId: z.string(),
+        amount: z.number().positive(),
+        utrNumber: z.string().min(5),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const vendor = await ctx.prisma.vendor.findUnique({
+        where: { id: input.vendorId },
+      });
+      if (!vendor)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Vendor not found" });
+      if (vendor.pendingPayout < input.amount) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Insufficient pending balance",
+        });
+      }
+
+      return ctx.prisma.$transaction(async (tx) => {
+        const payout = await tx.payout.create({
+          data: {
+            vendorId: input.vendorId,
+            amount: input.amount,
+            utrNumber: input.utrNumber,
+            status: "COMPLETED",
+            processedAt: new Date(),
+          },
+        });
+
+        await tx.vendor.update({
+          where: { id: input.vendorId },
+          data: {
+            pendingPayout: { decrement: input.amount },
+            totalEarnings: { increment: input.amount },
+          },
+        });
+
+        return payout;
+      });
     }),
 });

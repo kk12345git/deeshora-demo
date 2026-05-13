@@ -104,6 +104,7 @@ model Product {
   category          Category    @relation(fields: [categoryId], references: [id])
   reviews           Review[]
   subscriptions     OrderSubscription[]
+  commissionRate     Float?
   vendorId          String?
   vendor            Vendor?     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 

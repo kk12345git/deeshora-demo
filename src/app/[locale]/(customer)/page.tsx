@@ -2,10 +2,14 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+
 import { trpc } from "@/lib/trpc";
+
 import { Link, useRouter } from "@/navigation";
 import Image from "next/image";
+
 import { motion, AnimatePresence } from "framer-motion";
+
 import {
   ShoppingBag,
   CheckCircle,
@@ -30,15 +34,19 @@ import {
 import ProductCard from "@/components/customer/ProductCard";
 import ProductCardSkeleton from "@/components/customer/ProductCardSkeleton";
 import CitySelector from "@/components/customer/CitySelector";
+
 import { useTranslations } from "next-intl";
 
 // ─── Debounce hook ─────────────────────────────────────────────────────────────
+
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedValue(value), delay);
+
     return () => clearTimeout(handler);
   }, [value, delay]);
+
   return debouncedValue;
 }
 
@@ -51,6 +59,7 @@ function CategoryItemImage({ category }: { category: any }) {
       </div>
     );
   }
+
   return (
     <Image
       src={category.image}
@@ -67,9 +76,13 @@ export default function HomePage() {
   const [selectedCity, setSelectedCity] = useState<string | undefined>(
     undefined,
   );
+
   const [isLoaded, setIsLoaded] = useState(false);
+
   const router = useRouter();
+
   const t = useTranslations("Home");
+
   const tc = useTranslations("Common");
 
   useEffect(() => {
@@ -79,8 +92,10 @@ export default function HomePage() {
   }, []);
 
   // ─── tRPC queries ────────────────────────────────────────────────────────
+
   const { data: categories, isLoading: isLoadingCats } =
     trpc.product.categories.useQuery();
+
   const { data: allProducts, isLoading: isLoadingAll } =
     trpc.product.list.useQuery({
       limit: 12,

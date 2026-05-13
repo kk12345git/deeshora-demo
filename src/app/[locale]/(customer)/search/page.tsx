@@ -1,15 +1,24 @@
 // src/app/(customer)/search/page.tsx
 "use client";
 
-import { useSearchParams } from 'next/navigation';
-import { useRouter } from '@/navigation';
-import { trpc } from '@/lib/trpc';
-import ProductCard from '@/components/customer/ProductCard';
-import { Search as SearchIcon, Loader2, ShoppingBag, Sparkles, Zap, Tag, ArrowRight, X } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "@/navigation";
+import { trpc } from "@/lib/trpc";
+import ProductCard from "@/components/customer/ProductCard";
+import {
+  Search as SearchIcon,
+  Loader2,
+  ShoppingBag,
+  Sparkles,
+  Zap,
+  Tag,
+  ArrowRight,
+  X,
+} from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import Image from "next/image";
 
 function CategoryItemImage({ category }: { category: any }) {
   const [error, setError] = useState(false);
@@ -21,24 +30,28 @@ function CategoryItemImage({ category }: { category: any }) {
     );
   }
   return (
-    <Image 
-       src={category.image} 
-       alt={category.name} 
-       width={80} 
-       height={80} 
-       className="object-contain group-hover:scale-110 transition-transform group-hover:brightness-0 group-hover:invert" 
-       onError={() => setError(true)} 
-     />
+    <Image
+      src={category.image}
+      alt={category.name}
+      width={80}
+      height={80}
+      className="object-contain group-hover:scale-110 transition-transform group-hover:brightness-0 group-hover:invert"
+      onError={() => setError(true)}
+    />
   );
 }
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const query = searchParams.get('q') || '';
-  const [selectedCity, setSelectedCity] = useState<string | undefined>(undefined);
+  const query = searchParams.get("q") || "";
+  const [selectedCity, setSelectedCity] = useState<string | undefined>(
+    undefined,
+  );
   const [liveQuery, setLiveQuery] = useState(query);
-  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
+    undefined,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -51,39 +64,47 @@ export default function SearchPage() {
     setSelectedCategory(undefined);
   }, [query]);
 
-  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (liveQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(liveQuery.trim())}`);
-    }
-  }, [liveQuery, router]);
+  const handleSearchSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (liveQuery.trim()) {
+        router.push(`/search?q=${encodeURIComponent(liveQuery.trim())}`);
+      }
+    },
+    [liveQuery, router],
+  );
 
   // ─── AI Smart Search ────────────────────────────────────────────────────
-  const { data: smartData, isLoading: isSmartLoading } = trpc.product.smartSearch.useQuery(
-    { query, city: selectedCity, limit: 20 },
-    { enabled: query.trim().length > 0 }
-  );
+  const { data: smartData, isLoading: isSmartLoading } =
+    trpc.product.smartSearch.useQuery(
+      { query, city: selectedCity, limit: 20 },
+      { enabled: query.trim().length > 0 },
+    );
 
   // ─── Categories for filter chips ────────────────────────────────────────
   const { data: categories } = trpc.product.categories.useQuery();
 
   // ─── Filter by category on client side ──────────────────────────────────
   const filteredExact = selectedCategory
-    ? smartData?.exact.filter(p => p.category.slug === selectedCategory) ?? []
-    : smartData?.exact ?? [];
+    ? (smartData?.exact.filter((p) => p.category.slug === selectedCategory) ??
+      [])
+    : (smartData?.exact ?? []);
 
   const filteredRelated = selectedCategory
-    ? smartData?.related.filter(p => p.category.slug === selectedCategory) ?? []
-    : smartData?.related ?? [];
+    ? (smartData?.related.filter((p) => p.category.slug === selectedCategory) ??
+      [])
+    : (smartData?.related ?? []);
 
   // Which categories appear in results
   const resultCategorySlugs = new Set([
-    ...(smartData?.exact ?? []).map(p => p.category.slug),
-    ...(smartData?.related ?? []).map(p => p.category.slug),
+    ...(smartData?.exact ?? []).map((p) => p.category.slug),
+    ...(smartData?.related ?? []).map((p) => p.category.slug),
   ]);
 
-  const filterCategories = categories?.filter(c => resultCategorySlugs.has(c.slug)) ?? [];
-  const hasResults = (smartData?.exact.length ?? 0) + (smartData?.related.length ?? 0) > 0;
+  const filterCategories =
+    categories?.filter((c) => resultCategorySlugs.has(c.slug)) ?? [];
+  const hasResults =
+    (smartData?.exact.length ?? 0) + (smartData?.related.length ?? 0) > 0;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -92,20 +113,24 @@ export default function SearchPage() {
         <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-emerald-500/20 to-transparent blur-3xl opacity-30 animate-pulse" />
         <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-brand-500/20 to-transparent blur-3xl opacity-20 animate-pulse delay-1000" />
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
-        
+
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto space-y-6">
             {/* AI badge */}
             <div className="flex items-center gap-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
-                <Sparkles size={12} className="animate-pulse" /> AI Search Engine
+                <Sparkles size={12} className="animate-pulse" /> AI Search
+                Engine
               </div>
             </div>
 
             {/* Live re-search input */}
             <form onSubmit={handleSearchSubmit} className="relative group">
               <div className="flex items-center bg-white/5 border border-white/10 rounded-[1.75rem] overflow-hidden focus-within:border-brand-500/50 focus-within:bg-white/8 transition-all">
-                <SearchIcon size={20} className="ml-5 text-gray-500 flex-shrink-0" />
+                <SearchIcon
+                  size={20}
+                  className="ml-5 text-gray-500 flex-shrink-0"
+                />
                 <input
                   ref={inputRef}
                   type="text"
@@ -125,7 +150,10 @@ export default function SearchPage() {
                 {liveQuery && (
                   <button
                     type="button"
-                    onClick={() => { setLiveQuery(''); inputRef.current?.focus(); }}
+                    onClick={() => {
+                      setLiveQuery("");
+                      inputRef.current?.focus();
+                    }}
                     className="px-3 text-gray-600 hover:text-gray-400 transition-colors"
                   >
                     <X size={18} />
@@ -141,9 +169,22 @@ export default function SearchPage() {
                   <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
                     {hasResults ? (
                       <>
-                        <span className="text-brand-400">{smartData?.totalExact ?? 0}</span> exact
-                        {(filteredRelated.length > 0) && <> + <span className="text-emerald-400">{smartData?.related.length}</span> related</>}
-                        <span className="text-white/40 font-medium"> for</span> &quot;{query}&quot;
+                        <span className="text-brand-400">
+                          {smartData?.totalExact ?? 0}
+                        </span>{" "}
+                        exact
+                        {filteredRelated.length > 0 && (
+                          <>
+                            {" "}
+                            +{" "}
+                            <span className="text-emerald-400">
+                              {smartData?.related.length}
+                            </span>{" "}
+                            related
+                          </>
+                        )}
+                        <span className="text-white/40 font-medium"> for</span>{" "}
+                        &quot;{query}&quot;
                       </>
                     ) : (
                       <>No results for &quot;{query}&quot;</>
@@ -159,10 +200,15 @@ export default function SearchPage() {
                         <Tag size={16} />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/60 leading-none mb-1">AI Smart Intent</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/60 leading-none mb-1">
+                          AI Smart Intent
+                        </p>
                         <p className="text-sm font-bold text-emerald-400">
-                          Detected your interest in <span className="text-white underline decoration-emerald-500/50 underline-offset-4 decoration-2">{smartData.suggestedCategory.name}</span>. 
-                          I&apos;ve prioritized fresh local items for you.
+                          Detected your interest in{" "}
+                          <span className="text-white underline decoration-emerald-500/50 underline-offset-4 decoration-2">
+                            {smartData.suggestedCategory.name}
+                          </span>
+                          . I&apos;ve prioritized fresh local items for you.
                         </p>
                       </div>
                     </div>
@@ -183,26 +229,36 @@ export default function SearchPage() {
                 onClick={() => setSelectedCategory(undefined)}
                 className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest transition-all ${
                   !selectedCategory
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                 }`}
               >
                 All
               </button>
               {filterCategories.map((cat) => {
-                const count = (smartData?.exact ?? []).filter(p => p.category.slug === cat.slug).length
-                  + (smartData?.related ?? []).filter(p => p.category.slug === cat.slug).length;
+                const count =
+                  (smartData?.exact ?? []).filter(
+                    (p) => p.category.slug === cat.slug,
+                  ).length +
+                  (smartData?.related ?? []).filter(
+                    (p) => p.category.slug === cat.slug,
+                  ).length;
                 return (
                   <button
                     key={cat.id}
-                    onClick={() => setSelectedCategory(cat.slug === selectedCategory ? undefined : cat.slug)}
+                    onClick={() =>
+                      setSelectedCategory(
+                        cat.slug === selectedCategory ? undefined : cat.slug,
+                      )
+                    }
                     className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black transition-all ${
                       selectedCategory === cat.slug
-                        ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20'
-                        : 'bg-gray-100 text-gray-600 hover:bg-brand-50 hover:text-brand-600'
+                        ? "bg-brand-500 text-white shadow-lg shadow-brand-500/20"
+                        : "bg-gray-100 text-gray-600 hover:bg-brand-50 hover:text-brand-600"
                     }`}
                   >
-                    <Tag size={11} /> {cat.name} <span className="opacity-60">({count})</span>
+                    <Tag size={11} /> {cat.name}{" "}
+                    <span className="opacity-60">({count})</span>
                   </button>
                 );
               })}
@@ -217,12 +273,19 @@ export default function SearchPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-3 text-gray-500">
               <Loader2 size={18} className="animate-spin text-brand-400" />
-              <span className="font-bold text-sm">AI is searching your neighborhood...</span>
+              <span className="font-bold text-sm">
+                AI is searching your neighborhood...
+              </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {Array(8).fill(0).map((_, i) => (
-                <div key={i} className="h-80 bg-white rounded-[2.5rem] animate-pulse shadow-xl shadow-gray-200/50" />
-              ))}
+              {Array(8)
+                .fill(0)
+                .map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-80 bg-white rounded-[2.5rem] animate-pulse shadow-xl shadow-gray-200/50"
+                  />
+                ))}
             </div>
           </div>
         )}
@@ -233,13 +296,18 @@ export default function SearchPage() {
             <div className="flex items-center gap-3 mb-8">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-brand-100 rounded-full">
                 <Zap size={14} className="text-brand-600" />
-                <span className="text-xs font-black text-brand-700 uppercase tracking-widest">Exact Matches</span>
+                <span className="text-xs font-black text-brand-700 uppercase tracking-widest">
+                  Exact Matches
+                </span>
               </div>
-              <span className="text-sm text-gray-400 font-medium">{filteredExact.length} product{filteredExact.length !== 1 ? 's' : ''} found</span>
+              <span className="text-sm text-gray-400 font-medium">
+                {filteredExact.length} product
+                {filteredExact.length !== 1 ? "s" : ""} found
+              </span>
               <span className="h-px bg-gray-200 flex-grow hidden md:block" />
             </div>
-            <motion.div 
-               layout
+            <motion.div
+              layout
               className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"
             >
               <AnimatePresence mode="popLayout">
@@ -266,9 +334,13 @@ export default function SearchPage() {
             <div className="flex items-center gap-3 mb-8">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 rounded-full">
                 <Sparkles size={14} className="text-emerald-600" />
-                <span className="text-xs font-black text-emerald-700 uppercase tracking-widest">Related Items</span>
+                <span className="text-xs font-black text-emerald-700 uppercase tracking-widest">
+                  Related Items
+                </span>
               </div>
-              <span className="text-sm text-gray-400 font-medium">You might also like these</span>
+              <span className="text-sm text-gray-400 font-medium">
+                You might also like these
+              </span>
               <span className="h-px bg-gray-200 flex-grow hidden md:block" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
@@ -285,21 +357,44 @@ export default function SearchPage() {
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-200">
               <SearchIcon size={40} />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 uppercase tracking-tight">Nothing found</h3>
+            <h3 className="text-2xl font-bold text-gray-900 uppercase tracking-tight">
+              Nothing found
+            </h3>
             <p className="mt-2 text-gray-500 max-w-sm mx-auto font-medium">
-              Couldn&apos;t find anything matching &quot;{query}&quot; {selectedCity ? `in ${selectedCity}` : 'in your area'}.
+              Couldn&apos;t find anything matching &quot;{query}&quot;{" "}
+              {selectedCity ? `in ${selectedCity}` : "in your area"}.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-              <button onClick={() => window.history.back()} className="btn-secondary">← Try Different Search</button>
+              <button
+                onClick={() => window.history.back()}
+                className="btn-secondary"
+              >
+                ← Try Different Search
+              </button>
               {selectedCity && (
-                <button onClick={() => setSelectedCity(undefined)} className="btn-ghost text-brand-600">Search Everywhere</button>
+                <button
+                  onClick={() => setSelectedCity(undefined)}
+                  className="btn-ghost text-brand-600"
+                >
+                  Search Everywhere
+                </button>
               )}
             </div>
             {/* Trending suggestions */}
             <div className="mt-10 space-y-3">
-              <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Try searching for</p>
+              <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
+                Try searching for
+              </p>
               <div className="flex flex-wrap items-center justify-center gap-2">
-                {['Tomato', 'Milk', 'Rice', 'Chicken', 'Bread', 'Eggs', 'Paneer'].map((term) => (
+                {[
+                  "Tomato",
+                  "Milk",
+                  "Rice",
+                  "Chicken",
+                  "Bread",
+                  "Eggs",
+                  "Paneer",
+                ].map((term) => (
                   <Link
                     key={term}
                     href={`/search?q=${encodeURIComponent(term)}`}
@@ -317,21 +412,40 @@ export default function SearchPage() {
         {!query && (
           <section className="py-12">
             <div className="mb-8">
-              <h2 className="text-3xl font-black text-gray-900">Explore Categories</h2>
-              <p className="text-gray-500 mt-2">Find exactly what you need in your {selectedCity || "local area"}.</p>
+              <h2 className="text-3xl font-black text-gray-900">
+                Explore Categories
+              </h2>
+              <p className="text-gray-500 mt-2">
+                Find exactly what you need in your{" "}
+                {selectedCity || "local area"}.
+              </p>
             </div>
-            
+
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
-              {!categories ? Array(8).fill(0).map((_, i) => <div key={i} className="aspect-square bg-gray-100 animate-pulse rounded-3xl" />) : 
-              categories?.map((category) => (
-                <Link key={category.id} href={`/category/${category.slug}`} className="group space-y-4">
-                  <div className="aspect-square bg-gray-50 rounded-[2rem] p-4 flex items-center justify-center group-hover:bg-brand-600 transition-all group-hover:shadow-2xl group-hover:shadow-brand-500/40 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <CategoryItemImage category={category} />
-                  </div>
-                  <p className="text-center font-bold text-gray-800 group-hover:text-brand-600 transition-colors">{category.name}</p>
-                </Link>
-              ))}
+              {!categories
+                ? Array(8)
+                    .fill(0)
+                    .map((_, i) => (
+                      <div
+                        key={i}
+                        className="aspect-square bg-gray-100 animate-pulse rounded-3xl"
+                      />
+                    ))
+                : categories?.map((category) => (
+                    <Link
+                      key={category.id}
+                      href={`/category/${category.slug}`}
+                      className="group space-y-4"
+                    >
+                      <div className="aspect-square bg-gray-50 rounded-[2rem] p-4 flex items-center justify-center group-hover:bg-brand-600 transition-all group-hover:shadow-2xl group-hover:shadow-brand-500/40 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <CategoryItemImage category={category} />
+                      </div>
+                      <p className="text-center font-bold text-gray-800 group-hover:text-brand-600 transition-colors">
+                        {category.name}
+                      </p>
+                    </Link>
+                  ))}
             </div>
           </section>
         )}

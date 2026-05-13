@@ -1,1 +1,30 @@
-// src/components/LanguageSwitcher.tsx'use client';import { useLocale } from 'next-intl';import { useRouter, usePathname } from '@/navigation';import { Languages } from 'lucide-react';export default function LanguageSwitcher() {  const locale = useLocale();  const router = useRouter();  const pathname = usePathname();  const toggleLanguage = () => {    const nextLocale = locale === 'en' ? 'ta' : 'en';    router.replace(pathname, { locale: nextLocale });  };  return (    <button      onClick={toggleLanguage}      className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all group"    >      <Languages size={18} className="text-brand-500 group-hover:rotate-12 transition-transform" />      <span className="text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">        {locale === 'en' ? 'தமிழ்' : 'English'}      </span>    </button>  );}
+// src/components/LanguageSwitcher.tsx
+"use client";
+import { useLocale } from "next-intl";
+import { useRouter, usePathname } from "@/navigation";
+import { Languages } from "lucide-react";
+export default function LanguageSwitcher() {
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
+  const toggleLanguage = () => {
+    const nextLocale = locale === "en" ? "ta" : "en";
+    router.replace(pathname, { locale: nextLocale });
+  };
+  return (
+    <button
+      onClick={toggleLanguage}
+      className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all group"
+    >
+      {" "}
+      <Languages
+        size={18}
+        className="text-brand-500 group-hover:rotate-12 transition-transform"
+      />{" "}
+      <span className="text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">
+        {" "}
+        {locale === "en" ? "தமிழ்" : "English"}{" "}
+      </span>{" "}
+    </button>
+  );
+}

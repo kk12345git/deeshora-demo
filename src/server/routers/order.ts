@@ -443,10 +443,18 @@ export const orderRouter = createTRPCRouter({
     }),
 
   vendorOrders: vendorProcedure
-    .input(z.object({ status: z.nativeEnum(OrderStatus).optional(), limit: z.number().optional() }))
+    .input(
+      z.object({
+        status: z.nativeEnum(OrderStatus).optional(),
+        limit: z.number().optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
-      const vendor = await ctx.prisma.vendor.findUnique({ where: { userId: ctx.user.id } });
-      if (!vendor && ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Not a vendor' });
+      const vendor = await ctx.prisma.vendor.findUnique({
+        where: { userId: ctx.user.id },
+      });
+      if (!vendor && ctx.user.role !== "ADMIN")
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not a vendor" });
 
       const { status, limit = 10 } = input;
       const orders = await ctx.prisma.order.findMany({
@@ -460,7 +468,7 @@ export const orderRouter = createTRPCRouter({
           items: true,
           deliveryPartner: { select: { name: true, phone: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: limit,
       });
 
@@ -476,7 +484,7 @@ export const orderRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { orderId, status } = input;
-      
+
       const order = await ctx.prisma.order.findFirst({
         where: { id: orderId },
         include: { user: { select: { phone: true } } },
@@ -487,10 +495,12 @@ export const orderRouter = createTRPCRouter({
       }
 
       // If vendor, check ownership
-      if (ctx.user.role === 'VENDOR') {
-        const vendor = await ctx.prisma.vendor.findUnique({ where: { userId: ctx.user.id } });
+      if (ctx.user.role === "VENDOR") {
+        const vendor = await ctx.prisma.vendor.findUnique({
+          where: { userId: ctx.user.id },
+        });
         if (!vendor || order.vendorId !== vendor.id) {
-          throw new TRPCError({ code: 'FORBIDDEN', message: 'Not your order' });
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not your order" });
         }
       }
 
@@ -633,10 +643,12 @@ export const orderRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
 
       // Ownership check for vendors
-      if (ctx.user.role === 'VENDOR') {
-        const vendor = await ctx.prisma.vendor.findUnique({ where: { userId: ctx.user.id } });
+      if (ctx.user.role === "VENDOR") {
+        const vendor = await ctx.prisma.vendor.findUnique({
+          where: { userId: ctx.user.id },
+        });
         if (!vendor || order.vendorId !== vendor.id) {
-          throw new TRPCError({ code: 'FORBIDDEN', message: 'Not your order' });
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not your order" });
         }
       }
 
