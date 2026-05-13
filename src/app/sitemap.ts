@@ -3,7 +3,7 @@ import { MetadataRoute } from 'next';
 import prisma from '@/lib/prisma';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://deeshora.com';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://Daily1Mart.com';
 
   // Fetch all categories
   const categories = await prisma.category.findMany({
@@ -14,12 +14,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const products = await prisma.product.findMany({
     where: { isActive: true },
     select: { slug: true, updatedAt: true },
-  });
-
-  // Fetch only approved vendors — do not leak PENDING/SUSPENDED vendors to crawlers
-  const vendors = await prisma.vendor.findMany({
-    where: { status: 'APPROVED' },
-    select: { id: true, updatedAt: true },
   });
 
   const categoryEntries = categories.map((cat) => ({
@@ -36,13 +30,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  const vendorEntries = vendors.map((v) => ({
-    url: `${baseUrl}/vendor/${v.id}`,
-    lastModified: v.updatedAt,
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }));
-
   const staticPages = [
     {
       url: baseUrl,
@@ -56,13 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly' as const,
       priority: 0.5,
     },
-    {
-        url: `${baseUrl}/vendor/register`,
-        lastModified: new Date(),
-        changeFrequency: 'monthly' as const,
-        priority: 0.4,
-    }
   ];
 
-  return [...staticPages, ...categoryEntries, ...productEntries, ...vendorEntries];
+  return [...staticPages, ...categoryEntries, ...productEntries];
 }

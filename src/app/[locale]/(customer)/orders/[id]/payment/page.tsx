@@ -27,7 +27,7 @@ export default function OrderPaymentPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="animate-spin text-orange-500" size={48} />
+        <Loader2 className="animate-spin text-brand-500" size={48} />
       </div>
     );
   }
@@ -49,16 +49,13 @@ export default function OrderPaymentPage() {
     return null;
   }
 
-  const vendorUpiId = order.vendor.upiId;
-  const vendorUpiQr = order.vendor.upiQrCode;
+  const adminUpiId = "deeshware15-2@okicici";
   
   // Construct standard UPI URI
-  const upiUrl = vendorUpiId 
-    ? `upi://pay?pa=${vendorUpiId}&pn=${encodeURIComponent(order.vendor.shopName)}&am=${order.total.toFixed(2)}&tr=${order.id}&cu=INR`
-    : '';
+  const upiUrl = `upi://pay?pa=${adminUpiId}&pn=${encodeURIComponent("Daily1Mart")}&am=${order.total.toFixed(2)}&tr=${order.id}&cu=INR`;
 
-  // Use vendor QR if available, otherwise fallback to generating one using a generic API
-  const qrUrl = vendorUpiQr || (upiUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiUrl)}` : null);
+  // Generic API to generate QR code for the UPI URI
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiUrl)}`;
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
@@ -67,7 +64,7 @@ export default function OrderPaymentPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black text-gray-900 tracking-tighter">Complete Payment</h1>
-          <p className="text-gray-500 font-medium text-sm mt-2">Pay directly to <span className="text-gray-900 font-bold">{order.vendor.shopName}</span></p>
+          <p className="text-gray-500 font-medium text-sm mt-2">Pay directly to <span className="text-gray-900 font-bold">Daily1Mart</span></p>
         </div>
 
         {/* Order Summary */}
@@ -78,7 +75,7 @@ export default function OrderPaymentPage() {
           </div>
           <div className="flex justify-between items-end">
             <span className="text-gray-900 font-black uppercase tracking-widest text-sm">Amount to Pay</span>
-            <span className="text-4xl font-black text-orange-500 tracking-tighter">₹{order.total.toFixed(2)}</span>
+            <span className="text-4xl font-black text-brand-500 tracking-tighter">₹{order.total.toFixed(2)}</span>
           </div>
         </div>
 
@@ -126,7 +123,7 @@ export default function OrderPaymentPage() {
                   </div>
                 )}
               </div>
-              <p className="text-xs font-bold text-gray-400 mt-4">Scan this code using any UPI app to pay <br/><span className="text-gray-900 font-black">{order.vendor.shopName}</span></p>
+              <p className="text-xs font-bold text-gray-400 mt-4">Scan this code using any UPI app to pay <br/><span className="text-gray-900 font-black">Daily1Mart</span></p>
             </div>
           )}
         </div>
@@ -141,7 +138,7 @@ export default function OrderPaymentPage() {
             placeholder="Enter 12-digit UTR Number"
             value={utrNumber}
             onChange={(e) => setUtrNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
-            className="w-full h-14 bg-gray-50 border-2 border-transparent focus:border-orange-500 focus:bg-white transition-all rounded-2xl px-5 font-mono font-black text-center tracking-widest text-gray-900 placeholder:text-gray-300 placeholder:font-sans placeholder:tracking-normal mb-4 outline-none"
+            className="w-full h-14 bg-gray-50 border-2 border-transparent focus:border-brand-500 focus:bg-white transition-all rounded-2xl px-5 font-mono font-black text-center tracking-widest text-gray-900 placeholder:text-gray-300 placeholder:font-sans placeholder:tracking-normal mb-4 outline-none"
             maxLength={12}
           />
 

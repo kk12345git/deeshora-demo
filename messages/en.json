@@ -1,6 +1,6 @@
 {
   "Common": {
-    "welcome": "Welcome to Deeshora",
+    "welcome": "Welcome to Daily1Mart",
     "search": "Search for products...",
     "cart": "Cart",
     "profile": "Profile",
@@ -44,7 +44,7 @@
   },
   "Home": {
     "hero_title": "Your Hometown Marketplace.",
-    "hero_subtitle": "Deeshora connects you directly with local shops in your neighborhood.",
+    "hero_subtitle": "Daily1Mart connects you directly with local shops in your neighborhood.",
     "browse_products": "Browse Products",
     "explore_categories": "Explore by Category",
     "featured_specials": "Featured Specials",

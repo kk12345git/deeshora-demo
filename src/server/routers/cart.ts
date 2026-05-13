@@ -11,13 +11,9 @@ export const cartRouter = createTRPCRouter({
       include: {
         items: {
           include: {
-            product: {
-              include: {
-                vendor: { select: { shopName: true } },
-              },
-            },
+            product: true,
           },
-          orderBy: { product: { vendorId: 'asc' } },
+          orderBy: { id: 'asc' },
         },
       },
     });
@@ -49,11 +45,10 @@ export const cartRouter = createTRPCRouter({
 
       const product = await ctx.prisma.product.findUnique({
         where: { id: productId },
-        include: { vendor: { select: { status: true } } },
       });
 
 
-      if (!product || !product.isActive || product.vendor.status !== 'APPROVED') {
+      if (!product || !product.isActive) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Product is not available.' });
       }
 
@@ -170,7 +165,6 @@ export const cartRouter = createTRPCRouter({
       const productIds = input.map((i) => i.productId);
       const products = await ctx.prisma.product.findMany({
         where: { id: { in: productIds } },
-        include: { vendor: { select: { status: true } } },
       });
 
       const productMap = new Map(products.map((p) => [p.id, p]));
@@ -182,7 +176,6 @@ export const cartRouter = createTRPCRouter({
         if (
           !product ||
           !product.isActive ||
-          product.vendor.status !== 'APPROVED' ||
           product.stock < 1
         ) {
           skipped.push(item.productId);

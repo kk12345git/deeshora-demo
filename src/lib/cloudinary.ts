@@ -10,7 +10,7 @@ cloudinary.config({
 });
 
 
-export const uploadImage = async (base64Image: string, folder: string = 'deeshora'): Promise<string> => {
+export const uploadImage = async (base64Image: string, folder: string = 'Daily1Mart'): Promise<string> => {
   try {
     const result = await cloudinary.uploader.upload(base64Image, {
       folder: folder,

@@ -88,7 +88,7 @@ export const useCart = create<CartState>()(
       },
     }),
     {
-      name: 'deeshora-cart',
+      name: 'Daily1Mart-cart',
       storage: createJSONStorage(() => localStorage),
     }
   )

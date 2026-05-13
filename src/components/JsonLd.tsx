@@ -7,14 +7,14 @@ interface JsonLdProps {
 }
 
 export default function JsonLd({ type, data }: JsonLdProps) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://deeshora.com';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://Daily1Mart.com';
   
   // Default Organization & Service Schema (Global)
   if (!type) {
     const organizationSchema = {
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": "Deeshora",
+      "name": "Daily1Mart",
       "url": baseUrl,
       "logo": `${baseUrl}/logo.png`,
       "description": "Premium hyperlocal delivery platform connecting local shops with customers for instant delivery of groceries, food, and essentials. Serving Thiruvottriyur, Chennai, and beyond.",
@@ -25,9 +25,9 @@ export default function JsonLd({ type, data }: JsonLdProps) {
         "addressCountry": "IN"
       },
       "sameAs": [
-        "https://facebook.com/deeshora",
-        "https://instagram.com/deeshora",
-        "https://twitter.com/deeshora"
+        "https://facebook.com/Daily1Mart",
+        "https://instagram.com/Daily1Mart",
+        "https://twitter.com/Daily1Mart"
       ]
     };
 
@@ -37,7 +37,7 @@ export default function JsonLd({ type, data }: JsonLdProps) {
       "serviceType": "Hyperlocal Delivery",
       "provider": {
         "@type": "LocalBusiness",
-        "name": "Deeshora Local Marketplace"
+        "name": "Daily1Mart Local Marketplace"
       },
       "areaServed": {
         "@type": "City",

@@ -32,7 +32,7 @@ export default function InvoicePage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
+        <Loader2 className="w-10 h-10 animate-spin text-brand-500" />
       </div>
     );
   }
@@ -65,12 +65,12 @@ export default function InvoicePage() {
 
       {/* Top bar (no-print) */}
       <div className="no-print sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between shadow-sm">
-        <Link href={`/orders/${id}`} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-orange-500 transition-colors">
+        <Link href={`/orders/${id}`} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-brand-500 transition-colors">
           <ArrowLeft size={18} /> Back to Order
         </Link>
         <button
           onClick={handlePrint}
-          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-black text-sm px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-orange-500/20"
+          className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-black text-sm px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-brand-500/20"
         >
           <Printer size={16} /> Print / Save PDF
         </button>
@@ -80,30 +80,26 @@ export default function InvoicePage() {
       <div className="min-h-screen bg-gray-50 py-10 px-4 flex justify-center">
         <div id="invoice-content" ref={printRef} className="w-full max-w-2xl bg-white rounded-3xl shadow-xl overflow-hidden">
           {/* Header band */}
-          <div className="h-2 bg-gradient-to-r from-orange-400 via-orange-500 to-rose-500" />
+          <div className="h-2 bg-gradient-to-r from-brand-400 via-brand-500 to-rose-500" />
 
           <div className="p-8 space-y-8">
             {/* Brand + Invoice No */}
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
-                <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0">
-                  {order.vendor.logo ? (
-                    <Image src={order.vendor.logo} alt={order.vendor.shopName} fill className="object-cover" />
-                  ) : (
-                    <Store size={28} className="m-3 text-gray-400" />
-                  )}
+                <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-gray-900 flex-shrink-0 flex items-center justify-center">
+                  <Store size={28} className="text-brand-500" />
                 </div>
                 <div>
-                  <p className="font-black text-xl text-gray-900">{order.vendor.shopName}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">via Deeshora.com</p>
-                  {order.vendor.address && <p className="text-xs text-gray-500 mt-0.5">{order.vendor.address}, {order.vendor.city}</p>}
-                  {order.vendor.phone && <p className="text-xs text-gray-500">{order.vendor.phone}</p>}
+                  <p className="font-black text-xl text-gray-900">Daily1Mart</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Platform Official Invoice</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Thiruvottriyur, Chennai</p>
+                  <p className="text-xs text-gray-500">+91 8939318865</p>
                 </div>
               </div>
 
               <div className="text-right">
                 <p className="text-2xl font-black text-gray-900">TAX INVOICE</p>
-                <p className="text-sm font-bold text-orange-500 mt-1">{invoiceNumber}</p>
+                <p className="text-sm font-bold text-brand-500 mt-1">{invoiceNumber}</p>
                 <p className="text-xs text-gray-400 mt-1">Date: {invoiceDate}</p>
                 <div className="flex flex-col items-end gap-2 mt-2">
                   {isPaid ? (
@@ -118,7 +114,7 @@ export default function InvoicePage() {
                       {!isPaid && (
                         <Link 
                           href={`/orders/${id}`}
-                          className="no-print text-[10px] font-black text-white bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-xl shadow-lg shadow-orange-500/20 transition-all uppercase tracking-tight"
+                          className="no-print text-[10px] font-black text-white bg-brand-500 hover:bg-brand-600 px-4 py-2 rounded-xl shadow-lg shadow-brand-500/20 transition-all uppercase tracking-tight"
                         >
                           Pay Now Online
                         </Link>
@@ -217,7 +213,7 @@ export default function InvoicePage() {
                 <div className="h-px bg-gray-200" />
                 <div className="flex justify-between text-lg font-black text-gray-900">
                   <span>Grand Total</span>
-                  <span className="text-orange-600">₹{order.total.toFixed(2)}</span>
+                  <span className="text-brand-600">₹{order.total.toFixed(2)}</span>
                 </div>
                 {isPaid && order.paymentId && (
                   <div className="text-xs text-gray-400 text-right">
@@ -234,7 +230,7 @@ export default function InvoicePage() {
                 <div className="space-y-2">
                   {order.timeline.map(event => (
                     <div key={event.id} className="flex items-center gap-3 text-xs">
-                      <div className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0" />
                       <span className="text-gray-400">{new Date(event.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                       <span className="text-gray-600 font-medium">{event.message}</span>
                     </div>
@@ -245,9 +241,9 @@ export default function InvoicePage() {
 
             {/* Footer */}
             <div className="border-t border-gray-100 pt-6 text-center space-y-1">
-              <p className="text-xs font-black text-gray-500">Thank you for shopping with Deeshora!</p>
+              <p className="text-xs font-black text-gray-500">Thank you for shopping with Daily1Mart!</p>
               <p className="text-xs text-gray-400">This is a computer-generated invoice and does not require a signature.</p>
-              <p className="text-xs text-gray-400">Deeshora · Thiruvottriyur, Chennai · Support: support@deeshora.com</p>
+              <p className="text-xs text-gray-400">Daily1Mart · Thiruvottriyur, Chennai · Support: support@daily1mart.in</p>
             </div>
           </div>
         </div>

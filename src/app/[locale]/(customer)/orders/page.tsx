@@ -11,6 +11,8 @@ import {
   Clock, CheckCircle, IndianRupee, Store,
 } from 'lucide-react';
 import { OrderStatus } from '@prisma/client';
+import toast from 'react-hot-toast';
+import { useRouter } from '@/navigation';
 
 const STATUS_TABS: { key: OrderStatus | 'ALL'; label: string }[] = [
   { key: 'ALL', label: 'All Orders' },
@@ -27,7 +29,7 @@ const STATUS_COLORS: Record<string, string> = {
   CONFIRMED: 'from-blue-500/10 to-blue-500/5 border-blue-200',
   PREPARING: 'from-purple-500/10 to-purple-500/5 border-purple-200',
   READY: 'from-indigo-500/10 to-indigo-500/5 border-indigo-200',
-  OUT_FOR_DELIVERY: 'from-orange-500/10 to-orange-500/5 border-orange-200',
+  OUT_FOR_DELIVERY: 'from-brand-500/10 to-brand-500/5 border-brand-200',
   DELIVERED: 'from-emerald-500/10 to-emerald-500/5 border-emerald-200',
   CANCELLED: 'from-red-500/10 to-red-500/5 border-red-200',
   REFUNDED: 'from-gray-500/10 to-gray-500/5 border-gray-200',
@@ -38,14 +40,27 @@ const STATUS_DOT: Record<string, string> = {
   CONFIRMED: 'bg-blue-400',
   PREPARING: 'bg-purple-400',
   READY: 'bg-indigo-400',
-  OUT_FOR_DELIVERY: 'bg-orange-400 animate-pulse',
+  OUT_FOR_DELIVERY: 'bg-brand-400 animate-pulse',
   DELIVERED: 'bg-emerald-500',
   CANCELLED: 'bg-red-400',
   REFUNDED: 'bg-gray-400',
 };
 
 export default function OrdersPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<OrderStatus | 'ALL'>('ALL');
+
+  const reorderMutation = trpc.order.reorder.useMutation({
+    onSuccess: () => {
+      toast.success('Items added to cart!');
+      router.push('/cart');
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const handleReorder = (orderId: string) => {
+    reorderMutation.mutate({ orderId });
+  };
 
   const { data, isLoading } = trpc.order.myOrders.useQuery({ limit: 50 });
   const allOrders = data?.orders ?? [];
@@ -65,13 +80,13 @@ export default function OrdersPage() {
         <div className="flex items-center justify-between mb-1">
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">My Orders</h1>
           {activeCount > 0 && (
-            <span className="flex items-center gap-2 text-xs font-black text-orange-600 bg-orange-50 border border-orange-100 px-3 py-1.5 rounded-full">
-              <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+            <span className="flex items-center gap-2 text-xs font-black text-brand-600 bg-brand-50 border border-brand-100 px-3 py-1.5 rounded-full">
+              <span className="w-2 h-2 bg-brand-500 rounded-full animate-pulse" />
               {activeCount} active
             </span>
           )}
         </div>
-        <p className="text-gray-400 text-sm">Track and manage all your Deeshora orders</p>
+        <p className="text-gray-400 text-sm">Track and manage all your Daily1Mart orders</p>
       </div>
 
       {/* Status Tabs */}
@@ -82,13 +97,13 @@ export default function OrdersPage() {
             onClick={() => setActiveTab(tab.key)}
             className={`flex-shrink-0 text-xs font-black px-4 py-2 rounded-xl transition-all ${
               activeTab === tab.key
-                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
-                : 'bg-white text-gray-500 border border-gray-100 hover:border-orange-200 hover:text-orange-500'
+                ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20'
+                : 'bg-white text-gray-500 border border-gray-100 hover:border-brand-200 hover:text-brand-500'
             }`}
           >
             {tab.label}
             {tab.key !== 'ALL' && (
-              <span className={`ml-1.5 text-[10px] ${activeTab === tab.key ? 'text-orange-100' : 'text-gray-300'}`}>
+              <span className={`ml-1.5 text-[10px] ${activeTab === tab.key ? 'text-brand-100' : 'text-gray-300'}`}>
                 {allOrders.filter(o => o.status === tab.key).length || ''}
               </span>
             )}
@@ -99,7 +114,7 @@ export default function OrdersPage() {
       {/* Content */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
+          <Loader2 className="w-10 h-10 animate-spin text-brand-500" />
           <p className="text-gray-400 font-medium text-sm">Loading your orders...</p>
         </div>
       ) : filtered.length === 0 ? (
@@ -165,7 +180,7 @@ export default function OrdersPage() {
 
                     <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium mb-2">
                       <Store size={11} className="text-gray-400" />
-                      <span>{(order as any).vendor.shopName}</span>
+                      <span>Daily1Mart</span>
                     </div>
 
                     <div className="flex items-center justify-between flex-wrap gap-2">
@@ -188,7 +203,7 @@ export default function OrdersPage() {
                         </span>
                         <ArrowRight
                           size={16}
-                          className="text-gray-300 group-hover:text-orange-500 group-hover:translate-x-1 transition-all"
+                          className="text-gray-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all"
                         />
                       </div>
                     </div>
@@ -197,13 +212,25 @@ export default function OrdersPage() {
 
                 {/* Delivered footer */}
                 {order.status === 'DELIVERED' && (
-                  <div className="mt-4 pt-3 border-t border-emerald-100 flex items-center gap-2 text-xs text-emerald-600 font-bold">
-                    <CheckCircle size={13} />
-                    Delivered successfully — tap to view invoice
+                  <div className="mt-4 pt-3 border-t border-emerald-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-emerald-600 font-bold">
+                      <CheckCircle size={13} />
+                      Delivered successfully — tap to view invoice
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleReorder(order.id);
+                      }}
+                      className="px-4 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all"
+                    >
+                      Reorder
+                    </button>
                   </div>
                 )}
                 {isActive && (
-                  <div className="mt-4 pt-3 border-t border-gray-100/60 flex items-center gap-2 text-xs text-orange-600 font-bold">
+                  <div className="mt-4 pt-3 border-t border-gray-100/60 flex items-center gap-2 text-xs text-brand-600 font-bold">
                     <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
                     Live tracking available — tap to view
                   </div>

@@ -24,7 +24,6 @@ export const deliveryRouter = createTRPCRouter({
       },
       include: {
         user: { select: { name: true, phone: true } },
-        vendor: { select: { shopName: true, address: true, phone: true, city: true, coordinates: true } },
         address: true,
       },
       orderBy: { createdAt: 'desc' },
@@ -40,7 +39,6 @@ export const deliveryRouter = createTRPCRouter({
       },
       include: {
         user: { select: { name: true, phone: true } },
-        vendor: { select: { shopName: true, address: true, phone: true, city: true, coordinates: true } },
         address: true,
       },
       orderBy: { updatedAt: 'desc' },
@@ -113,7 +111,7 @@ export const deliveryRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const order = await ctx.prisma.order.findUnique({
         where: { id: input.orderId },
-        include: { user: { select: { phone: true, name: true } }, vendor: { select: { shopName: true } } },
+        include: { user: { select: { phone: true, name: true } } },
       });
 
       if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found.' });
@@ -142,11 +140,6 @@ export const deliveryRouter = createTRPCRouter({
           },
         });
 
-        // Credit vendor's pending payout — was previously missing from the delivery partner path
-        await tx.vendor.update({
-          where: { id: order.vendorId },
-          data: { pendingPayout: { increment: order.vendorAmount } },
-        });
 
         return updatedOrder;
       });
@@ -156,7 +149,7 @@ export const deliveryRouter = createTRPCRouter({
         success: true,
         customerPhone: order.user.phone,
         customerName: order.user.name,
-        shopName: order.vendor.shopName,
+        shopName: 'Daily1Mart',
       };
     }),
 
@@ -250,7 +243,6 @@ export const deliveryRouter = createTRPCRouter({
         id: true,
         deliveryFee: true,
         deliveredAt: true,
-        vendor: { select: { shopName: true } },
       },
       orderBy: { deliveredAt: 'desc' },
       take: 30,
@@ -265,7 +257,6 @@ export const deliveryRouter = createTRPCRouter({
         where: { id: input.orderId },
         include: {
           user: { select: { name: true, phone: true } },
-          vendor: { select: { shopName: true, address: true, phone: true, city: true, coordinates: true } },
           address: true,
           items: {
             select: {

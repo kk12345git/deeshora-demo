@@ -1,5 +1,5 @@
 // src/lib/areas.ts
-// Central source of truth for Deeshora's serviceable areas
+// Central source of truth for Daily1Mart's serviceable areas
 // Update this file to expand coverage — changes propagate everywhere automatically.
 
 export interface AreaOption {

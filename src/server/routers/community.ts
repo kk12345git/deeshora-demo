@@ -10,7 +10,6 @@ export const communityRouter = createTRPCRouter({
         take: (input.limit ?? 10) + 1,
         cursor: input.cursor ? { id: input.cursor } : undefined,
         include: {
-          vendor: { select: { shopName: true, logo: true } },
           _count: { select: { members: true } },
         },
         orderBy: { createdAt: 'desc' },
@@ -31,7 +30,6 @@ export const communityRouter = createTRPCRouter({
       const community = await ctx.prisma.community.findUnique({
         where: { id: input.id },
         include: {
-          vendor: { select: { shopName: true, logo: true, description: true } },
           posts: { orderBy: { createdAt: 'desc' }, take: 20 },
           _count: { select: { members: true } },
         },

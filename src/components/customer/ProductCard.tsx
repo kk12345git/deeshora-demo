@@ -123,6 +123,12 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                     Community
                 </div>
             )}
+            {product.isCombo && (
+                <div className="badge bg-brand-500 text-white shadow-lg flex items-center gap-1">
+                    <Sparkles size={10} />
+                    Combo Pack
+                </div>
+            )}
         </div>
 
         {product.stock === 0 && (
@@ -135,9 +141,9 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       {/* Content */}
       <div className="p-3 sm:p-6 flex flex-col flex-grow space-y-1.5 sm:space-y-3">
         <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 text-[8px] sm:text-[10px] font-black uppercase text-orange-500 tracking-wider">
+            <div className="flex items-center gap-1 text-[8px] sm:text-[10px] font-black uppercase text-brand-600 tracking-wider">
                 <Store size={10} className="sm:size-3" />
-                <span className="truncate max-w-[60px] sm:max-w-none">{product.vendor.shopName}</span>
+                <span className="truncate max-w-[60px] sm:max-w-none">Daily1Mart</span>
                 <CheckCircle2 size={10} className="text-blue-500 fill-blue-500/10 hidden sm:block" />
             </div>
             <div className="flex items-center gap-1 px-1 sm:px-1.5 py-0.5 bg-gray-50 dark:bg-gray-800 rounded-md sm:rounded-lg">
@@ -149,7 +155,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
         </div>
 
         <h3 className="text-xs sm:text-base font-bold text-gray-900 dark:text-white line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem]">
-          <Link href={`/product/${product.slug}`} className="hover:text-orange-500 transition-colors uppercase tracking-tight">
+          <Link href={`/product/${product.slug}`} className="hover:text-brand-500 transition-colors uppercase tracking-tight">
             {product.name}
           </Link>
         </h3>
@@ -171,14 +177,14 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                     <div className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
                         <button
                             onClick={() => handleUpdateQuantity(product.id, cartItem.quantity - 1)}
-                            className="p-2.5 text-orange-600 hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors"
+                            className="p-2.5 text-brand-600 hover:bg-brand-50 dark:hover:bg-gray-700 transition-colors"
                         >
                             <Minus size={16} strokeWidth={3} />
                         </button>
                         <span className="px-1 text-sm font-black w-6 text-center dark:text-white">{cartItem.quantity}</span>
                         <button
                             onClick={() => handleUpdateQuantity(product.id, cartItem.quantity + 1)}
-                            className="p-2.5 text-orange-600 hover:bg-orange-50 transition-colors"
+                            className="p-2.5 text-brand-600 hover:bg-brand-50 transition-colors"
                         >
                             <Plus size={16} strokeWidth={3} />
                         </button>
@@ -186,7 +192,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                 ) : (
                     <button 
                         onClick={handleAddToCart} 
-                        className="w-10 sm:w-12 h-10 sm:h-12 bg-gray-900 text-white rounded-xl sm:rounded-2xl flex items-center justify-center hover:bg-orange-500 transition-all shadow-xl shadow-gray-950/20 active:scale-95"
+                        className="w-10 sm:w-12 h-10 sm:h-12 bg-gray-900 text-white rounded-xl sm:rounded-2xl flex items-center justify-center hover:bg-brand-500 transition-all shadow-xl shadow-gray-950/20 active:scale-95"
                     >
                         <Plus size={20} className="sm:size-6" />
                     </button>

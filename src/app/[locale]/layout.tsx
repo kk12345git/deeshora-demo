@@ -31,16 +31,16 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://deeshora.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://daily1mart.in'),
   title: {
-    default: "Deeshora - Instant Delivery in Thiruvottriyur, Chennai",
-    template: "%s | Deeshora"
+    default: "Daily1Mart - North Chennai's Own Online ₹1 Mart",
+    template: "%s | Daily1Mart"
   },
-  description: "Shop local, get it now. Deeshora is Thiruvottriyur's favorite delivery platform connecting you with neighborhood shops for groceries, food, and essentials in minutes.",
-  keywords: ["Thiruvottriyur delivery", "Chennai local shops", "instant delivery Chennai", "grocery delivery Thiruvottriyur", "Deeshora Chennai", "hyperlocal marketplace"],
-  authors: [{ name: "Deeshora Team" }],
-  creator: "Deeshora Inc.",
-  publisher: "Deeshora Inc.",
+  description: "Shop local, get it now. Daily1Mart is North Chennai's own online ₹1 mart connecting you with neighborhood shops for groceries, food, and essentials in minutes.",
+  keywords: ["North Chennai mart", "₹1 mart", "daily essentials delivery", "local shops North Chennai", "Daily1Mart Chennai", "instant delivery"],
+  authors: [{ name: "Daily1Mart Team" }],
+  creator: "Daily1Mart Inc.",
+  publisher: "Daily1Mart Inc.",
   formatDetection: {
     email: false,
     address: false,
@@ -49,25 +49,25 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://deeshora.com",
-    title: "Deeshora - Your Local Delivery Partner in Chennai",
-    description: "The fastest way to get items from your local neighborhood shops delivered in Thiruvottriyur and across North Chennai.",
-    siteName: "Deeshora",
+    url: "https://daily1mart.in",
+    title: "Daily1Mart - North Chennai's Own Online ₹1 Mart",
+    description: "The fastest way to get items from your local neighborhood shops delivered in North Chennai.",
+    siteName: "Daily1Mart",
     images: [
       {
         url: "/og-main.jpg",
         width: 1200,
         height: 630,
-        alt: "Deeshora - Local Commerce Platform Chennai",
+        alt: "Daily1Mart - Local Commerce Platform Chennai",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Deeshora - Instant Delivery in Thiruvottriyur",
+    title: "Daily1Mart - North Chennai's Own Online ₹1 Mart",
     description: "Your city's shops, delivered fast to your doorstep.",
     images: ["/og-main.jpg"],
-    creator: "@deeshora",
+    creator: "@daily1mart",
   },
   icons: {
     icon: "/favicon.ico",
@@ -97,14 +97,14 @@ export default async function RootLayout({
       <html lang={locale} className="scroll-smooth" suppressHydrationWarning>
         <head>
           <link rel="manifest" href="/manifest.json" />
-          <meta name="theme-color" content="#f97316" />
+          <meta name="theme-color" content="#d41d6d" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-          <meta name="apple-mobile-web-app-title" content="Deeshora" />
+          <meta name="apple-mobile-web-app-title" content="Daily1Mart" />
           <link rel="apple-touch-icon" href="/logo.jpg" />
         </head>
         <body className={`${plusJakartaSans.variable} ${manrope.variable} font-manrope antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
-          <NextTopLoader color="#f97316" showSpinner={false} height={3} />
+          <NextTopLoader color="#d41d6d" showSpinner={false} height={3} />
           <TRPCProvider>
             <PWARegistration />
             <PWAInstallPrompt />

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { DeeshoraBot } from '@/lib/whatsapp-bot';
+import { Daily1MartBot } from '@/lib/whatsapp-bot';
 import prisma from '@/lib/prisma';
 
 // This is the endpoint WhatsApp will call
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       const type = message.type;
       
       // Initialize Bot (Credentials should be in env or DB)
-      const bot = new DeeshoraBot({
+      const bot = new Daily1MartBot({
         accessToken: process.env.WHATSAPP_ACCESS_TOKEN || '',
         phoneId: process.env.WHATSAPP_PHONE_ID || '',
       });

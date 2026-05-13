@@ -28,30 +28,7 @@ export async function POST(req: Request) {
 
     if (success && code === 'PAYMENT_SUCCESS') {
       const transactionId = data.merchantTransactionId;
-
-      // 3. Update Vendor Subscription
-      // We look for a vendor who initiated this payment
-      const vendor = await prisma.vendor.findFirst({
-        where: { lastPaymentId: transactionId }
-      });
-
-      if (vendor) {
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 30); // 30 days from now
-
-        await prisma.vendor.update({
-          where: { id: vendor.id },
-          data: {
-            plan: 'PREMIUM',
-            subscriptionStatus: 'ACTIVE',
-            planExpiresAt: expiryDate,
-            subscriptionPaidAt: new Date(),
-            isVerified: true,
-          }
-        });
-
-        console.log(`[PhonePe Webhook] Updated vendor ${vendor.id} to PREMIUM`);
-      }
+      console.log(`[PhonePe Webhook] Payment successful for transaction: ${transactionId}`);
     }
 
     return NextResponse.json({ success: true });

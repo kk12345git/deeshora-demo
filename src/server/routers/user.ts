@@ -36,7 +36,6 @@ export const userRouter = createTRPCRouter({
             total: true,
             createdAt: true,
             paymentStatus: true,
-            vendor: { select: { shopName: true } },
             items: { take: 1, select: { image: true, name: true } },
           },
         },
@@ -71,7 +70,6 @@ export const userRouter = createTRPCRouter({
                 total: true,
                 createdAt: true,
                 paymentStatus: true,
-                vendor: { select: { shopName: true } },
                 items: { take: 1, select: { image: true, name: true } },
               },
             },
@@ -95,6 +93,8 @@ export const userRouter = createTRPCRouter({
         pincode: z.string().regex(/^\d{6}$/, 'Enter a valid 6-digit pincode').optional().or(z.literal('')),
         landmark: z.string().optional(),
         avatar: z.string().startsWith('data:image/').optional(),
+        gender: z.string().optional(),
+        occupation: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -129,6 +129,8 @@ export const userRouter = createTRPCRouter({
         area: z.string().optional(),
         pincode: z.string().optional(),
         landmark: z.string().optional(),
+        gender: z.string().optional(),
+        occupation: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -140,6 +142,8 @@ export const userRouter = createTRPCRouter({
           area: input.area,
           pincode: input.pincode,
           landmark: input.landmark,
+          gender: input.gender,
+          occupation: input.occupation,
           isOnboarded: true,
         },
       });
@@ -269,16 +273,19 @@ export const userRouter = createTRPCRouter({
       });
     }),
 
-  // Set user role during onboarding
   setRole: protectedProcedure
     .input(z.object({
-      role: z.enum(['CUSTOMER', 'VENDOR', 'DELIVERY_PARTNER'])
+      role: z.enum(['CUSTOMER', 'DELIVERY_PARTNER']),
+      gender: z.string().optional(),
+      occupation: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const updated = await ctx.prisma.user.update({
         where: { id: ctx.user.id },
         data: {
           role: input.role,
+          gender: input.gender,
+          occupation: input.occupation,
           isOnboarded: input.role === 'CUSTOMER' ? true : false
         }
       });

@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { trpc } from '@/lib/trpc';
-import { X, User, Phone, MapPin, CheckCircle, AlertTriangle, Loader2, ChevronRight, Sparkles, Clock } from 'lucide-react';
+import { X, User, Phone, MapPin, CheckCircle, AlertTriangle, Loader2, ChevronRight, Sparkles, Clock, Briefcase } from 'lucide-react';
 import type { ServiceArea } from '@prisma/client';
 
 interface OnboardingModalProps {
@@ -21,6 +21,8 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    gender: '',
+    occupation: '',
     area: '',
     pincode: '',
     landmark: '',
@@ -67,6 +69,12 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
     if (!/^[6-9]\d{9}$/.test(formData.phone)) {
       newErrors.phone = 'Enter a valid 10-digit Indian mobile number';
     }
+    if (!formData.gender) {
+      newErrors.gender = 'Please select your gender';
+    }
+    if (!formData.occupation) {
+      newErrors.occupation = 'Please select your occupation';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -79,6 +87,13 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+    
+    // Reset occupation if gender changes and it's not applicable
+    if (field === 'gender') {
+        if (value === 'Male' && formData.occupation === 'Housewife') {
+            setFormData(prev => ({ ...prev, gender: value, occupation: '' }));
+        }
+    }
   };
 
   // Auto fill pincode when area is selected
@@ -102,7 +117,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
       <div className="relative z-10 w-full sm:max-w-lg bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-500">
 
         {/* Decorative gradient header strip */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-orange-400 via-orange-500 to-rose-500" />
+        <div className="h-1.5 w-full bg-gradient-to-r from-brand-400 via-brand-500 to-rose-500" />
 
         {/* Close Button */}
         {step !== 'success' && (
@@ -118,7 +133,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
         {step === 'intro' && (
           <div className="p-8 flex flex-col items-center text-center gap-6">
             <div className="relative">
-              <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center shadow-xl shadow-orange-500/30">
+              <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-brand-400 to-rose-500 flex items-center justify-center shadow-xl shadow-brand-500/30">
                 <Sparkles size={36} className="text-white" />
               </div>
               <div className="absolute -bottom-2 -right-2 w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
@@ -126,9 +141,9 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
               </div>
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-black text-gray-900 tracking-tight">Almost there!</h2>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight">Welcome to Daily1Mart!</h2>
               <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
-                We just need a couple of quick details to deliver to your door. Takes less than a minute!
+                North Chennai&apos;s own online ₹1 mart. Let&apos;s set up your profile for a personalized experience!
               </p>
             </div>
 
@@ -140,9 +155,9 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
               <div>
                 <p className="text-xs font-black text-emerald-700 uppercase tracking-wider">Now Delivering In</p>
                 <p className="text-sm font-bold text-emerald-900 mt-0.5">
-                  Thiruvottriyur &amp; {liveAreas.length} localities, Chennai
+                  Thiruvottriyur &amp; {liveAreas.length} localities
                 </p>
-                <p className="text-xs text-emerald-600 mt-0.5">More areas coming soon ✨</p>
+                <p className="text-xs text-emerald-600 mt-0.5">Instant delivery in minutes ✨</p>
               </div>
             </div>
 
@@ -151,13 +166,13 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
                 onClick={() => setStep('details')}
                 className="btn-primary w-full h-14 rounded-2xl font-black text-sm tracking-widest uppercase flex items-center justify-center gap-2"
               >
-                Let&apos;s Go <ChevronRight size={18} />
+                Start Onboarding <ChevronRight size={18} />
               </button>
               <button
                 onClick={onClose}
                 className="text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
               >
-                Maybe later (browse only)
+                Skip for now
               </button>
             </div>
           </div>
@@ -165,21 +180,21 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
 
         {/* ─── STEP: Contact Details ─────────────────────────────────── */}
         {step === 'details' && (
-          <div className="p-8 space-y-6">
+          <div className="p-8 space-y-5 max-h-[85vh] overflow-y-auto">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <div className="w-6 h-6 bg-orange-500 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-brand-500 rounded-lg flex items-center justify-center">
                   <User size={12} className="text-white" />
                 </div>
-                <p className="text-xs font-black uppercase tracking-widest text-orange-500">Step 1 of 2</p>
+                <p className="text-xs font-black uppercase tracking-widest text-brand-500">Step 1 of 2</p>
               </div>
-              <h2 className="text-xl font-black text-gray-900 mt-2">Your Contact Info</h2>
-              <p className="text-gray-500 text-sm">Required to deliver your order.</p>
+              <h2 className="text-xl font-black text-gray-900 mt-2">Personal Information</h2>
+              <p className="text-gray-500 text-sm">Help us know you better.</p>
             </div>
 
             {/* Name */}
-            <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-gray-500">Full Name *</label>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Full Name *</label>
               <div className="relative">
                 <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
@@ -187,15 +202,15 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
                   value={formData.name}
                   onChange={(e) => updateField('name', e.target.value)}
                   placeholder="Your full name"
-                  className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 rounded-2xl text-sm font-medium border-2 outline-none transition-all focus:bg-white focus:border-orange-500 ${errors.name ? 'border-red-400 bg-red-50' : 'border-transparent'}`}
+                  className={`w-full pl-11 pr-4 py-3 bg-gray-50 rounded-2xl text-sm font-medium border-2 outline-none transition-all focus:bg-white focus:border-brand-500 ${errors.name ? 'border-red-400 bg-red-50' : 'border-transparent'}`}
                 />
               </div>
-              {errors.name && <p className="text-xs text-red-500 font-bold">{errors.name}</p>}
+              {errors.name && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.name}</p>}
             </div>
 
             {/* Phone */}
-            <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-gray-500">Mobile Number *</label>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Mobile Number *</label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                   <Phone size={16} className="text-gray-400" />
@@ -206,10 +221,67 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
                   value={formData.phone}
                   onChange={(e) => updateField('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
                   placeholder="10-digit number"
-                  className={`w-full pl-20 pr-4 py-3.5 bg-gray-50 rounded-2xl text-sm font-medium border-2 outline-none transition-all focus:bg-white focus:border-orange-500 ${errors.phone ? 'border-red-400 bg-red-50' : 'border-transparent'}`}
+                  className={`w-full pl-20 pr-4 py-3 bg-gray-50 rounded-2xl text-sm font-medium border-2 outline-none transition-all focus:bg-white focus:border-brand-500 ${errors.phone ? 'border-red-400 bg-red-50' : 'border-transparent'}`}
                 />
               </div>
-              {errors.phone && <p className="text-xs text-red-500 font-bold">{errors.phone}</p>}
+              {errors.phone && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.phone}</p>}
+            </div>
+
+            {/* Gender Selection */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Gender *</label>
+              <div className="grid grid-cols-3 gap-2">
+                {['Male', 'Female', 'Others'].map((g) => (
+                  <button
+                    key={g}
+                    onClick={() => updateField('gender', g)}
+                    className={`py-2.5 rounded-xl border-2 text-xs font-black transition-all ${
+                      formData.gender === g
+                        ? 'border-brand-500 bg-brand-50 text-brand-600'
+                        : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-brand-200'
+                    }`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+              {errors.gender && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.gender}</p>}
+            </div>
+
+            {/* Occupation Selection */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Occupation *</label>
+              <div className="flex flex-wrap gap-2">
+                {(formData.gender === 'Female' 
+                  ? ['Student', 'Employee', 'Housewife'] 
+                  : ['Student', 'Employee']
+                ).map((occ) => (
+                  <button
+                    key={occ}
+                    onClick={() => updateField('occupation', occ)}
+                    className={`px-5 py-2.5 rounded-xl border-2 text-xs font-black transition-all ${
+                      formData.occupation === occ
+                        ? 'border-brand-500 bg-brand-50 text-brand-600'
+                        : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-brand-200'
+                    }`}
+                  >
+                    {occ}
+                  </button>
+                ))}
+                {formData.gender === 'Others' && (
+                  <div className="relative w-full">
+                    <Briefcase size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      value={formData.occupation}
+                      onChange={(e) => updateField('occupation', e.target.value)}
+                      placeholder="Please specify your occupation"
+                      className={`w-full pl-11 pr-4 py-3 bg-gray-50 rounded-2xl text-sm font-medium border-2 outline-none transition-all focus:bg-white focus:border-brand-500 ${errors.occupation ? 'border-red-400 bg-red-50' : 'border-transparent'}`}
+                    />
+                  </div>
+                )}
+              </div>
+              {errors.occupation && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.occupation}</p>}
             </div>
 
             <button
@@ -217,7 +289,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
                 if (!validate()) return;
                 setStep('location');
               }}
-              className="btn-primary w-full h-14 rounded-2xl font-black text-sm tracking-widest uppercase flex items-center justify-center gap-2"
+              className="btn-primary w-full h-14 rounded-2xl font-black text-sm tracking-widest uppercase flex items-center justify-center gap-2 mt-2"
             >
               Continue <ChevronRight size={18} />
             </button>
@@ -229,13 +301,13 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
           <div className="p-6 space-y-5 max-h-[85vh] overflow-y-auto">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <div className="w-6 h-6 bg-orange-500 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-brand-500 rounded-lg flex items-center justify-center">
                   <MapPin size={12} className="text-white" />
                 </div>
-                <p className="text-xs font-black uppercase tracking-widest text-orange-500">Step 2 of 2</p>
+                <p className="text-xs font-black uppercase tracking-widest text-brand-500">Step 2 of 2</p>
               </div>
-              <h2 className="text-xl font-black text-gray-900 mt-2">Where do you live?</h2>
-              <p className="text-gray-500 text-sm">Select your locality for accurate delivery.</p>
+              <h2 className="text-xl font-black text-gray-900 mt-2">Delivery Location</h2>
+              <p className="text-gray-500 text-sm">Where should we deliver your orders?</p>
             </div>
 
             {/* ── Thiruvottriyur Localities ── */}
@@ -244,7 +316,7 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
                   ✅ Delivering Now
                 </span>
-                <span className="text-xs font-bold text-gray-700">Thiruvottriyur, Chennai</span>
+                <span className="text-xs font-bold text-gray-700">Thiruvottriyur Area</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {liveAreas.map((loc: ServiceArea) => (
@@ -254,61 +326,40 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
                     className={`p-3 rounded-2xl border-2 text-left transition-all flex flex-col gap-0.5 ${
                       formData.area === loc.value
                         ? 'border-emerald-500 bg-emerald-50'
-                        : 'border-gray-100 bg-gray-50 hover:border-emerald-200 hover:bg-emerald-50/50'
+                        : 'border-gray-100 bg-gray-50 hover:border-emerald-200'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-1">
-                      <span className="text-xs font-bold text-gray-800 leading-tight">{loc.label}</span>
+                      <span className="text-[11px] font-black text-gray-800 leading-tight uppercase tracking-tight">{loc.label}</span>
                       {formData.area === loc.value && (
                         <CheckCircle size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />
                       )}
                     </div>
                     {loc.pincode && (
-                      <span className="text-[10px] text-gray-400 font-medium">{loc.pincode}</span>
+                      <span className="text-[10px] text-gray-400 font-bold">{loc.pincode}</span>
                     )}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* ── Coming Soon Areas ── */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-700 bg-orange-100 px-2.5 py-1 rounded-full flex items-center gap-1">
-                  <Clock size={9} /> Coming Soon
-                </span>
-                <span className="text-xs font-bold text-gray-500">Expanding to more Chennai areas</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {comingSoonAreas.map((loc: ServiceArea) => (
-                  <div
-                    key={loc.value}
-                    className="p-3 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 opacity-70 cursor-not-allowed"
-                  >
-                    <span className="text-xs font-bold text-gray-500">{loc.label}</span>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Coming soon</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Optional pincode + landmark (shown when a locality is selected) */}
-            {formData.area && liveAreas.some((a: ServiceArea) => a.value === formData.area) && (
+            {/* Optional pincode + landmark */}
+            {formData.area && (
               <div className="space-y-3 animate-in fade-in duration-300 border-t pt-4">
-                <p className="text-xs font-black uppercase tracking-widest text-gray-400">Fine-tune your location (optional)</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Additional details (Optional)</p>
                 <input
                   type="text"
                   value={formData.pincode}
                   onChange={(e) => updateField('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="Pincode (auto-filled)"
-                  className="w-full px-4 py-3 bg-gray-50 rounded-2xl text-sm font-medium border-2 border-transparent outline-none focus:border-orange-500 focus:bg-white transition-all"
+                  placeholder="Pincode"
+                  className="w-full px-4 py-3 bg-gray-50 rounded-2xl text-sm font-medium border-2 border-transparent outline-none focus:border-brand-500 focus:bg-white transition-all"
                 />
                 <input
                   type="text"
                   value={formData.landmark}
                   onChange={(e) => updateField('landmark', e.target.value)}
-                  placeholder="Landmark (e.g. near temple, bus stop)"
-                  className="w-full px-4 py-3 bg-gray-50 rounded-2xl text-sm font-medium border-2 border-transparent outline-none focus:border-orange-500 focus:bg-white transition-all"
+                  placeholder="Landmark (e.g. Near Bus Stand)"
+                  className="w-full px-4 py-3 bg-gray-50 rounded-2xl text-sm font-medium border-2 border-transparent outline-none focus:border-brand-500 focus:bg-white transition-all"
                 />
               </div>
             )}
@@ -322,18 +373,17 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
                 {completeOnboarding.isPending ? (
                   <><Loader2 size={18} className="animate-spin" /> Saving...</>
                 ) : (
-                  'Confirm & Continue'
+                  'Complete Profile'
                 )}
               </button>
               <button
                 onClick={() => {
-                  // Allow skip — saves profile but without confirmed area
                   completeOnboarding.mutate({ ...formData, area: formData.area || 'Not set' });
                 }}
                 disabled={completeOnboarding.isPending}
-                className="w-full text-center text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
+                className="w-full text-center text-[10px] font-black text-gray-400 hover:text-gray-600 uppercase tracking-widest transition-colors"
               >
-                Skip for now (browse only)
+                Skip &amp; Browse
               </button>
             </div>
           </div>
@@ -348,10 +398,9 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
               </div>
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-black text-gray-900 tracking-tight">You&apos;re all set! 🎉</h2>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight">Profile Complete! 🎉</h2>
               <p className="text-gray-500 text-sm max-w-xs mx-auto">
-                Welcome to Deeshora, {formData.name.split(' ')[0]}! You can now order from local shops in{' '}
-                <span className="font-bold text-orange-600">{formData.area}</span>.
+                Welcome to the Daily1Mart family, {formData.name.split(' ')[0]}! Start exploring our ₹1 store and combo deals.
               </p>
             </div>
             <button
@@ -363,34 +412,25 @@ export default function OnboardingModal({ isOpen, onClose, onSuccess }: Onboardi
           </div>
         )}
 
-        {/* ─── STEP: Outside Serviceable Area ────────────────────────── */}
+        {/* ─── STEP: Unavailable ──────────────────────────────────────── */}
         {step === 'unavailable' && (
           <div className="p-8 flex flex-col items-center text-center gap-6">
-            <div className="w-20 h-20 rounded-[2rem] bg-gray-100 flex items-center justify-center">
-              <AlertTriangle size={36} className="text-orange-500" />
+            <div className="w-20 h-20 rounded-[2rem] bg-rose-50 flex items-center justify-center">
+              <AlertTriangle size={36} className="text-rose-500" />
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-black text-gray-900 tracking-tight">Not Available Yet</h2>
               <p className="text-gray-500 text-sm max-w-xs mx-auto">
-                We&apos;re currently delivering in <span className="font-bold text-orange-600">Thiruvottriyur &amp; nearby areas, Chennai</span>.
+                We&apos;re currently delivering in <span className="font-bold text-brand-600">Thiruvottriyur</span>.
                 You can still browse our products — we&apos;re expanding soon!
               </p>
             </div>
-            <div className="w-full bg-orange-50 border border-orange-100 rounded-2xl p-4 text-left space-y-1">
-              <p className="text-xs font-black text-orange-700 uppercase tracking-wider">Coming to your area soon:</p>
-              {comingSoonAreas.map((a: ServiceArea) => (
-                <p key={a.value} className="text-xs text-orange-600 font-medium">• {a.label}</p>
-              ))}
-            </div>
-            <div className="space-y-3 w-full">
-              <button
-                onClick={onClose}
-                className="btn-primary w-full h-12 rounded-2xl font-black text-sm uppercase"
-              >
-                Browse Products
-              </button>
-              <p className="text-xs text-gray-400">We&apos;re expanding soon — stay tuned!</p>
-            </div>
+            <button
+              onClick={onClose}
+              className="btn-primary w-full h-12 rounded-2xl font-black text-sm uppercase"
+            >
+              Browse Anyway
+            </button>
           </div>
         )}
       </div>

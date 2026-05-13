@@ -18,7 +18,7 @@ export function CartSync() {
 
   useEffect(() => {
     if (isLoaded && isSignedIn && items.length > 0 && !hasSyncedThisSession.current) {
-      const syncKey = `deeshora_synced_${user.id}`;
+      const syncKey = `Daily1Mart_synced_${user.id}`;
       const alreadySynced = localStorage.getItem(syncKey);
 
       if (alreadySynced === 'true') {

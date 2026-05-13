@@ -69,21 +69,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
             console.error('[tRPC] Failed to sync Admin metadata on creation:', e);
           }
 
-          // Ensure vendor profile for admin to manage official shop
-          await prisma.vendor.upsert({
-            where: { userId: user.id },
-            create: {
-              userId: user.id,
-              shopName: 'Deeshora Official',
-              email: email.toLowerCase(),
-              phone: process.env.ADMIN_PHONE ?? '0000000000',
-              city: 'Chennai',
-              address: 'Deeshora HQ',
-              categories: ['Official'],
-              status: 'APPROVED',
-            },
-            update: {},
-          });
+          // Vendor creation removed
         }
       }
     } catch (e) {
@@ -131,20 +117,6 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
           console.log(`[tRPC] Synced DELIVERY_PARTNER role to Clerk for ${user.email}`);
         } catch (e) {
           console.error('[tRPC] Failed to sync Clerk metadata for delivery partner:', e);
-        }
-      }
-    } else if (user.role === 'VENDOR') {
-      // Sync VENDOR role to Clerk
-      const { sessionClaims } = await auth();
-      if ((sessionClaims?.metadata as any)?.role !== 'VENDOR') {
-        try {
-          const clerk = await clerkClient();
-          await clerk.users.updateUserMetadata(userId, {
-            publicMetadata: { role: 'VENDOR' },
-          });
-          console.log(`[tRPC] Synced VENDOR role to Clerk for ${user.email}`);
-        } catch (e) {
-          console.error('[tRPC] Failed to sync Clerk metadata for vendor:', e);
         }
       }
     }
@@ -201,27 +173,6 @@ const isAuthed = t.middleware(({ ctx, next }) => {
 export const protectedProcedure = t.procedure.use(isAuthed);
 
 
-/**
- * Vendor procedure
- */
-export const vendorProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  const isVendor = ctx.user.role === 'VENDOR' || ctx.user.role === 'ADMIN';
-
-  if (!isVendor) {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not a vendor.' });
-  }
-
-  const vendor = await prisma.vendor.findUnique({ where: { userId: ctx.user.id } });
-  if (!vendor) {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'Vendor profile not found.' });
-  }
-  return next({
-    ctx: {
-      ...ctx,
-      vendor,
-    },
-  });
-});
 
 
 /**

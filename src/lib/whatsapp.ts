@@ -18,7 +18,7 @@ export function getWhatsAppUrl(phone: string, message: string) {
 }
 
 export function getProductShareUrl(phone: string, productName: string, productSlug: string, locale: string = 'en') {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://deeshora.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://Daily1Mart.com';
   const productUrl = `${appUrl}/${locale}/product/${productSlug}`;
   const message = `Hi! I'm interested in this product: *${productName}*\n\n${productUrl}\n\nCan you provide more details?`;
   return getWhatsAppUrl(phone, message);
@@ -55,7 +55,7 @@ export const WHATSAPP_TEMPLATES = {
       `Hi! Requesting payment for Order #${orderId.slice(-8).toUpperCase()} from ${shopName}. Amount: ₹${amount.toFixed(2)}\n\nClick here to pay via any UPI app: ${upiLink}\n\nThank you! 🙏`,
 
     GENERAL_SUPPORT: () =>
-      `Hello Deeshora Support! I need help with my account/order.`,
+      `Hello Daily1Mart Support! I need help with my account/order.`,
 
     GENERAL_INQUIRY: (shopName: string) =>
       `Hello! I'm interested in shopping from ${shopName}. Could you please help me with some details?`,
@@ -84,7 +84,7 @@ export const WHATSAPP_TEMPLATES = {
       `வணக்கம்! உங்கள் ஆர்டர் #${orderId.slice(-8).toUpperCase()}-க்கான கட்டணம் ₹${amount.toFixed(2)}. இந்த லிங்க் மூலம் பணம் செலுத்தலாம்: ${upiLink}\n\nநன்றி! 🙏`,
       
     GENERAL_SUPPORT: () =>
-      `வணக்கம் Deeshora உதவி மையம்! எனக்கு ஒரு உதவி தேவை.`,
+      `வணக்கம் Daily1Mart உதவி மையம்! எனக்கு ஒரு உதவி தேவை.`,
   }
 };
 

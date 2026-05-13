@@ -35,15 +35,7 @@ export async function POST(req: NextRequest) {
   }
 
 
-  if (channel.startsWith('private-vendor-')) {
-    const vendorId = channel.replace('private-vendor-', '');
-    const vendor = await prisma.vendor.findFirst({
-      where: { id: vendorId, userId: user.id },
-    });
-    if (vendor) {
-      isAuthorized = true;
-    }
-  }
+
 
 
   if (channel === 'private-admin') {

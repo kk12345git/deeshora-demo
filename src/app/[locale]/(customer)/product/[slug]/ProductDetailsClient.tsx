@@ -114,7 +114,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
     "sku": product.id,
     "brand": {
       "@type": "Brand",
-      "name": product.vendor.shopName
+      "name": "Daily1Mart"
     },
     "aggregateRating": {
       "@type": "AggregateRating",
@@ -131,7 +131,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
       "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       "seller": {
         "@type": "Organization",
-        "name": product.vendor.shopName
+        "name": "Daily1Mart"
       }
     }
   };
@@ -197,7 +197,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                 </motion.div>
               </AnimatePresence>
               {discount > 0 && (
-                <div className="absolute top-8 left-8 badge bg-orange-600 text-white font-black text-xs px-5 py-2.5 shadow-xl rotate-[-2deg]">
+                <div className="absolute top-8 left-8 badge bg-brand-600 text-white font-black text-xs px-5 py-2.5 shadow-xl rotate-[-2deg]">
                     SAVES {discount}%
                 </div>
               )}
@@ -211,7 +211,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedImage(index)}
                   className={`relative flex-shrink-0 w-24 h-24 rounded-3xl overflow-hidden border-2 transition-all shadow-md ${
-                    selectedImage === index ? 'border-orange-500 shadow-orange-500/10' : 'border-transparent opacity-60 hover:opacity-100'
+                    selectedImage === index ? 'border-brand-500 shadow-brand-500/10' : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
                 >
                   <Image src={img} alt={`${product.name} preview-${index}`} width={120} height={120} className="w-full h-full object-cover" />
@@ -225,7 +225,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
             <div className="space-y-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                    <Link href={`/category/${product.category.slug}`} className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-600 bg-orange-50 px-4 py-1.5 rounded-full hover:bg-orange-100 transition-colors">
+                    <Link href={`/category/${product.category.slug}`} className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-600 bg-brand-50 px-4 py-1.5 rounded-full hover:bg-brand-100 transition-colors">
                         {product.category.name}
                     </Link>
                     <div className="flex items-center text-[11px] font-bold text-gray-500 gap-1.5 ml-auto bg-white px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
@@ -258,23 +258,20 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
               {/* Shop Card */}
               <motion.div 
                 whileHover={{ scale: 1.02 }}
-                className="group card p-6 bg-white border border-gray-100 shadow-2xl shadow-gray-200/40 hover:border-orange-200 transition-all cursor-pointer relative overflow-hidden"
+                className="group card p-6 bg-white border border-gray-100 shadow-2xl shadow-gray-200/40 hover:border-brand-200 transition-all cursor-pointer relative overflow-hidden"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-orange-500/10 transition-all duration-700" />
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Market Partner</p>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-brand-500/10 transition-all duration-700" />
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Official Platform Store</p>
                 <div className="flex items-center gap-5 relative z-10">
-                    <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-orange-600 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-orange-500/20">
-                        <span className="font-black text-2xl">{product.vendor.shopName.charAt(0)}</span>
+                    <div className="w-16 h-16 bg-gradient-to-br from-brand-400 to-brand-600 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-brand-500/20">
+                        <span className="font-black text-2xl">D</span>
                     </div>
                     <div>
-                        <h4 className="font-black text-xl text-gray-950 group-hover:text-orange-600 transition-colors leading-tight">{product.vendor.shopName}</h4>
+                        <h4 className="font-black text-xl text-gray-950 group-hover:text-brand-600 transition-colors leading-tight">Daily1Mart</h4>
                         <p className="text-sm text-gray-500 font-bold flex items-center gap-1.5 mt-1">
-                            <MapPin size={14} className="text-orange-500" /> {product.vendor.city}
+                            <MapPin size={14} className="text-brand-500" /> Thiruvottriyur, Chennai
                         </p>
                     </div>
-                    <Link href={`/vendor/${product.vendor.id}`} className="ml-auto w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-orange-600 group-hover:text-white transition-all shadow-sm">
-                        <ChevronLeft size={24} className="rotate-180" />
-                    </Link>
                 </div>
               </motion.div>
 
@@ -291,9 +288,9 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                 <motion.div 
                   animate={{ scale: [1, 1.02, 1] }}
                   transition={{ repeat: Infinity, duration: 2 }}
-                  className="flex items-center gap-4 text-orange-700 bg-orange-50/80 backdrop-blur-sm p-5 rounded-[2rem] border border-orange-100/50"
+                  className="flex items-center gap-4 text-brand-700 bg-brand-50/80 backdrop-blur-sm p-5 rounded-[2rem] border border-brand-100/50"
                 >
-                  <AlertTriangle size={24} className="text-orange-600" />
+                  <AlertTriangle size={24} className="text-brand-600" />
                   <p className="text-sm font-black tracking-tight uppercase italic">Inventory Alert: Only {product.stock} units remaining!</p>
                 </motion.div>
               )}
@@ -306,7 +303,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                     <div className="flex flex-col gap-4">
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Modify Selection</p>
                       <div className="flex items-center gap-4">
-                        <div className="flex items-center bg-gray-950 text-white rounded-[2.5rem] p-1.5 shadow-2xl shadow-orange-500/20">
+                        <div className="flex items-center bg-gray-950 text-white rounded-[2.5rem] p-1.5 shadow-2xl shadow-brand-500/20">
                           <motion.button 
                             whileTap={{ scale: 0.9 }} 
                             onClick={() => handleUpdateQuantity(product.id, cartItem.quantity - 1)} 
@@ -327,7 +324,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                           whileHover={{ scale: 1.05, y: -3 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={handleBuyNow}
-                          className="flex-1 h-[72px] bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-base rounded-[2rem] shadow-2xl shadow-orange-500/30 flex items-center justify-center gap-3 tracking-wide uppercase italic transition-all"
+                          className="flex-1 h-[72px] bg-gradient-to-r from-brand-500 to-brand-600 text-white font-black text-base rounded-[2rem] shadow-2xl shadow-brand-500/30 flex items-center justify-center gap-3 tracking-wide uppercase italic transition-all"
                         >
                           <Zap size={20} className="fill-white" /> Buy Now
                         </motion.button>
@@ -340,11 +337,11 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                         whileHover={{ scale: 1.03, y: -3 }}
                         whileTap={{ scale: 0.95 }}
                         animate={{ 
-                          boxShadow: ["0 0 0 0 rgba(249, 115, 22, 0)", "0 0 0 10px rgba(249, 115, 22, 0.1)", "0 0 0 0 rgba(249, 115, 22, 0)"]
+                          boxShadow: ["0 0 0 0 rgba(var(--brand-500) / 0)", "0 0 0 10px rgba(var(--brand-500) / 0.1)", "0 0 0 0 rgba(var(--brand-500) / 0)"]
                         }}
                         transition={{ repeat: Infinity, duration: 2 }}
                         onClick={handleBuyNow}
-                        className="w-full h-20 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-xl rounded-[2.5rem] shadow-2xl shadow-orange-500/30 flex items-center justify-center gap-3 tracking-wide uppercase italic transition-all"
+                        className="w-full h-20 bg-gradient-to-r from-brand-500 to-brand-600 text-white font-black text-xl rounded-[2.5rem] shadow-2xl shadow-brand-500/30 flex items-center justify-center gap-3 tracking-wide uppercase italic transition-all"
                       >
                         <Zap size={24} className="fill-white" /> Buy Now
                       </motion.button>
@@ -358,7 +355,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                       </motion.button>
                       
                       <a 
-                        href={getProductShareUrl(product.vendor.phone, product.name, product.slug)}
+                        href={getProductShareUrl('918939318865', product.name, product.slug)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 text-xs font-black text-emerald-600 hover:text-emerald-700 transition-colors uppercase tracking-widest"
@@ -389,11 +386,11 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
           {product.reviews.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {product.reviews.map((review: any) => (
-                <div key={review.id} className="card p-6 bg-white border border-gray-100 flex flex-col gap-4 group hover:border-orange-500/20 transition-all">
+                <div key={review.id} className="card p-6 bg-white border border-gray-100 flex flex-col gap-4 group hover:border-brand-500/20 transition-all">
                   <div className="flex items-center justify-between">
                     <div className="flex gap-0.5">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} size={14} className={i < review.rating ? 'text-orange-500 fill-current' : 'text-gray-200'} />
+                        <Star key={i} size={14} className={i < review.rating ? 'text-brand-500 fill-current' : 'text-gray-200'} />
                       ))}
                     </div>
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
@@ -450,7 +447,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                       </div>
                       <button
                         onClick={handleBuyNow}
-                        className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2 uppercase tracking-widest"
+                        className="flex-1 h-12 bg-gradient-to-r from-brand-500 to-brand-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-brand-500/30 flex items-center justify-center gap-2 uppercase tracking-widest"
                       >
                         <Zap size={15} className="fill-white" /> Buy Now
                       </button>
@@ -465,7 +462,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                         <ShoppingCart size={15} />
                       </button>
                       <a 
-                        href={getProductShareUrl(product.vendor.phone, product.name, product.slug)}
+                        href={getProductShareUrl('918939318865', product.name, product.slug)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="h-12 w-12 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 shrink-0"
@@ -474,7 +471,7 @@ export default function ProductDetailsClient({ product: initialProduct }: Produc
                       </a>
                       <button
                         onClick={handleBuyNow}
-                        className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2 uppercase tracking-widest"
+                        className="flex-1 h-12 bg-gradient-to-r from-brand-500 to-brand-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-brand-500/30 flex items-center justify-center gap-2 uppercase tracking-widest"
                       >
                         <Zap size={15} className="fill-white" /> Buy Now
                       </button>

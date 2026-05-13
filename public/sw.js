@@ -1,5 +1,5 @@
 // public/sw.js
-const CACHE_NAME = 'deeshora-v1';
+const CACHE_NAME = 'daily1mart-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.json',

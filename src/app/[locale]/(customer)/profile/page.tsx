@@ -24,7 +24,7 @@ function getLoyaltyTier(orderCount: number) {
   if (orderCount >= 50) return { name: 'Platinum', iconKey: 'crown',  color: 'from-violet-500 to-purple-600', textColor: 'text-violet-100', min: 50, next: null, emoji: '👑' };
   if (orderCount >= 20) return { name: 'Gold',     iconKey: 'flame',  color: 'from-amber-400 to-yellow-500',   textColor: 'text-amber-100',  min: 20, next: 50, emoji: '🔥' };
   if (orderCount >= 5)  return { name: 'Silver',   iconKey: 'shield', color: 'from-slate-400 to-slate-500',    textColor: 'text-slate-100',  min: 5,  next: 20, emoji: '🛡️' };
-  return                       { name: 'Bronze',   iconKey: 'zap',    color: 'from-orange-400 to-orange-500',  textColor: 'text-orange-100', min: 0,  next: 5, emoji: '⚡' };
+  return                       { name: 'Bronze',   iconKey: 'zap',    color: 'from-brand-400 to-brand-500',  textColor: 'text-brand-100', min: 0,  next: 5, emoji: '⚡' };
 }
 
 // ─── Status dot (unused directly, kept for reference)
@@ -94,7 +94,7 @@ export default function MySpacePage() {
   if (isLoading) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
-        <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
+        <Loader2 className="w-10 h-10 animate-spin text-brand-500" />
         <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Loading your space...</p>
       </div>
     </div>
@@ -103,15 +103,15 @@ export default function MySpacePage() {
   if (!profile) return (
     <div className="min-h-screen flex items-center justify-center text-center px-4 bg-gray-50">
       <div className="bg-white rounded-3xl p-10 shadow-xl border border-gray-100 max-w-sm w-full space-y-6">
-        <div className="w-20 h-20 bg-orange-50 rounded-3xl flex items-center justify-center mx-auto">
-          <User size={36} className="text-orange-500" />
+        <div className="w-20 h-20 bg-brand-50 rounded-3xl flex items-center justify-center mx-auto">
+          <User size={36} className="text-brand-500" />
         </div>
         <div>
           <h1 className="text-2xl font-black text-gray-900">Sign in to continue</h1>
           <p className="text-gray-400 text-sm mt-2">Access your profile, orders, and more.</p>
         </div>
         <Link href="/sign-in" className="btn-primary w-full text-center block">Sign In</Link>
-        <Link href="/sign-up" className="text-sm font-bold text-orange-500 hover:underline block">New here? Create an account →</Link>
+        <Link href="/sign-up" className="text-sm font-bold text-brand-500 hover:underline block">New here? Create an account →</Link>
       </div>
     </div>
   );
@@ -153,7 +153,7 @@ export default function MySpacePage() {
       {/* Hero Banner */}
       <div className="relative bg-gray-950 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-orange-500/20 to-transparent blur-3xl" />
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-brand-500/20 to-transparent blur-3xl" />
           <div className="absolute bottom-0 left-0 w-1/3 h-full bg-gradient-to-r from-emerald-500/10 to-transparent blur-3xl" />
         </div>
         <div className="container mx-auto px-4 pt-10 pb-24 relative z-10">
@@ -164,7 +164,7 @@ export default function MySpacePage() {
                 {displayAvatar ? (
                   <Image src={displayAvatar} alt={profile.name} width={112} height={112} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center">
+                  <div className="w-full h-full bg-gradient-to-br from-brand-400 to-rose-500 flex items-center justify-center">
                     <span className="text-4xl font-black text-white">{profile.name.charAt(0)}</span>
                   </div>
                 )}
@@ -199,13 +199,13 @@ export default function MySpacePage() {
                     <CheckCircle size={12} /> Area Verified
                   </span>
                 ) : profile.area ? (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 px-3 py-1 rounded-full">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-400 bg-brand-500/10 border border-brand-500/20 px-3 py-1 rounded-full">
                     <AlertTriangle size={12} /> Area Not Serviceable
                   </span>
                 ) : (
                   <button
                     onClick={() => setShowOnboarding(true)}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-300 bg-white/5 border border-white/10 px-3 py-1 rounded-full hover:bg-orange-500/10 hover:border-orange-500/30 hover:text-orange-400 transition-all"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-300 bg-white/5 border border-white/10 px-3 py-1 rounded-full hover:bg-brand-500/10 hover:border-brand-500/30 hover:text-brand-400 transition-all"
                   >
                     <MapPin size={12} /> Set your location →
                   </button>
@@ -234,11 +234,11 @@ export default function MySpacePage() {
           <div className="flex-1">
             <div className="flex justify-between items-center mb-2">
               <p className="text-xs font-black uppercase tracking-widest text-gray-500">Profile Completion</p>
-              <span className="text-sm font-black text-orange-500">{completionPct}%</span>
+              <span className="text-sm font-black text-brand-500">{completionPct}%</span>
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full transition-all duration-1000"
+                className="h-full bg-gradient-to-r from-brand-400 to-brand-600 rounded-full transition-all duration-1000"
                 style={{ width: `${completionPct}%` }}
               />
             </div>
@@ -273,13 +273,13 @@ export default function MySpacePage() {
 
         {/* Onboarding nudge */}
         {!profile.isOnboarded && (
-          <div className="p-5 bg-orange-50 border border-orange-200 rounded-2xl flex items-start gap-4">
-            <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+          <div className="p-5 bg-brand-50 border border-brand-200 rounded-2xl flex items-start gap-4">
+            <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
               <CheckCircle size={20} className="text-white" />
             </div>
             <div className="flex-1">
-              <p className="font-black text-orange-800 text-sm">Complete your profile to start ordering!</p>
-              <p className="text-xs text-orange-600 mt-1">Add phone & delivery area to unlock ordering.</p>
+              <p className="font-black text-brand-800 text-sm">Complete your profile to start ordering!</p>
+              <p className="text-xs text-brand-600 mt-1">Add phone & delivery area to unlock ordering.</p>
             </div>
             <button onClick={() => setShowOnboarding(true)} className="flex-shrink-0 btn-primary py-2 px-4 text-xs rounded-xl">
               Setup →
@@ -326,9 +326,9 @@ export default function MySpacePage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
               <h2 className="font-black text-gray-900 flex items-center gap-2">
-                <ShoppingBag size={16} className="text-orange-500" /> Recent Orders
+                <ShoppingBag size={16} className="text-brand-500" /> Recent Orders
               </h2>
-              <Link href="/orders" className="text-xs font-black text-orange-500 hover:text-orange-600 flex items-center gap-1">
+              <Link href="/orders" className="text-xs font-black text-brand-500 hover:text-brand-600 flex items-center gap-1">
                 All orders <ArrowRight size={12} />
               </Link>
             </div>
@@ -352,7 +352,7 @@ export default function MySpacePage() {
                       <span className="font-black text-gray-900 text-sm">#{order.id.slice(-6).toUpperCase()}</span>
                       <OrderStatusBadge status={order.status} />
                     </div>
-                    <p className="text-xs text-gray-400 font-medium mt-0.5 truncate">{order.vendor.shopName}</p>
+                    <p className="text-xs text-gray-400 font-medium mt-0.5 truncate">Daily1Mart</p>
                   </div>
                   {/* Amount + date */}
                   <div className="text-right flex-shrink-0">
@@ -363,7 +363,7 @@ export default function MySpacePage() {
                       {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                     </p>
                   </div>
-                  <ChevronRight size={14} className="text-gray-200 group-hover:text-orange-400 transition-colors flex-shrink-0" />
+                  <ChevronRight size={14} className="text-gray-200 group-hover:text-brand-400 transition-colors flex-shrink-0" />
                 </Link>
               ))}
             </div>
@@ -374,13 +374,13 @@ export default function MySpacePage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-gray-50">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-orange-50 rounded-xl flex items-center justify-center">
-                <User size={18} className="text-orange-500" />
+              <div className="w-9 h-9 bg-brand-50 rounded-xl flex items-center justify-center">
+                <User size={18} className="text-brand-500" />
               </div>
               <h2 className="font-black text-gray-900">Personal Info</h2>
             </div>
             {editSection !== 'basic' && (
-              <button onClick={() => startEdit('basic')} className="flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-600">
+              <button onClick={() => startEdit('basic')} className="flex items-center gap-1.5 text-xs font-bold text-brand-500 hover:text-brand-600">
                 <Edit3 size={14} /> Edit
               </button>
             )}
@@ -393,7 +393,7 @@ export default function MySpacePage() {
                 <input
                   value={editData.name ?? ''}
                   onChange={e => setEditData({ ...editData, name: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all"
+                  className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium border-2 border-transparent focus:border-brand-500 focus:bg-white outline-none transition-all"
                   placeholder="Your full name"
                 />
               </div>
@@ -404,7 +404,7 @@ export default function MySpacePage() {
                   <input
                     value={editData.phone ?? ''}
                     onChange={e => setEditData({ ...editData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                    className="w-full pl-14 pr-4 py-3 bg-gray-50 rounded-xl text-sm font-medium border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all"
+                    className="w-full pl-14 pr-4 py-3 bg-gray-50 rounded-xl text-sm font-medium border-2 border-transparent focus:border-brand-500 focus:bg-white outline-none transition-all"
                     placeholder="10-digit mobile number"
                   />
                 </div>
@@ -431,8 +431,8 @@ export default function MySpacePage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-gray-50">
             <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isServiceable ? 'bg-emerald-50' : 'bg-orange-50'}`}>
-                <MapPin size={18} className={isServiceable ? 'text-emerald-500' : 'text-orange-500'} />
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isServiceable ? 'bg-emerald-50' : 'bg-brand-50'}`}>
+                <MapPin size={18} className={isServiceable ? 'text-emerald-500' : 'text-brand-500'} />
               </div>
               <div>
                 <h2 className="font-black text-gray-900">Delivery Location</h2>
@@ -440,7 +440,7 @@ export default function MySpacePage() {
               </div>
             </div>
             {editSection !== 'location' && (
-              <button onClick={() => startEdit('location')} className="flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-600">
+              <button onClick={() => startEdit('location')} className="flex items-center gap-1.5 text-xs font-bold text-brand-500 hover:text-brand-600">
                 <Edit3 size={14} /> {profile.area ? 'Edit' : 'Add'}
               </button>
             )}
@@ -457,8 +457,8 @@ export default function MySpacePage() {
                       onClick={() => setEditData({ ...editData, area: opt.value, pincode: opt.pincode ?? editData.pincode })}
                       className={`p-3 rounded-xl border-2 text-left text-sm font-bold transition-all flex flex-col gap-0.5 ${
                         editData.area === opt.value
-                          ? 'border-orange-500 bg-orange-50 text-orange-700'
-                          : 'border-gray-100 bg-gray-50 text-gray-600 hover:border-orange-200'
+                          ? 'border-brand-500 bg-brand-50 text-brand-700'
+                          : 'border-gray-100 bg-gray-50 text-gray-600 hover:border-brand-200'
                       }`}
                     >
                       <span className="text-xs leading-tight">{opt.label}</span>
@@ -470,13 +470,13 @@ export default function MySpacePage() {
               <input
                 value={editData.pincode ?? ''}
                 onChange={e => setEditData({ ...editData, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
-                className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all"
+                className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium border-2 border-transparent focus:border-brand-500 focus:bg-white outline-none transition-all"
                 placeholder="Pincode (e.g. 600019)"
               />
               <input
                 value={editData.landmark ?? ''}
                 onChange={e => setEditData({ ...editData, landmark: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all"
+                className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium border-2 border-transparent focus:border-brand-500 focus:bg-white outline-none transition-all"
                 placeholder="Landmark (optional)"
               />
               <div className="flex gap-3">
@@ -512,14 +512,14 @@ export default function MySpacePage() {
 
         {/* Non-serviceable notice */}
         {profile.area && !isServiceable && (
-          <div className="p-5 bg-orange-50 border border-orange-100 rounded-2xl flex items-start gap-4">
-            <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-              <AlertTriangle size={20} className="text-orange-600" />
+          <div className="p-5 bg-brand-50 border border-brand-100 rounded-2xl flex items-start gap-4">
+            <div className="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+              <AlertTriangle size={20} className="text-brand-600" />
             </div>
             <div>
-              <p className="font-black text-orange-800 text-sm">Delivery not available in your area</p>
-              <p className="text-xs text-orange-600 mt-1">
-                Deeshora currently serves <strong>Thiruvottriyur &amp; nearby localities, Chennai</strong>. Watch for us to expand soon!
+              <p className="font-black text-brand-800 text-sm">Delivery not available in your area</p>
+              <p className="text-xs text-brand-600 mt-1">
+                Daily1Mart currently serves <strong>Thiruvottriyur &amp; nearby localities, Chennai</strong>. Watch for us to expand soon!
               </p>
             </div>
           </div>
@@ -547,12 +547,12 @@ function InfoRow({ icon, label, value, missing = 'Not provided' }: { icon: React
 function QuickLink({ href, icon, label, badge }: { href: string; icon: React.ReactNode; label: string; badge?: string }) {
   return (
     <Link href={href} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors group">
-      <div className="w-9 h-9 bg-gray-50 group-hover:bg-orange-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-orange-500 transition-all flex-shrink-0">
+      <div className="w-9 h-9 bg-gray-50 group-hover:bg-brand-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-brand-500 transition-all flex-shrink-0">
         {icon}
       </div>
       <span className="flex-1 text-sm font-bold text-gray-700">{label}</span>
-      {badge && <span className="text-xs font-black bg-orange-100 text-orange-600 px-2.5 py-1 rounded-full">{badge}</span>}
-      <ChevronRight size={16} className="text-gray-300 group-hover:text-orange-500 transition-colors" />
+      {badge && <span className="text-xs font-black bg-brand-100 text-brand-600 px-2.5 py-1 rounded-full">{badge}</span>}
+      <ChevronRight size={16} className="text-gray-300 group-hover:text-brand-500 transition-colors" />
     </Link>
   );
 }

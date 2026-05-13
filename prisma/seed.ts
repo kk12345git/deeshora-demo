@@ -39,23 +39,25 @@ async function main() {
   // ── Seed Comprehensive Categories ────────────────────────────────────
   console.log('📂 Seeding all categories...');
   const categoriesList = [
-    { name: 'Groceries & Essentials', slug: 'groceries', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800', sortOrder: 1 },
-    { name: 'Fruits & Vegetables', slug: 'fruits-veg', image: 'https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800', sortOrder: 2 },
-    { name: 'Meat & Fish', slug: 'meat-fish', image: 'https://images.unsplash.com/photo-1607623273573-7034ed8a9abd?w=800', sortOrder: 3 },
-    { name: 'Bakery & Dairy', slug: 'bakery-dairy', image: 'https://images.unsplash.com/photo-1550583724-125581f77833?w=800', sortOrder: 4 },
-    { name: 'Pharmacy & Wellness', slug: 'pharmacy', image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbbb88?w=800', sortOrder: 5 },
-    { name: 'Electronics & Gadgets', slug: 'electronics', image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800', sortOrder: 6 },
-    { name: 'Fashion & Lifestyle', slug: 'fashion', image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=800', sortOrder: 7 },
-    { name: 'Home & Kitchen', slug: 'home-kitchen', image: 'https://images.unsplash.com/photo-1556911220-e15224bbaf47?w=800', sortOrder: 8 },
-    { name: 'Stationery & Office', slug: 'stationery', image: 'https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=800', sortOrder: 9 },
-    { name: 'Pet Care', slug: 'pet-care', image: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=800', sortOrder: 10 },
-    { name: 'Toys & Baby Care', slug: 'toys-baby', image: 'https://images.unsplash.com/photo-1532330393533-443990a51d10?w=800', sortOrder: 11 },
+    { name: '₹1 Store', slug: 'one-rupee-store', image: 'https://images.unsplash.com/photo-1580519542036-c47de6196ba5?w=800', sortOrder: 0 },
+    { name: 'Combo Packs', slug: 'combo-packs', image: 'https://images.unsplash.com/photo-1607349913338-fca6f7fc714a?w=800', sortOrder: 1 },
+    { name: 'Groceries & Essentials', slug: 'groceries', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800', sortOrder: 2 },
+    { name: 'Fruits & Vegetables', slug: 'fruits-veg', image: 'https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800', sortOrder: 3 },
+    { name: 'Meat & Fish', slug: 'meat-fish', image: 'https://images.unsplash.com/photo-1607623273573-7034ed8a9abd?w=800', sortOrder: 4 },
+    { name: 'Bakery & Dairy', slug: 'bakery-dairy', image: 'https://images.unsplash.com/photo-1550583724-125581f77833?w=800', sortOrder: 5 },
+    { name: 'Pharmacy & Wellness', slug: 'pharmacy', image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbbb88?w=800', sortOrder: 6 },
+    { name: 'Electronics & Gadgets', slug: 'electronics', image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800', sortOrder: 7 },
+    { name: 'Fashion & Lifestyle', slug: 'fashion', image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=800', sortOrder: 8 },
+    { name: 'Home & Kitchen', slug: 'home-kitchen', image: 'https://images.unsplash.com/photo-1556911220-e15224bbaf47?w=800', sortOrder: 9 },
+    { name: 'Stationery & Office', slug: 'stationery', image: 'https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=800', sortOrder: 10 },
+    { name: 'Pet Care', slug: 'pet-care', image: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=800', sortOrder: 11 },
+    { name: 'Toys & Baby Care', slug: 'toys-baby', image: 'https://images.unsplash.com/photo-1532330393533-443990a51d10?w=800', sortOrder: 12 },
   ];
 
   const categoryMap = new Map();
   for (const cat of categoriesList) {
     const upserted = await prisma.category.upsert({
-      where: { slug: cat.slug },
+      where: { name: cat.name },
       update: cat,
       create: cat,
     });
@@ -63,40 +65,25 @@ async function main() {
   }
   console.log(`✅ Seeded ${categoriesList.length} categories.`);
 
-  // ── Seed a Sample Vendor ─────────────────────────────────────────────
-  console.log('🏪 Seeding sample vendor...');
-  const sampleVendorEmail = 'karthik@example.com'; 
-  const user = await prisma.user.upsert({
-    where: { email: sampleVendorEmail },
+  // ── Seed Admin as Sole Vendor ─────────────────────────────────────────
+  console.log('🏪 Seeding Admin as sole vendor...');
+  const adminEmail = 'admin@daily1mart.in'; 
+  const adminUser = await prisma.user.upsert({
+    where: { email: adminEmail },
     create: {
-      clerkId: 'user_seed_v1',
-      email: sampleVendorEmail,
-      name: 'Karthik S',
-      role: 'VENDOR',
+      clerkId: 'admin_daily1mart_v1',
+      email: adminEmail,
+      name: 'Daily1Mart Admin',
+      role: 'ADMIN',
     },
-    update: { role: 'VENDOR' },
-  });
-
-  const vendor = await prisma.vendor.upsert({
-    where: { userId: user.id },
-    create: {
-      userId: user.id,
-      shopName: 'Fresh Mart & More',
-      logo: 'https://res.cloudinary.com/dqr6idm0v/image/upload/v1712800000/logos/fresh-mart.png',
-      phone: '9840012345',
-      email: sampleVendorEmail,
-      categories: ['Groceries & Essentials', 'Bakery & Dairy'],
-      address: '123 Market St, Thiruvottriyur',
-      city: 'Chennai',
-      status: 'APPROVED',
-      commissionRate: 0.1,
-    },
-    update: { status: 'APPROVED', categories: ['Groceries & Essentials', 'Bakery & Dairy'] },
+    update: { role: 'ADMIN' },
   });
 
   // ── Seed Sample Products ─────────────────────────────────────────────
   console.log('🍎 Seeding sample products...');
   const groceryCat = categoryMap.get('groceries');
+  const oneRupeeCat = categoryMap.get('one-rupee-store');
+  const comboCat = categoryMap.get('combo-packs');
 
   const products = [
     {
@@ -110,7 +97,31 @@ async function main() {
       type: 'DIGITAL',
       images: ['https://images.unsplash.com/photo-1556911220-e15224bbaf47?w=800'],
       categoryId: groceryCat.id,
-      vendorId: vendor.id,
+    },
+    {
+      name: 'Pencil Set',
+      slug: 'pencil-set-1',
+      description: '<p>Standard pencil for daily use.</p>',
+      price: 1,
+      mrp: 5,
+      stock: 100,
+      unit: 'Piece',
+      type: 'PHYSICAL',
+      images: ['https://images.unsplash.com/photo-1519332978332-21b7d621d05e?w=800'],
+      categoryId: oneRupeeCat.id,
+    },
+    {
+      name: 'Breakfast Combo',
+      slug: 'breakfast-combo',
+      description: '<p>Milk + Bread + Eggs bundle.</p>',
+      price: 150,
+      mrp: 180,
+      stock: 50,
+      unit: 'Pack',
+      type: 'PHYSICAL',
+      isCombo: true,
+      images: ['https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=800'],
+      categoryId: comboCat.id,
     }
   ];
 
@@ -122,20 +133,6 @@ async function main() {
     });
   }
   console.log(`✅ Seeded ${products.length} products.`);
-
-  // ── Seed Sample Communities ──────────────────────────────────────────
-  console.log('👥 Seeding communities...');
-  await prisma.community.upsert({
-    where: { vendorId: vendor.id },
-    create: {
-      vendorId: vendor.id,
-      name: 'Fresh Mart Inner Circle',
-      description: 'Exclusive updates, early access to sales, and cooking tips from Fresh Mart.',
-      image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800',
-    },
-    update: { name: 'Fresh Mart Inner Circle' },
-  });
-  console.log('✅ Seeded 1 community.');
   
   // ── Seed Sample Delivery Partner ────────────────────────────────────
   console.log('🛵 Seeding sample delivery partner...');
@@ -160,21 +157,13 @@ async function main() {
     {
       type: 'SYSTEM',
       action: 'INITIALIZATION',
-      message: 'Deeshora Platform Monitoring System Initialized.',
+      message: 'Daily1Mart Platform Monitoring System Initialized.',
       metadata: { version: '2.0.0', environment: 'production' },
-    },
-    {
-      type: 'VENDOR',
-      action: 'APPROVAL',
-      actorName: 'System Admin',
-      message: 'Vendor "Fresh Mart & More" was automatically approved by system seed.',
-      entityId: vendor.id,
-      entityType: 'Vendor',
     },
     {
       type: 'PRODUCT',
       action: 'CREATE',
-      actorName: 'Karthik S',
+      actorName: 'Admin',
       message: 'New digital product "Smart Kitchen Masterclass" added to inventory.',
       entityId: groceryCat.id, // Just for seed reference
       entityType: 'Product',

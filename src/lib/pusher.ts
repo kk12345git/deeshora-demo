@@ -47,7 +47,6 @@ export const getPusherClient = () => {
 // Channel & Event constants
 export const CHANNELS = {
   ORDER: (orderId: string) => `private-order-${orderId}`,
-  VENDOR: (vendorId: string) => `private-vendor-${vendorId}`,
   ADMIN: 'private-admin',
 };
 
@@ -55,9 +54,9 @@ export const CHANNELS = {
 export const EVENTS = {
   ORDER_STATUS_UPDATED: 'order-status-updated',
   NEW_ORDER: 'new-order',
-  VENDOR_APPROVED: 'vendor-approved',
   LOW_STOCK_ALERT: 'low-stock-alert',
   NEW_PAYMENT_VERIFICATION: 'new-payment-verification',
+  PAYMENT_VERIFIED: 'payment-verified',
   NEW_ACTIVITY: 'new-activity',
   STATS_UPDATED: 'stats-updated',
 };

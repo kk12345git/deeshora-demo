@@ -1,5 +1,5 @@
 /**
- * Deeshora WhatsApp Bot Library (Chennai Metro Style)
+ * Daily1Mart WhatsApp Bot Library (Chennai Metro Style)
  * Handles generation of interactive list messages and buttons
  */
 
@@ -8,7 +8,7 @@ interface WhatsAppConfig {
   phoneId: string;
 }
 
-export class DeeshoraBot {
+export class Daily1MartBot {
   private config: WhatsAppConfig;
 
   constructor(config: WhatsAppConfig) {
@@ -45,7 +45,7 @@ export class DeeshoraBot {
       type: 'interactive',
       interactive: {
         type: 'button',
-        header: { type: 'text', text: 'Deeshora - Your Local Marketplace' },
+        header: { type: 'text', text: 'Daily1Mart - Your Local Marketplace' },
         body: { text: 'Welcome! How can we help you today?\n\nவணக்கம்! இன்று நாங்கள் உங்களுக்கு எவ்வாறு உதவ முடியும்?' },
         footer: { text: 'Select an option below' },
         action: {
@@ -76,7 +76,7 @@ export class DeeshoraBot {
         type: 'list',
         header: { type: 'text', text: 'Browse Categories' },
         body: { text: 'Please select a category to view available products.' },
-        footer: { text: 'Deeshora Shopping' },
+        footer: { text: 'Daily1Mart Shopping' },
         action: {
           button: 'Select Category',
           sections: [
@@ -94,7 +94,7 @@ export class DeeshoraBot {
    * Send Order Status with Map Link
    */
   async sendOrderStatus(to: string, order: { id: string; status: string; total: number }) {
-    const trackingUrl = `https://deeshora.in/orders/${order.id}`;
+    const trackingUrl = `https://Daily1Mart.in/orders/${order.id}`;
     return this.sendRequest({
       to,
       type: 'interactive',
@@ -127,7 +127,7 @@ export class DeeshoraBot {
           image: { link: qrUrl } 
         },
         body: { text: `🎟️ *Your Delivery Pass*\n\nOrder: #${orderId.slice(-8).toUpperCase()}\n\nPlease show this QR code to the delivery partner when they arrive to confirm your delivery.` },
-        footer: { text: 'Deeshora Secure Delivery' },
+        footer: { text: 'Daily1Mart Secure Delivery' },
         action: {
           buttons: [
             { type: 'reply', reply: { id: `view_map_${orderId}`, title: '📍 Track Driver' } },

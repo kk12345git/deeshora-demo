@@ -5,7 +5,7 @@ export function initiateManualUpiPayment(req: PaymentInitiateRequest): PaymentIn
   // Use the admin's UPI ID from environment or a default
   const adminUpiId = process.env.ADMIN_UPI_ID || 'deeshware15-2@okicici';
   const amount = req.amount.toFixed(2);
-  const shopName = "Deeshora";
+  const shopName = "Daily1Mart";
   const transactionNote = `Order_${req.orderId.slice(-8).toUpperCase()}`;
 
   // UPI Deep Link Format: upi://pay?pa=ID&pn=NAME&am=AMOUNT&cu=INR&tn=NOTE

@@ -16,48 +16,27 @@ export async function GET(req: Request) {
   }
 
   const results = {
-    subscriptionsProcessed: 0,
-    notificationsSent: 0,
+    lowStockNotificationsSent: 0,
     errors: [] as string[],
   };
 
   try {
-    // 1. Process Expired Subscriptions
-    const now = new Date();
-    const expiredVendors = await prisma.vendor.findMany({
-      where: {
-        plan: 'PREMIUM',
-        planExpiresAt: { lt: now },
-        subscriptionStatus: 'ACTIVE',
-      },
+    // 1. Get the admin user to notify
+    const adminUser = await prisma.user.findFirst({
+      where: { role: 'ADMIN' },
+      select: { id: true },
     });
 
-    for (const vendor of expiredVendors) {
-      await prisma.vendor.update({
-        where: { id: vendor.id },
-        data: {
-          subscriptionStatus: 'EXPIRED',
-        },
-      });
-
-      await logActivity({
-        type: 'SYSTEM',
-        action: 'SUBSCRIPTION',
-        entityId: vendor.id,
-        entityType: 'Vendor',
-        message: `Subscription for ${vendor.shopName} has expired automatically.`,
-        metadata: { expiredAt: vendor.planExpiresAt },
-      });
-
-      results.subscriptionsProcessed++;
+    if (!adminUser) {
+      return NextResponse.json({ success: false, error: 'Admin user not found' }, { status: 500 });
     }
 
-    // Fetch active products and post-filter: Prisma doesn't support
-    // column-to-column comparisons in where clauses without $queryRaw
+    // 2. Process Low Stock Alerts
     const allLowStockCandidates = await prisma.product.findMany({
       where: { isActive: true, stock: { lte: 10 } }, // broad pre-filter
-      select: { id: true, name: true, stock: true, lowStockThreshold: true, vendor: { select: { userId: true, shopName: true } } },
+      select: { id: true, name: true, stock: true, lowStockThreshold: true },
     });
+
     const lowStockProducts = allLowStockCandidates.filter(
       (p) => p.stock <= p.lowStockThreshold
     );
@@ -66,7 +45,7 @@ export async function GET(req: Request) {
       // Check if we already notified recently (last 24h) to avoid spam
       const recentNotification = await prisma.notification.findFirst({
         where: {
-          userId: product.vendor.userId,
+          userId: adminUser.id,
           type: 'LOW_STOCK',
           createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
           message: { contains: product.name },
@@ -76,14 +55,14 @@ export async function GET(req: Request) {
       if (!recentNotification) {
         await prisma.notification.create({
           data: {
-            userId: product.vendor.userId,
+            userId: adminUser.id,
             title: 'Low Stock Alert',
-            message: `Your product "${product.name}" is low on stock (${product.stock} left).`,
+            message: `Product "${product.name}" is low on stock (${product.stock} left).`,
             type: 'LOW_STOCK',
-            link: `/vendor/products`,
+            link: `/admin/products`,
           },
         });
-        results.notificationsSent++;
+        results.lowStockNotificationsSent++;
       }
     }
 
