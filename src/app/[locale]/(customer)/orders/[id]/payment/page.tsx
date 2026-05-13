@@ -153,10 +153,12 @@ export default function OrderPaymentPage() {
             <div className="text-center animate-in fade-in zoom-in-95">
               <div className="bg-gray-50 p-4 rounded-3xl inline-block border border-gray-100 shadow-sm">
                 {qrUrl ? (
-                  <img
+                  <Image
                     src={qrUrl}
                     alt="Vendor QR Code"
-                    className="w-48 h-48 rounded-2xl"
+                    width={192}
+                    height={192}
+                    className="rounded-2xl"
                   />
                 ) : (
                   <div className="w-48 h-48 rounded-2xl bg-gray-200 flex items-center justify-center text-gray-400 font-bold text-xs text-center px-4">

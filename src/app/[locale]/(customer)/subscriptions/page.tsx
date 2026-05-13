@@ -82,7 +82,7 @@ export default function SubscriptionsPage() {
                 Smart Subscriptions
               </h2>
               <p className="text-gray-400 text-sm font-medium max-w-xs">
-                Set it once, and we'll deliver it on your schedule. No more
+                Set it once, and we&apos;ll deliver it on your schedule. No more
                 last-minute runs!
               </p>
             </div>

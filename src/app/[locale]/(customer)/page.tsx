@@ -25,6 +25,7 @@ import {
   Timer,
   ShieldCheck,
   ChevronRight,
+  X,
 } from "lucide-react";
 import ProductCard from "@/components/customer/ProductCard";
 import ProductCardSkeleton from "@/components/customer/ProductCardSkeleton";
