@@ -86,7 +86,7 @@ export default function HomePage() {
   const tc = useTranslations("Common");
 
   useEffect(() => {
-    const savedCity = localStorage.getItem("deeshora_city");
+    const savedCity = localStorage.getItem("Deeshora_city");
     if (savedCity) setSelectedCity(savedCity);
     setIsLoaded(true);
   }, []);

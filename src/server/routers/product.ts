@@ -255,11 +255,12 @@ export const productRouter = createTRPCRouter({
         sortBy: z
           .enum(["newest", "price_asc", "price_desc", "rating", "popular"])
           .optional(),
+        city: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
       const limit = input.limit ?? 12;
-      const { cursor, categorySlug, search, featured, sortBy } = input;
+      const { cursor, categorySlug, search, featured, sortBy, city } = input;
       const orderBy =
         sortBy === "price_asc"
           ? { price: "asc" as const }
@@ -276,6 +277,7 @@ export const productRouter = createTRPCRouter({
           isActive: true,
           category: categorySlug ? { slug: categorySlug } : undefined,
           isFeatured: featured,
+          vendor: city ? { city: { contains: city, mode: "insensitive" } } : undefined,
           OR:
             search && search.trim().length > 0
               ? [
@@ -673,7 +675,12 @@ export const productRouter = createTRPCRouter({
     return { success: true };
   }),
   getCities: publicProcedure.query(async ({ ctx }) => {
-    return [];
+    const vendors = await ctx.prisma.vendor.findMany({
+      where: { status: "APPROVED" },
+      select: { city: true },
+      distinct: ["city"],
+    });
+    return vendors.map((v) => v.city).filter(Boolean);
   }),
   autoAnalyze: protectedProcedure
     .input(
