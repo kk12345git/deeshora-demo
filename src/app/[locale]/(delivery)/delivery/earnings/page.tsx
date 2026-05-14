@@ -123,7 +123,7 @@ export default function EarningsPage() {
                   </div>
                   <div>
                     <p className="font-black text-gray-200 text-sm">
-                      {item.vendor.shopName}
+                      {item.vendor?.shopName || "Unknown Vendor"}
                     </p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
                       {item.deliveredAt

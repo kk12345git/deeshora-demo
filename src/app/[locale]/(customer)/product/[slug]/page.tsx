@@ -34,17 +34,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `${product.name} | Deeshora Thiruvottriyur`,
-    description: `${description}... Buy ${product.name} from ${product.vendor.shopName} in Thiruvottriyur, Chennai for ₹${product.price}.`,
+    description: `${description}... Buy ${product.name} from ${product.vendor?.shopName || "Local Vendor"} in Thiruvottriyur, Chennai for ₹${product.price}.`,
     keywords: [
       product.name,
       product.category.name,
-      product.vendor.shopName,
+      product.vendor?.shopName || "Local Shop",
       "Thiruvottriyur delivery",
       "Chennai local shops",
     ],
     openGraph: {
       title: `${product.name} - Instant Delivery in Chennai`,
-      description: `Get ${product.name} delivered in minutes from ${product.vendor.shopName}.`,
+      description: `Get ${product.name} delivered in minutes from ${product.vendor?.shopName || "Local Shop"}.`,
       images: [
         {
           url: product.images[0],

@@ -65,17 +65,17 @@ export default function CommunityDetailPage() {
             {" "}
             <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-[2rem] overflow-hidden border-4 border-white shadow-2xl flex-shrink-0">
               {" "}
-              {community.vendor.logo ? (
+              {community.vendor?.logo ? (
                 <Image
-                  src={community.vendor.logo}
-                  alt={community.vendor.shopName}
+                  src={community.vendor?.logo || ""}
+                  alt={community.vendor?.shopName || "Vendor Logo"}
                   fill
                   className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full bg-brand-100 flex items-center justify-center text-brand-500 text-3xl font-black">
                   {" "}
-                  {community.vendor.shopName[0]}{" "}
+                  {community.vendor?.shopName?.[0] || "C"}{" "}
                 </div>
               )}{" "}
             </div>{" "}
