@@ -3,7 +3,7 @@
 
 import { trpc } from "@/lib/trpc";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Star,
@@ -61,6 +61,13 @@ export default function ProductDetailsClient({
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null,
   );
+
+  useEffect(() => {
+    if (addresses && addresses.length > 0 && !selectedAddressId) {
+      const defaultAddress = addresses.find((a) => a.isDefault) || addresses[0];
+      setSelectedAddressId(defaultAddress.id);
+    }
+  }, [addresses, selectedAddressId]);
 
   const addItemMutation = trpc.cart.addItem.useMutation();
   const updateQuantityMutation = trpc.cart.updateQuantity.useMutation();

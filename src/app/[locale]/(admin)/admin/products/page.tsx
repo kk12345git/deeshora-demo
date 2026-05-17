@@ -22,16 +22,13 @@ import { motion } from "framer-motion";
 
 export default function AdminProductsPage() {
   const [search, setSearch] = useState("");
-  const [vendorId, setVendorId] = useState<string | undefined>(undefined);
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
 
   const { data, isLoading, refetch } = trpc.admin.products.useQuery({
     search: search || undefined,
-    vendorId,
     categoryId,
   });
 
-  const { data: vendors } = trpc.admin.vendors.useQuery({ limit: 100 });
   const { data: categories } = trpc.product.categories.useQuery();
 
   const deleteMutation = trpc.admin.deleteProduct.useMutation({
@@ -60,14 +57,14 @@ export default function AdminProductsPage() {
             </p>
           </div>
           <h1 className="text-4xl font-black text-gray-900 tracking-tight">
-            Marketplace Catalog
+            Store Catalog
           </h1>
           <p className="text-gray-500 text-sm font-medium mt-1">
             Managing{" "}
             <span className="text-gray-900 font-bold">
-              {data?.total || 0} local items
+              {data?.total || 0} items
             </span>{" "}
-            across all active partner shops.
+            in your active product collection.
           </p>
         </div>
         <Link
@@ -84,7 +81,7 @@ export default function AdminProductsPage() {
 
       {/* Advanced Command Bar */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-        <div className="xl:col-span-6 relative group">
+        <div className="xl:col-span-8 relative group">
           <Search
             size={18}
             className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-500 transition-colors"
@@ -98,29 +95,7 @@ export default function AdminProductsPage() {
           />
         </div>
 
-        <div className="xl:col-span-3 relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-gray-50 rounded-lg pointer-events-none">
-            <Store size={14} className="text-gray-400" />
-          </div>
-          <select
-            className="w-full h-16 pl-14 pr-6 bg-white border border-gray-100 rounded-[1.5rem] shadow-sm focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-400 font-black text-[11px] uppercase tracking-wider appearance-none cursor-pointer"
-            value={vendorId || ""}
-            onChange={(e) => setVendorId(e.target.value || undefined)}
-          >
-            <option value="">All Partners</option>
-            {vendors?.vendors.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.shopName}
-              </option>
-            ))}
-          </select>
-          <ChevronRight
-            size={14}
-            className="absolute right-6 top-1/2 -translate-y-1/2 rotate-90 text-gray-300 pointer-events-none"
-          />
-        </div>
-
-        <div className="xl:col-span-3 relative">
+        <div className="xl:col-span-4 relative">
           <div className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-gray-50 rounded-lg pointer-events-none">
             <Tag size={14} className="text-gray-400" />
           </div>
@@ -169,15 +144,7 @@ export default function AdminProductsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-6">
           {data?.products.map((product, i) => {
-            const currentComm =
-              (product.commissionRate ??
-                product.category.commissionRate ??
-                product.vendor?.commissionRate ?? 0) * 100;
-            const commSource = product.commissionRate
-              ? "Product"
-              : product.category.commissionRate
-                ? "Category"
-                : "Vendor";
+            // commission calculations removed
 
             return (
               <motion.div
@@ -209,37 +176,21 @@ export default function AdminProductsPage() {
                         <span className="px-2 py-0.5 bg-brand-50 text-brand-600 text-[9px] font-black rounded-md uppercase tracking-widest">
                           {product.category.name}
                         </span>
-                        <span className="w-1 h-1 rounded-full bg-gray-200" />
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">
-                          {product.vendor?.shopName ?? "Platform"}
-                        </span>
                       </div>
                       <h3 className="text-xl font-black text-gray-900 tracking-tight leading-tight uppercase truncate">
                         {product.name}
                       </h3>
-                      <div className="flex items-center gap-2 mt-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                        <MapPin size={12} className="text-brand-500/50" />{" "}
-                        {product.vendor?.city ?? "Direct"}
-                      </div>
                     </div>
                   </div>
 
                   {/* Financial & Stock Metrics */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-8 flex-1 py-6 xl:py-0 border-y xl:border-y-0 xl:border-x border-gray-50 xl:px-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 flex-1 py-6 xl:py-0 border-y xl:border-y-0 xl:border-x border-gray-50 xl:px-8">
                     <div>
                       <p className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
                         ₹{product.price}
                       </p>
                       <p className="text-[10px] font-black text-gray-400 line-through mt-1.5 uppercase tracking-widest">
                         MRP {product.mrp}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-base font-black text-brand-600 tracking-tight leading-none">
-                        {currentComm.toFixed(1)}%
-                      </p>
-                      <p className="text-[10px] font-black text-gray-400 mt-1.5 uppercase tracking-widest truncate">
-                        {commSource} Rate
                       </p>
                     </div>
                     <div className="col-span-2">

@@ -11,7 +11,6 @@ import Image from "next/image";
 export default function AdminNewProductPage() {
   const router = useRouter();
   const { data: categories } = trpc.product.categories.useQuery();
-  const { data: vendors } = trpc.admin.vendors.useQuery({ limit: 100 });
 
   const createProductMutation = trpc.admin.createProduct.useMutation({
     onSuccess: () => {
@@ -52,7 +51,7 @@ export default function AdminNewProductPage() {
     }
     const formData = new FormData(e.currentTarget);
     createProductMutation.mutate({
-      vendorId: formData.get("vendorId") as string,
+      vendorId: undefined,
       name: formData.get("name") as string,
       description: formData.get("description") as string,
       categoryId: formData.get("categoryId") as string,
@@ -76,10 +75,10 @@ export default function AdminNewProductPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Add Universal Product
+            Add Product
           </h1>
           <p className="text-gray-500 text-sm">
-            Add a product on behalf of any local business vendor.
+            List a new product to your storefront catalog.
           </p>
         </div>
       </div>
@@ -88,44 +87,12 @@ export default function AdminNewProductPage() {
         onSubmit={handleSubmit}
         className="card p-8 space-y-8 bg-white/80 backdrop-blur-md shadow-xl border-white/20"
       >
-        {/* Vendor Selection */}
-        <section>
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <span className="w-6 h-6 bg-gray-900 text-white rounded-full flex items-center justify-center text-xs">
-              1
-            </span>
-            Vendor Assignment
-          </h3>
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label
-                htmlFor="vendorId"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Assign to Local Shop
-              </label>
-              <select
-                name="vendorId"
-                id="vendorId"
-                className="input mt-1 shadow-sm"
-                required
-              >
-                <option value="">Select a vendor</option>
-                {vendors?.vendors.map((vendor) => (
-                  <option key={vendor.id} value={vendor.id}>
-                    {vendor.shopName} ({vendor.city})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </section>
 
         {/* Image Upload */}
         <section>
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <span className="w-6 h-6 bg-gray-900 text-white rounded-full flex items-center justify-center text-xs">
-              2
+              1
             </span>
             Display Images
           </h3>
@@ -173,7 +140,7 @@ export default function AdminNewProductPage() {
         <section>
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <span className="w-6 h-6 bg-gray-900 text-white rounded-full flex items-center justify-center text-xs">
-              3
+              2
             </span>
             Basic Information
           </h3>
@@ -240,7 +207,7 @@ export default function AdminNewProductPage() {
         <section>
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <span className="w-6 h-6 bg-gray-900 text-white rounded-full flex items-center justify-center text-xs">
-              4
+              3
             </span>
             Inventory & Price
           </h3>
@@ -324,7 +291,7 @@ export default function AdminNewProductPage() {
         <section className="bg-brand-50 p-6 rounded-[2rem] border-2 border-brand-100">
           <h3 className="text-lg font-bold text-brand-950 mb-4 flex items-center gap-2 uppercase tracking-tighter">
             <span className="w-6 h-6 bg-brand-500 text-white rounded-full flex items-center justify-center text-xs">
-              5
+              4
             </span>
             Custom Commission Override
           </h3>

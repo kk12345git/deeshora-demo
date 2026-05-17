@@ -35,26 +35,17 @@ export async function GET(request: Request) {
     for (const sub of subscriptions) {
       try {
         const order = await prisma.$transaction(async (tx) => {
-          // 1. Check user wallet balance
-          if (sub.user.walletBalance < sub.product.price * sub.quantity) {
-            // Option A: Skip and mark as failed?
-            // For now, let's just skip this subscription or mark it for intervention.
-            // In a real app, you might send a "Wallet low" notification.
-            throw new Error(
-              `Insufficient wallet balance for user ${sub.userId}`,
-            );
-          }
-
           const total = sub.product.price * sub.quantity;
+          const isWalletPaid = sub.user.walletBalance >= total;
 
-          // 2. Create the Order
+          // 1. Create the Order
           const newOrder = await tx.order.create({
             data: {
               userId: sub.userId,
               addressId: sub.addressId || "", // Fallback or throw error if missing
-              status: OrderStatus.CONFIRMED, // Subscriptions are pre-confirmed if paid by wallet
-              paymentStatus: PaymentStatus.PAID,
-              paymentMethod: PaymentMethod.WALLET,
+              status: isWalletPaid ? OrderStatus.CONFIRMED : OrderStatus.PENDING,
+              paymentStatus: isWalletPaid ? PaymentStatus.PAID : PaymentStatus.PENDING,
+              paymentMethod: isWalletPaid ? PaymentMethod.WALLET : PaymentMethod.COD,
               subtotal: total,
               total: total,
               items: {
@@ -70,32 +61,48 @@ export async function GET(request: Request) {
               },
               timeline: {
                 create: {
-                  status: OrderStatus.CONFIRMED,
-                  message: "Order created automatically via subscription",
+                  status: isWalletPaid ? OrderStatus.CONFIRMED : OrderStatus.PENDING,
+                  message: isWalletPaid
+                    ? "Order created automatically via subscription (Paid via Wallet)"
+                    : "Order created automatically via subscription as Cash on Delivery (Insufficient Wallet Balance)",
                 },
               },
             },
           });
 
-          // 3. Deduct from wallet
-          await tx.user.update({
-            where: { id: sub.userId },
-            data: { walletBalance: { decrement: total } },
-          });
+          // 2. Process payments/notifications based on payment method
+          if (isWalletPaid) {
+            // Deduct from wallet
+            await tx.user.update({
+              where: { id: sub.userId },
+              data: { walletBalance: { decrement: total } },
+            });
 
-          // 4. Log transaction
-          await tx.walletTransaction.create({
-            data: {
-              userId: sub.userId,
-              amount: -total,
-              type: TransactionType.PAYMENT,
-              status: TransactionStatus.COMPLETED,
-              description: `Subscription payment for ${sub.product.name}`,
-              reference: newOrder.id,
-            },
-          });
+            // Log wallet transaction
+            await tx.walletTransaction.create({
+              data: {
+                userId: sub.userId,
+                amount: -total,
+                type: TransactionType.PAYMENT,
+                status: TransactionStatus.COMPLETED,
+                description: `Subscription payment for ${sub.product.name}`,
+                reference: newOrder.id,
+              },
+            });
+          } else {
+            // Create user notification for low wallet balance
+            await tx.notification.create({
+              data: {
+                userId: sub.userId,
+                title: "Low Wallet Balance - Subscription Fallback",
+                message: `Your subscription order for ${sub.product.name} was successfully created, but set as Cash on Delivery (COD) due to insufficient wallet balance (₹${sub.user.walletBalance.toFixed(2)} / ₹${total.toFixed(2)} required). Please top up your wallet for automatic payments.`,
+                type: "SYSTEM",
+                link: `/orders/${newOrder.id}`,
+              },
+            });
+          }
 
-          // 5. Calculate next order date
+          // 3. Calculate next order date
           const nextDate = new Date(sub.nextOrder);
           if (sub.frequency === "DAILY")
             nextDate.setDate(nextDate.getDate() + 1);
@@ -104,7 +111,7 @@ export async function GET(request: Request) {
           else if (sub.frequency === "MONTHLY")
             nextDate.setMonth(nextDate.getMonth() + 1);
 
-          // 6. Update subscription
+          // 4. Update subscription
           await tx.orderSubscription.update({
             where: { id: sub.id },
             data: { nextOrder: nextDate },

@@ -29,13 +29,11 @@ import Footer from "@/components/layout/Footer";
 const navItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart2 },
-  { name: "Vendors", href: "/admin/vendors", icon: Store },
   { name: "Categories", href: "/admin/categories", icon: Tag },
   { name: "Products", href: "/admin/products", icon: Package },
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { name: "Tax Center", href: "/admin/tax", icon: FileText },
-  { name: "Payouts", href: "/admin/payouts", icon: CreditCard },
   { name: "Coupons", href: "/admin/coupons", icon: Tag },
   { name: "Coverage", href: "/admin/coverage", icon: MapPin },
   { name: "Activity", href: "/admin/activity", icon: Clock },

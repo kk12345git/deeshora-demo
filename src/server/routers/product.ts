@@ -277,37 +277,47 @@ export const productRouter = createTRPCRouter({
           isActive: true,
           category: categorySlug ? { slug: categorySlug } : undefined,
           isFeatured: featured,
-          vendor: city ? { city: { contains: city, mode: "insensitive" } } : undefined,
-          OR:
+          AND: [
+            city
+              ? {
+                  OR: [
+                    { vendor: { city: { contains: city, mode: "insensitive" } } },
+                    { vendorId: null },
+                  ],
+                }
+              : {},
             search && search.trim().length > 0
-              ? [
-                  {
-                    AND: search
-                      .trim()
-                      .split(/\s+/)
-                      .map((w) => ({
-                        name: { contains: w, mode: "insensitive" as const },
-                      })),
-                  },
-                  {
-                    AND: search
-                      .trim()
-                      .split(/\s+/)
-                      .map((w) => ({
-                        description: {
-                          contains: w,
-                          mode: "insensitive" as const,
-                        },
-                      })),
-                  },
-                  {
-                    AND: search
-                      .trim()
-                      .split(/\s+/)
-                      .map((w) => ({ tags: { has: w.toLowerCase() } })),
-                  },
-                ]
-              : undefined,
+              ? {
+                  OR: [
+                    {
+                      AND: search
+                        .trim()
+                        .split(/\s+/)
+                        .map((w) => ({
+                          name: { contains: w, mode: "insensitive" as const },
+                        })),
+                    },
+                    {
+                      AND: search
+                        .trim()
+                        .split(/\s+/)
+                        .map((w) => ({
+                          description: {
+                            contains: w,
+                            mode: "insensitive" as const,
+                          },
+                        })),
+                    },
+                    {
+                      AND: search
+                        .trim()
+                        .split(/\s+/)
+                        .map((w) => ({ tags: { has: w.toLowerCase() } })),
+                    },
+                  ],
+                }
+              : {},
+          ],
         },
         include: {
           category: { select: { name: true, slug: true } },
@@ -338,7 +348,14 @@ export const productRouter = createTRPCRouter({
       const q = query.trim();
       const baseWhere = {
         isActive: true,
-        ...(city ? { vendor: { city: { equals: city, mode: "insensitive" as const } } } : {}),
+        ...(city
+          ? {
+              OR: [
+                { vendor: { city: { equals: city, mode: "insensitive" as const } } },
+                { vendorId: null },
+              ],
+            }
+          : {}),
       };
       const words = q.split(/\s+/).filter((w) => w.length > 0);
       const nameContains = words.map((w) => ({
