@@ -47,12 +47,12 @@ export default function OnboardingPage() {
       title: "Customer",
       subtitle: "Daily Shopper",
       description:
-        "Get essentials delivered for ₹1 and explore amazing combo deals.",
+        "Shop daily essentials and explore amazing cashback rewards.",
       icon: UserRound,
       color: "from-brand-500 to-pink-600",
       lightColor: "bg-brand-50",
       textColor: "text-brand-600",
-      features: ["₹1 Store Access", "Combo Deals", "Wallet Rewards"],
+      features: ["Daily 1Mart", "Combo Deals", "1% Instant Cashback"],
     },
     {
       id: "DELIVERY_PARTNER",

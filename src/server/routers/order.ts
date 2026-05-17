@@ -624,6 +624,36 @@ export const orderRouter = createTRPCRouter({
           },
         });
 
+        // Daily 1Mart 1% Cashback Scheme
+        if (status === "DELIVERED" && order.status !== "DELIVERED") {
+          const cashbackAmount = Math.round(order.total * 0.01 * 100) / 100;
+          if (cashbackAmount > 0) {
+            await tx.user.update({
+              where: { id: order.userId },
+              data: { walletBalance: { increment: cashbackAmount } },
+            });
+            await tx.walletTransaction.create({
+              data: {
+                userId: order.userId,
+                amount: cashbackAmount,
+                type: "BONUS",
+                status: "COMPLETED",
+                description: `Daily 1Mart 1% Cashback for Order #${order.id.slice(-6)}`,
+                reference: order.id,
+              },
+            });
+            await tx.notification.create({
+              data: {
+                userId: order.userId,
+                title: "Daily 1Mart Cashback! 💰",
+                message: `Congratulations! You've received 1% cashback of ₹${cashbackAmount.toFixed(2)} in your wallet for Order #${order.id.slice(-6)}.`,
+                type: "SYSTEM",
+                link: "/wallet",
+              },
+            });
+          }
+        }
+
         // Referral logic
         if (status === "DELIVERED" && order.status !== "DELIVERED") {
           const userWithReferrer = await tx.user.findUnique({

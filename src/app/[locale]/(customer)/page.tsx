@@ -178,15 +178,15 @@ export default function HomePage() {
                 Premium
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-pink-500 to-brand-600 animate-gradient-x italic">
-                  Grocery
+                  Daily
                 </span>
                 <br />
-                Experience
+                1Mart
               </h1>
               <p className="max-w-2xl mx-auto text-xl md:text-3xl text-white/50 font-medium leading-relaxed tracking-tight mt-8">
-                North Chennai oda own online{" "}
-                <span className="text-white font-black italic">₹1 mart</span>.
-                High quality at unbeatable prices.
+                North Chennai&apos;s own online{" "}
+                <span className="text-white font-black italic">Daily 1Mart</span>.
+                Get <span className="text-brand-400 font-bold">1% Instant Wallet Cashback</span> on all your purchases!
               </p>
             </motion.div>
 
@@ -249,17 +249,14 @@ export default function HomePage() {
       <section className="relative -mt-10 z-20 container mx-auto px-4">
         <div className="bg-white dark:bg-gray-900 rounded-[3rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] p-6 border border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-2">
-            <Link
-              href="/category/one-rupee-store"
-              className="flex-shrink-0 group"
-            >
-              <div className="w-20 h-20 bg-gradient-to-br from-brand-500 to-pink-600 rounded-3xl flex flex-col items-center justify-center text-white shadow-xl shadow-brand-500/20 group-hover:scale-105 transition-transform border-4 border-white dark:border-gray-800">
-                <span className="text-[10px] font-black uppercase opacity-60 tracking-widest">
-                  Store
+            <div className="flex-shrink-0 group">
+              <div className="w-24 h-20 bg-gradient-to-br from-brand-500 to-pink-600 rounded-3xl flex flex-col items-center justify-center text-white shadow-xl shadow-brand-500/20 group-hover:scale-105 transition-transform border-4 border-white dark:border-gray-800">
+                <span className="text-[9px] font-black uppercase opacity-80 tracking-widest">
+                  CASHBACK
                 </span>
-                <span className="text-2xl font-black italic -mt-1">₹1</span>
+                <span className="text-2xl font-black italic -mt-1">1%</span>
               </div>
-            </Link>
+            </div>
             <div className="w-px h-12 bg-gray-100 dark:bg-gray-800 flex-shrink-0" />
             {isLoadingCats
               ? Array(6)
@@ -288,31 +285,29 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── ₹1 STORE FLASH DEALS (Dark Premium) ────────────────────────── */}
+      {/* ─── DAILY 1MART CASHBACK DEALS (Dark Premium) ────────────────────────── */}
       <section className="py-24 overflow-hidden bg-gray-950 relative">
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-500/10 blur-[100px] rounded-full" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/20 border border-brand-500/30 text-brand-400 text-[10px] font-black uppercase tracking-widest">
-                <Timer size={12} className="animate-pulse" /> Limited Time
-                Offers
+                <Percent size={12} className="animate-pulse" /> Daily 1Mart Scheme
               </div>
               <h2 className="text-5xl md:text-8xl font-black text-white italic tracking-tighter leading-none">
-                ₹1 STORE <span className="text-brand-500">FLASH</span> DEALS
+                DAILY <span className="text-brand-500">1MART</span> TOP PICKS
               </h2>
               <p className="text-white/40 font-bold text-lg max-w-md uppercase tracking-widest mt-4">
-                Everything at just ₹1. Stock up on your daily essentials at the
-                lowest price in Chennai!
+                Get 1% wallet cashback instantly credited straight to your wallet on every single purchase!
               </p>
             </div>
             <Link
-              href="/category/one-rupee-store"
+              href="/search"
               className="group relative px-10 py-5 bg-white text-gray-950 rounded-[2rem] flex items-center gap-2 text-sm font-black uppercase tracking-widest overflow-hidden hover:scale-105 transition-all"
             >
               <div className="absolute inset-0 bg-brand-500 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
               <span className="relative z-10 flex items-center gap-2 group-hover:text-white transition-colors">
-                Explore Store <ChevronRight size={18} />
+                Explore Deals <ChevronRight size={18} />
               </span>
             </Link>
           </div>
@@ -359,9 +354,7 @@ export default function HomePage() {
                   WALLET
                 </h3>
                 <p className="text-white/70 font-bold text-lg mt-4 max-w-xs">
-                  Add <span className="text-white">₹100</span>, Get{" "}
-                  <span className="text-white">₹110</span> balance. Instant
-                  bonus on every top-up!
+                  Get <span className="text-white">1% Instant Cashback</span> on all purchases + extra bonus on top-ups!
                 </p>
                 <Link
                   href="/wallet"

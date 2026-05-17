@@ -205,7 +205,7 @@ export default function Navbar() {
                 Deeshora
               </span>{" "}
               <span className="text-[9px] font-bold text-brand-500 tracking-[0.2em] uppercase">
-                North Chennai oda own online ₹1 mart
+                North Chennai&apos;s Own Daily 1Mart
               </span>{" "}
             </div>{" "}
           </Link>{" "}

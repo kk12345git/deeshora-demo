@@ -26,13 +26,11 @@ export default function CommunitiesPage() {
           </div>{" "}
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 tracking-tight">
             {" "}
-            Connect with your{" "}
-            <span className="text-brand-500">Local Creators</span>{" "}
+            Deeshora <span className="text-brand-500">Official Communities</span>{" "}
           </h1>{" "}
           <p className="max-w-2xl mx-auto text-gray-500 text-lg">
             {" "}
-            Join exclusive communities built by your favorite local shops. Get
-            early access to products, updates, and more.{" "}
+            Join exclusive interest groups built by Deeshora. Get early access to product drops, daily deals, and official updates.{" "}
           </p>{" "}
         </div>{" "}
       </section>{" "}
@@ -79,26 +77,13 @@ export default function CommunitiesPage() {
                     {" "}
                     <div className="flex items-center gap-3">
                       {" "}
-                      <div className="w-10 h-10 rounded-xl border-2 border-white overflow-hidden bg-white">
-                        {" "}
-                        {community.vendor.logo ? (
-                          <Image
-                            src={community.vendor.logo}
-                            alt={community.vendor.shopName}
-                            width={40}
-                            height={40}
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-brand-100 flex items-center justify-center text-brand-500 font-black">
-                            {" "}
-                            {community.vendor.shopName[0]}{" "}
-                          </div>
-                        )}{" "}
+                      <div className="w-10 h-10 rounded-xl border-2 border-white overflow-hidden bg-brand-500 flex items-center justify-center text-white font-black">
+                        D
                       </div>{" "}
                       <div className="text-white">
                         {" "}
-                        <p className="text-xs font-bold opacity-80 uppercase tracking-widest">
-                          {community.vendor.shopName}
+                        <p className="text-[10px] font-black opacity-80 uppercase tracking-widest leading-none mb-1">
+                          Deeshora Official
                         </p>{" "}
                         <p className="text-sm font-black flex items-center gap-1">
                           {" "}

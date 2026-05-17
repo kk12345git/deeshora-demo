@@ -160,7 +160,7 @@ export default function OnboardingModal({
                 Welcome to Deeshora!
               </h2>
               <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
-                North Chennai&apos;s own online ₹1 mart. Let&apos;s set up your
+                North Chennai&apos;s own Daily 1Mart. Let&apos;s set up your
                 profile for a personalized experience!
               </p>
             </div>
@@ -509,7 +509,7 @@ export default function OnboardingModal({
               </h2>
               <p className="text-gray-500 text-sm max-w-xs mx-auto">
                 Welcome to the Deeshora family, {formData.name.split(" ")[0]}!
-                Start exploring our ₹1 store and combo deals.
+                Start exploring our Daily 1Mart and cashback deals.
               </p>
             </div>
             <button

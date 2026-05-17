@@ -151,6 +151,11 @@ export const deliveryRouter = createTRPCRouter({
         });
 
       const updated = await ctx.prisma.$transaction(async (tx) => {
+        // Calculate previous delivered count to determine if this is the first delivered order
+        const prevDeliveredCount = await tx.order.count({
+          where: { userId: order.userId, status: "DELIVERED" },
+        });
+
         const updatedOrder = await tx.order.update({
           where: { id: input.orderId },
           data: {
@@ -167,6 +172,67 @@ export const deliveryRouter = createTRPCRouter({
             },
           },
         });
+
+        // Daily 1Mart 1% Cashback Scheme
+        if (order.status !== "DELIVERED") {
+          const cashbackAmount = Math.round(order.total * 0.01 * 100) / 100;
+          if (cashbackAmount > 0) {
+            await tx.user.update({
+              where: { id: order.userId },
+              data: { walletBalance: { increment: cashbackAmount } },
+            });
+            await tx.walletTransaction.create({
+              data: {
+                userId: order.userId,
+                amount: cashbackAmount,
+                type: "BONUS",
+                status: "COMPLETED",
+                description: `Daily 1Mart 1% Cashback for Order #${order.id.slice(-6)}`,
+                reference: order.id,
+              },
+            });
+            await tx.notification.create({
+              data: {
+                userId: order.userId,
+                title: "Daily 1Mart Cashback! 💰",
+                message: `Congratulations! You've received 1% cashback of ₹${cashbackAmount.toFixed(2)} in your wallet for Order #${order.id.slice(-6)}.`,
+                type: "SYSTEM",
+                link: "/wallet",
+              },
+            });
+          }
+
+          // Referral logic
+          const userWithReferrer = await tx.user.findUnique({
+            where: { id: order.userId },
+            select: { referredById: true },
+          });
+
+          if (userWithReferrer?.referredById && prevDeliveredCount === 0) {
+            const referrerId = userWithReferrer.referredById;
+            const couponCode = `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+            await tx.coupon.create({
+              data: {
+                code: couponCode,
+                type: "FIXED",
+                value: 50,
+                minOrder: 200,
+                maxUses: 1,
+              },
+            });
+
+            await tx.notification.create({
+              data: {
+                userId: referrerId,
+                title: "Referral Reward! 🎁",
+                message: `Your friend's first order was delivered! You've earned a ₹50 coupon: ${couponCode}`,
+                type: "SYSTEM",
+                link: "/profile",
+              },
+            });
+          }
+        }
 
         return updatedOrder;
       });

@@ -65,19 +65,9 @@ export default function CommunityDetailPage() {
             {" "}
             <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-[2rem] overflow-hidden border-4 border-white shadow-2xl flex-shrink-0">
               {" "}
-              {community.vendor?.logo ? (
-                <Image
-                  src={community.vendor?.logo || ""}
-                  alt={community.vendor?.shopName || "Vendor Logo"}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-brand-100 flex items-center justify-center text-brand-500 text-3xl font-black">
-                  {" "}
-                  {community.vendor?.shopName?.[0] || "C"}{" "}
-                </div>
-              )}{" "}
+              <div className="w-full h-full bg-brand-500 flex items-center justify-center text-white text-3xl font-black">
+                D
+              </div>{" "}
             </div>{" "}
             <div className="flex-1 space-y-4">
               {" "}
@@ -183,12 +173,12 @@ export default function CommunityDetailPage() {
                       {" "}
                       <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center text-white font-black text-sm">
                         {" "}
-                        V{" "}
+                        D{" "}
                       </div>{" "}
                       <div>
                         {" "}
                         <p className="text-sm font-black text-gray-900">
-                          {community.vendor?.shopName || "Community Member"}
+                          Deeshora Official
                         </p>{" "}
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                           Admin • 2 hours ago
@@ -239,20 +229,12 @@ export default function CommunityDetailPage() {
             <div className="card p-8 bg-gray-900 text-white border-none shadow-2xl">
               {" "}
               <h3 className="text-xl font-black mb-4 tracking-tight">
-                About {community.vendor?.shopName || "this Community"}
+                About this Community
               </h3>{" "}
               <p className="text-gray-400 text-sm leading-relaxed mb-6">
                 {" "}
-                {community.vendor?.description ||
-                  "Join our community to stay updated with our latest offerings and local events."}{" "}
+                Welcome to the official Deeshora community! Join our group to stay updated with our latest product drops, cashback offers, and local events.{" "}
               </p>{" "}
-              <Link
-                href={`/vendor/${community.vendorId}`}
-                className="btn-primary w-full py-4 text-xs font-black uppercase tracking-widest"
-              >
-                {" "}
-                Visit Store{" "}
-              </Link>{" "}
             </div>{" "}
             <div className="card p-8 bg-white shadow-xl shadow-gray-200/40 border-none">
               {" "}

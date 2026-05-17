@@ -75,13 +75,12 @@ export default function Footer() {
                   Deeshora
                 </span>
                 <span className="text-[10px] font-black text-brand-500 uppercase tracking-[0.2em]">
-                  North Chennai oda own online ₹1 mart
+                  North Chennai&apos;s Own Daily 1Mart
                 </span>
               </div>
             </Link>
             <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed font-medium">
-              North Chennai&apos;s favorite online ₹1 mart. Connecting local
-              sellers with passionate buyers.
+              North Chennai&apos;s favorite Daily 1Mart. Get 1% cashback on every purchase directly credited to your wallet.
             </p>
             <div className="flex items-center gap-4">
               {socialLinks.map((social) => (
@@ -216,7 +215,7 @@ export default function Footer() {
               System Operational
             </div>
             <p className="text-xs font-bold text-gray-400">
-              Made with ❤️ for Local Sellers
+              Made with ❤️ by Deeshora
             </p>
           </div>
         </div>

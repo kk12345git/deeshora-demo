@@ -56,9 +56,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+import { redirect } from "next/navigation";
+
 export default async function VendorPublicPage({ params }: Props) {
-  const vendor = await getVendor(params.id);
-  if (!vendor) notFound();
-  const serializableVendor = JSON.parse(JSON.stringify(vendor));
-  return <VendorProfileClient vendor={serializableVendor} />;
+  redirect("/");
 }
