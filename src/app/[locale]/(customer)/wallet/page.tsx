@@ -29,6 +29,46 @@ export default function WalletPage() {
 
   const [rechargeAmount, setRechargeAmount] = useState<number>(100);
 
+  // 3D Tilt Coordinates and Touch-Drag state handlers
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+  const [touchStart, setTouchStart] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setCoords({ x, y });
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    setIsHovered(true);
+    const touch = e.touches[0];
+    setTouchStart({ x: touch.clientX, y: touch.clientY });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const touch = e.touches[0];
+    const dx = touch.clientX - touchStart.x;
+    const dy = touch.clientY - touchStart.y;
+    const x = Math.max(-0.5, Math.min(0.5, dx / rect.width));
+    const y = Math.max(-0.5, Math.min(0.5, dy / rect.height));
+    setCoords({ x, y });
+  };
+
+  const handleTouchEnd = () => {
+    setIsHovered(false);
+    setCoords({ x: 0, y: 0 });
+  };
+
+  const rotateX = isHovered ? -coords.y * 22 : 0;
+  const rotateY = isHovered ? coords.x * 22 : 0;
+  const lightX = isHovered ? (coords.x + 0.5) * 100 : 50;
+  const lightY = isHovered ? (coords.y + 0.5) * 100 : 50;
+
   const rechargeMutation = trpc.wallet.addMoney.useMutation({
     onSuccess: () => {
       toast.success("Wallet recharged successfully! 🚀");
@@ -77,69 +117,94 @@ export default function WalletPage() {
           {/* ─── Left: Balance & Recharge ───────────────────────────── */}
           <div className="lg:col-span-7 space-y-10">
             {/* Premium Balance Card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="relative aspect-[16/9] md:aspect-auto md:h-80 rounded-[3.5rem] overflow-hidden group shadow-2xl shadow-brand-500/20"
-            >
-              <div className="absolute inset-0 bg-gray-950" />
-              <div className="absolute inset-0 bg-gradient-to-br from-brand-600/40 via-transparent to-pink-600/40 opacity-50" />
+            <div className="perspective-1000 w-full select-none">
               <motion.div
-                animate={{
-                  rotate: [0, 360],
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                style={{
+                  transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${isHovered ? 1.02 : 1})`,
+                  transformStyle: "preserve-3d",
+                  transition: isHovered ? "transform 0.05s ease-out, box-shadow 0.3s ease" : "transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.5s ease",
                 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                className="absolute -top-[50%] -right-[20%] w-[100%] h-[100%] bg-brand-500/10 blur-[120px] rounded-full"
-              />
+                onMouseMove={handleMouseMove}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => {
+                  setIsHovered(false);
+                  setCoords({ x: 0, y: 0 });
+                }}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                className="relative aspect-[16/9] md:aspect-auto md:h-80 rounded-[3.5rem] overflow-hidden group shadow-2xl shadow-brand-500/20 bg-gray-950 cursor-grab active:cursor-grabbing"
+              >
+                <div className="absolute inset-0 bg-gray-950" />
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-600/40 via-transparent to-pink-600/40 opacity-50" />
+                
+                {/* Specular plastic glint flare */}
+                <div
+                  style={{
+                    background: `radial-gradient(circle 220px at ${lightX}% ${lightY}%, rgba(255,255,255,0.18), transparent 75%)`,
+                  }}
+                  className={`absolute inset-0 pointer-events-none z-20 transition-opacity duration-300 mix-blend-overlay ${isHovered ? "opacity-100" : "opacity-0"}`}
+                />
 
-              <div className="relative h-full p-10 md:p-14 flex flex-col justify-between z-10 text-white">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-3xl flex items-center justify-center border border-white/10">
-                      <Wallet className="text-brand-400" size={28} />
+                <motion.div
+                  animate={{
+                    rotate: [0, 360],
+                  }}
+                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  className="absolute -top-[50%] -right-[20%] w-[100%] h-[100%] bg-brand-500/10 blur-[120px] rounded-full"
+                />
+
+                <div className="relative h-full p-10 md:p-14 flex flex-col justify-between z-10 text-white select-none pointer-events-none" style={{ transformStyle: "preserve-3d" }}>
+                  <div className="flex items-center justify-between" style={{ transform: "translateZ(25px)", transformStyle: "preserve-3d" }}>
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-3xl flex items-center justify-center border border-white/10 shadow-[inset_0_2px_4px_rgba(255,255,255,0.2)]">
+                        <Wallet className="text-brand-400" size={28} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
+                          Tier Status
+                        </p>
+                        <p className="text-sm font-black flex items-center gap-2">
+                          <Crown size={16} className="text-yellow-400" /> Deeshora
+                          Platinum
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
-                        Tier Status
-                      </p>
-                      <p className="text-sm font-black flex items-center gap-2">
-                        <Crown size={16} className="text-yellow-400" /> Deeshora
-                        Platinum
-                      </p>
+                    <div className="px-4 py-2 bg-brand-500/20 border border-brand-500/30 rounded-full text-[10px] font-black uppercase tracking-widest text-brand-400 flex items-center gap-2 backdrop-blur-md">
+                      <Sparkles size={14} className="animate-pulse" /> Verified
+                      Holder
                     </div>
                   </div>
-                  <div className="px-4 py-2 bg-brand-500/20 border border-brand-500/30 rounded-full text-[10px] font-black uppercase tracking-widest text-brand-400 flex items-center gap-2 backdrop-blur-md">
-                    <Sparkles size={14} className="animate-pulse" /> Verified
-                    Holder
-                  </div>
-                </div>
 
-                <div className="space-y-1">
-                  <p className="text-xs font-black uppercase tracking-[0.3em] text-white/30">
-                    Total Value
-                  </p>
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-6xl md:text-8xl font-black italic tracking-tighter">
-                      ₹{isLoadingBalance ? "..." : balance.toFixed(0)}
-                    </span>
-                    <span className="text-xl md:text-2xl font-bold text-white/40">
-                      INR
-                    </span>
+                  <div className="space-y-1" style={{ transform: "translateZ(40px)" }}>
+                    <p className="text-xs font-black uppercase tracking-[0.3em] text-white/30">
+                      Total Value
+                    </p>
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-6xl md:text-8xl font-black italic tracking-tighter">
+                        ₹{isLoadingBalance ? "..." : balance.toFixed(0)}
+                      </span>
+                      <span className="text-xl md:text-2xl font-bold text-white/40">
+                        INR
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-6 text-[10px] font-black text-white/40 uppercase tracking-widest pt-6 border-t border-white/5">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck size={16} className="text-brand-400" />{" "}
-                    Protected by SSL
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Zap size={16} className="text-brand-400" /> Instant
-                    Settlement
+                  <div className="flex items-center gap-6 text-[10px] font-black text-white/40 uppercase tracking-widest pt-6 border-t border-white/5" style={{ transform: "translateZ(20px)" }}>
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck size={16} className="text-brand-400" />{" "}
+                      Protected by SSL
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Zap size={16} className="text-brand-400" /> Instant
+                      Settlement
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
 
             {/* Quick Recharge Section */}
             <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 border border-gray-100 dark:border-gray-800 shadow-xl shadow-black/5">

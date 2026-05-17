@@ -34,6 +34,7 @@ import {
 import ProductCard from "@/components/customer/ProductCard";
 import ProductCardSkeleton from "@/components/customer/ProductCardSkeleton";
 import CitySelector from "@/components/customer/CitySelector";
+import ClaymorphicPlayground from "@/components/customer/ClaymorphicPlayground";
 
 import { useTranslations } from "next-intl";
 
@@ -132,115 +133,130 @@ export default function HomePage() {
 
   return (
     <div className="bg-white dark:bg-gray-950 overflow-hidden">
-      {/* ─── Hero Section (Premium Glassmorphism) ─────────────────────────── */}
-      <section className="relative min-h-[95vh] flex items-center justify-center bg-gray-950 px-4 pt-20 pb-12 overflow-hidden">
+      {/* ─── Hero Section (Premium Glassmorphism Split-Screen) ────────────────── */}
+      <section className="relative min-h-[100vh] flex items-center bg-gray-950 px-4 pt-24 pb-16 overflow-hidden">
         {/* Dynamic Background Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div
             animate={{
               scale: [1, 1.2, 1],
-              rotate: [0, 90, 0],
-              opacity: [0.3, 0.5, 0.3],
+              opacity: [0.3, 0.45, 0.3],
             }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] bg-brand-500/20 blur-[120px] rounded-full"
+            transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -top-[15%] -left-[10%] w-[65%] h-[65%] bg-brand-500/20 blur-[130px] rounded-full animate-pulse-glowing"
           />
           <motion.div
             animate={{
               scale: [1.2, 1, 1.2],
-              rotate: [0, -90, 0],
-              opacity: [0.2, 0.4, 0.2],
+              opacity: [0.2, 0.35, 0.2],
             }}
-            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-            className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-pink-500/20 blur-[100px] rounded-full"
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -bottom-[15%] -right-[10%] w-[55%] h-[55%] bg-pink-500/15 blur-[110px] rounded-full"
           />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]" />
         </div>
 
         <div className="container mx-auto relative z-10">
-          <div className="max-w-5xl mx-auto text-center space-y-10">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 text-xs font-bold uppercase tracking-[0.2em] backdrop-blur-md"
-            >
-              <span className="flex h-2 w-2 rounded-full bg-brand-500 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.8)]" />
-              Daily Essentials Delivered
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="space-y-4"
-            >
-              <h1 className="text-6xl sm:text-8xl md:text-9xl lg:text-[10rem] font-black text-white leading-[0.8] tracking-tighter">
-                Premium
-                <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-pink-500 to-brand-600 animate-gradient-x italic">
-                  Daily
-                </span>
-                <br />
-                1Mart
-              </h1>
-              <p className="max-w-2xl mx-auto text-xl md:text-3xl text-white/50 font-medium leading-relaxed tracking-tight mt-8">
-                North Chennai&apos;s own online{" "}
-                <span className="text-white font-black italic">Daily 1Mart</span>.
-                Get <span className="text-brand-400 font-bold">1% Instant Wallet Cashback</span> on all your purchases!
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-6"
-            >
-              <div className="bg-white/5 p-1 rounded-[2rem] border border-white/10 backdrop-blur-xl shadow-2xl">
-                <CitySelector
-                  currentCity={selectedCity}
-                  onCityChange={setSelectedCity}
-                />
-              </div>
-              <Link
-                href="/search"
-                className="group relative px-10 py-5 rounded-[1.75rem] bg-brand-500 text-white font-black text-lg overflow-hidden shadow-[0_20px_50px_rgba(244,63,94,0.3)] hover:scale-105 transition-transform duration-300"
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+            
+            {/* Left Column: Premium Glassmorphic Copy, Location Select, CTA */}
+            <div className="lg:col-span-6 space-y-8 text-center lg:text-left">
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 text-xs font-bold uppercase tracking-[0.2em] backdrop-blur-md"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                <span className="relative flex items-center gap-2">
-                  Shop Now <ArrowRight size={22} />
-                </span>
-              </Link>
-            </motion.div>
+                <span className="flex h-2 w-2 rounded-full bg-brand-500 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.8)]" />
+                Daily Essentials Delivered
+              </motion.div>
 
-            {/* Trust Grid */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-12 border-t border-white/5"
-            >
-              {[
-                { label: "Products", val: "2k+", icon: ShoppingBag },
-                { label: "Happy Users", val: "10k+", icon: Users },
-                { label: "Fastest Delivery", val: "15m", icon: Zap },
-                { label: "Premium Rating", val: "4.9", icon: Star },
-              ].map((stat, i) => (
-                <div
-                  key={i}
-                  className="group p-4 bg-white/5 rounded-3xl border border-white/5 hover:bg-white/10 transition-colors"
-                >
-                  <stat.icon
-                    className="mx-auto text-brand-400 mb-2 opacity-50 group-hover:opacity-100 transition-opacity"
-                    size={20}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="space-y-4"
+              >
+                <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-[7rem] font-black text-white leading-[0.85] tracking-tighter">
+                  Premium
+                  <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-pink-500 to-brand-600 animate-gradient-x italic">
+                    Daily
+                  </span>
+                  <br />
+                  1Mart
+                </h1>
+                <p className="max-w-2xl mx-auto lg:mx-0 text-lg md:text-xl text-white/60 font-semibold leading-relaxed tracking-tight mt-6">
+                  North Chennai&apos;s own online{" "}
+                  <span className="text-white font-black italic">Daily 1Mart</span>.
+                  Get <span className="text-brand-400 font-bold">1% Instant Wallet Cashback</span> on all your purchases!
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 pt-2"
+              >
+                <div className="bg-white/5 p-1 rounded-[2rem] border border-white/10 backdrop-blur-xl shadow-2xl">
+                  <CitySelector
+                    currentCity={selectedCity}
+                    onCityChange={setSelectedCity}
                   />
-                  <p className="text-2xl font-black text-white">{stat.val}</p>
-                  <p className="text-[10px] text-white/30 uppercase font-black tracking-widest">
-                    {stat.label}
-                  </p>
                 </div>
-              ))}
-            </motion.div>
+                <Link
+                  href="/search"
+                  className="group relative px-9 py-4.5 rounded-[1.75rem] bg-brand-500 text-white font-black text-base overflow-hidden shadow-[0_20px_50px_rgba(244,63,94,0.3)] hover:scale-105 transition-transform duration-300"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                  <span className="relative flex items-center gap-2">
+                    Shop Now <ArrowRight size={20} />
+                  </span>
+                </Link>
+              </motion.div>
+
+              {/* Trust Grid */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-10 border-t border-white/5"
+              >
+                {[
+                  { label: "Products", val: "2k+", icon: ShoppingBag },
+                  { label: "Happy Users", val: "10k+", icon: Users },
+                  { label: "Fastest Delivery", val: "15m", icon: Zap },
+                  { label: "Premium Rating", val: "4.9", icon: Star },
+                ].map((stat, i) => (
+                  <div
+                    key={i}
+                    className="group p-4 bg-white/5 rounded-3xl border border-white/5 hover:bg-white/10 transition-colors"
+                  >
+                    <stat.icon
+                      className="mx-auto lg:mx-0 text-brand-400 mb-2 opacity-50 group-hover:opacity-100 transition-opacity"
+                      size={20}
+                    />
+                    <p className="text-2xl font-black text-white">{stat.val}</p>
+                    <p className="text-[10px] text-white/30 uppercase font-black tracking-widest">
+                      {stat.label}
+                    </p>
+                  </div>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Right Column: Immersive 3D Claymorphic Playground */}
+            <div className="lg:col-span-6 w-full flex items-center justify-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.8 }}
+                className="w-full"
+              >
+                <ClaymorphicPlayground />
+              </motion.div>
+            </div>
+
           </div>
         </div>
       </section>

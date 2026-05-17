@@ -49,6 +49,46 @@ export default function ProductDetailsClient({
   const [selectedImage, setSelectedImage] = useState(0);
   const { items, addItem, updateQuantity } = useCart();
 
+  // 3D Showcase Coordinates and Touch-Drag state handlers
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+  const [touchStart, setTouchStart] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setCoords({ x, y });
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    setIsHovered(true);
+    const touch = e.touches[0];
+    setTouchStart({ x: touch.clientX, y: touch.clientY });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const touch = e.touches[0];
+    const dx = touch.clientX - touchStart.x;
+    const dy = touch.clientY - touchStart.y;
+    const x = Math.max(-0.5, Math.min(0.5, dx / rect.width));
+    const y = Math.max(-0.5, Math.min(0.5, dy / rect.height));
+    setCoords({ x, y });
+  };
+
+  const handleTouchEnd = () => {
+    setIsHovered(false);
+    setCoords({ x: 0, y: 0 });
+  };
+
+  const rotateX = isHovered ? -coords.y * 20 : 0;
+  const rotateY = isHovered ? coords.x * 20 : 0;
+  const lightX = isHovered ? (coords.x + 0.5) * 100 : 50;
+  const lightY = isHovered ? (coords.y + 0.5) * 100 : 50;
+
   const [isSubmittingSub, setIsSubmittingSub] = useState(false);
   const [showSubModal, setShowSubModal] = useState(false);
   const [selectedFrequency, setSelectedFrequency] = useState<
@@ -257,41 +297,66 @@ export default function ProductDetailsClient({
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 mt-8">
           {/* Image Gallery */}
           <div className="space-y-6">
-            <motion.div
-              layoutId="product-image"
-              className="relative aspect-square w-full bg-white rounded-[3rem] overflow-hidden shadow-2xl shadow-gray-200/50 group border border-gray-100"
-            >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={selectedImage}
-                  initial={{ opacity: 0, scale: 1.1 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.4 }}
-                  className="w-full h-full"
-                >
+            <div className="perspective-1000 w-full select-none">
+              <motion.div
+                layoutId="product-image"
+                style={{
+                  transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${isHovered ? 1.01 : 1})`,
+                  transformStyle: "preserve-3d",
+                  transition: isHovered ? "transform 0.05s ease-out, box-shadow 0.3s ease" : "transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.5s ease",
+                }}
+                onMouseMove={handleMouseMove}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => {
+                  setIsHovered(false);
+                  setCoords({ x: 0, y: 0 });
+                }}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                className="relative aspect-square w-full bg-white rounded-[3rem] overflow-hidden shadow-2xl shadow-gray-200/50 group border border-gray-100 cursor-grab active:cursor-grabbing"
+              >
+                {/* Specular product reflection overlay */}
+                <div
+                  style={{
+                    background: `radial-gradient(circle 260px at ${lightX}% ${lightY}%, rgba(255,255,255,0.22), transparent 75%)`,
+                  }}
+                  className={`absolute inset-0 pointer-events-none z-20 transition-opacity duration-300 mix-blend-overlay ${isHovered ? "opacity-100" : "opacity-0"}`}
+                />
+
+                <AnimatePresence mode="wait">
                   <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ duration: 0.6, ease: [0.33, 1, 0.68, 1] }}
-                    className="w-full h-full cursor-zoom-in"
+                    key={selectedImage}
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.4 }}
+                    className="w-full h-full pointer-events-none select-none"
+                    style={{ transform: "translateZ(30px)", transformStyle: "preserve-3d" }}
                   >
-                    <Image
-                      src={product.images[selectedImage]}
-                      alt={product.name}
-                      width={800}
-                      height={800}
-                      className="w-full h-full object-cover"
-                      priority
-                    />
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ duration: 0.6, ease: [0.33, 1, 0.68, 1] }}
+                      className="w-full h-full cursor-zoom-in"
+                    >
+                      <Image
+                        src={product.images[selectedImage]}
+                        alt={product.name}
+                        width={800}
+                        height={800}
+                        className="w-full h-full object-cover"
+                        priority
+                      />
+                    </motion.div>
                   </motion.div>
-                </motion.div>
-              </AnimatePresence>
-              {discount > 0 && (
-                <div className="absolute top-8 left-8 badge bg-brand-600 text-white font-black text-xs px-5 py-2.5 shadow-xl rotate-[-2deg]">
-                  SAVES {discount}%
-                </div>
-              )}
-            </motion.div>
+                </AnimatePresence>
+                {discount > 0 && (
+                  <div className="absolute top-8 left-8 badge bg-brand-600 text-white font-black text-xs px-5 py-2.5 shadow-xl rotate-[-2deg]" style={{ transform: "translateZ(45px)" }}>
+                    SAVES {discount}%
+                  </div>
+                )}
+              </motion.div>
+            </div>
 
             <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
               {product.images.map((img: string, index: number) => (
