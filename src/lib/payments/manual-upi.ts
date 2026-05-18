@@ -4,14 +4,17 @@ import { PaymentInitiateRequest, PaymentInitiateResponse } from "./types";
 export function initiateManualUpiPayment(
   req: PaymentInitiateRequest,
 ): PaymentInitiateResponse {
-  // Use the admin's UPI ID from environment or a default
-  const adminUpiId = process.env.ADMIN_UPI_ID || "deeshware15-2@okicici";
+  // Read vendor details from request notes if available to support direct-to-vendor payments
+  const vendorUpiId = req.notes?.vendorUpiId;
+  const vendorShopName = req.notes?.vendorShopName;
+
+  const targetUpiId = vendorUpiId || process.env.ADMIN_UPI_ID || "deeshware15-2@okicici";
+  const shopName = vendorShopName || "Deeshora";
   const amount = req.amount.toFixed(2);
-  const shopName = "Deeshora";
   const transactionNote = `Order_${req.orderId.slice(-8).toUpperCase()}`;
 
   // UPI Deep Link Format: upi://pay?pa=ID&pn=NAME&am=AMOUNT&cu=INR&tn=NOTE
-  const upiUrl = `upi://pay?pa=${adminUpiId}&pn=${encodeURIComponent(shopName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
+  const upiUrl = `upi://pay?pa=${targetUpiId}&pn=${encodeURIComponent(shopName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
 
   // Using a public QR API for generation
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiUrl)}`;
@@ -22,7 +25,7 @@ export function initiateManualUpiPayment(
     qrUrl,
     payload: {
       upiUrl,
-      upiId: adminUpiId,
+      upiId: targetUpiId,
       amount: req.amount,
     },
   };

@@ -6,7 +6,7 @@ import { logActivity } from "@/lib/activity";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const AUTOMATION_KEY = process.env.AUTOMATION_KEY;
+  const AUTOMATION_KEY = process.env.AUTOMATION_KEY || process.env.CRON_SECRET;
   const { searchParams } = new URL(req.url);
   const key = searchParams.get("key");
 

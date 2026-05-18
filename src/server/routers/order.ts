@@ -277,20 +277,37 @@ export const orderRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const order = await ctx.prisma.order.findUnique({
         where: { id: input.orderId, userId: ctx.user.id },
-        include: { user: true },
+        include: { user: true, vendor: true },
       });
 
       if (!order)
         throw new TRPCError({ code: "NOT_FOUND", message: "Order not found." });
 
-      return await initiatePayment(input.provider, {
+      const paymentRes = await initiatePayment(input.provider, {
         orderId: order.id,
         amount: order.total,
         customerName: order.user.name,
         customerEmail: order.user.email,
         customerPhone: order.user.phone || "",
         callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/orders/${order.id}`,
+        notes: {
+          vendorUpiId: order.vendor?.upiId || "",
+          vendorShopName: order.vendor?.shopName || "",
+        },
       });
+
+      if (paymentRes.success && paymentRes.paymentId) {
+        // Record the PhonePe transaction reference / mapping to the database order
+        await ctx.prisma.order.update({
+          where: { id: order.id },
+          data: {
+            paymentId: paymentRes.paymentId,
+            paymentMethod: input.provider,
+          },
+        });
+      }
+
+      return paymentRes;
     }),
 
   submitUtr: protectedProcedure
@@ -309,6 +326,21 @@ export const orderRouter = createTRPCRouter({
 
       if (!order)
         throw new TRPCError({ code: "NOT_FOUND", message: "Order not found." });
+
+      // Enforce strict UTR uniqueness protection (double-spend / replay protection)
+      const existingUtr = await ctx.prisma.order.findFirst({
+        where: {
+          utrNumber: input.utrNumber,
+          id: { not: input.orderId },
+        },
+      });
+
+      if (existingUtr) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This UTR number has already been submitted for another order. Please verify or contact support.",
+        });
+      }
 
       const updated = await ctx.prisma.order.update({
         where: { id: input.orderId },
@@ -754,14 +786,18 @@ export const orderRouter = createTRPCRouter({
         }
       }
 
+      const isPaid = input.status === "PAID";
       const updated = await ctx.prisma.order.update({
         where: { id: input.orderId },
         data: {
           paymentStatus: input.status,
+          status: isPaid ? "CONFIRMED" : order.status,
           timeline: {
             create: {
-              status: order.status,
-              message: `Payment marked as ${input.status}.`,
+              status: isPaid ? "CONFIRMED" : order.status,
+              message: isPaid 
+                ? "Payment verified and order confirmed successfully!" 
+                : `Payment marked as ${input.status}.`,
             },
           },
         },
@@ -787,6 +823,15 @@ export const orderRouter = createTRPCRouter({
             message: `Payment verified as ${input.status}.`,
           },
         );
+
+        if (isPaid) {
+          // Trigger real-time status update broadcast too
+          await pusherServer.trigger(
+            CHANNELS.ORDER(input.orderId),
+            EVENTS.ORDER_STATUS_UPDATED,
+            { status: "CONFIRMED", message: "Order has been confirmed." },
+          );
+        }
       } catch (err) {
         console.error("Pusher verify failed", err);
       }

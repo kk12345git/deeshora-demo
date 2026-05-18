@@ -4,6 +4,7 @@ import {
   publicProcedure,
   protectedProcedure,
   adminProcedure,
+  vendorProcedure,
 } from "@/server/trpc";
 import { TRPCError } from "@trpc/server";
 import { uploadImage } from "@/lib/cloudinary";
@@ -756,9 +757,10 @@ export const productRouter = createTRPCRouter({
         hints: descriptionHints,
       };
     }),
-  create: adminProcedure
+  create: vendorProcedure
     .input(
       z.object({
+        vendorId: z.string().optional(),
         name: z.string().min(3),
         description: z.string().min(10),
         price: z.number().positive(),
@@ -785,6 +787,22 @@ export const productRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      let resolvedVendorId: string | null = null;
+      if (ctx.user.role === "VENDOR") {
+        const vendor = await ctx.prisma.vendor.findUnique({
+          where: { userId: ctx.user.id },
+        });
+        if (!vendor) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Vendor profile not found.",
+          });
+        }
+        resolvedVendorId = vendor.id;
+      } else if (ctx.user.role === "ADMIN" && input.vendorId) {
+        resolvedVendorId = input.vendorId;
+      }
+
       const imageUrls = await Promise.all(
         input.images.map((base64) => uploadImage(base64, "products")),
       );
@@ -810,6 +828,7 @@ export const productRouter = createTRPCRouter({
           gstRate: input.gstRate,
           tags: autoTags,
           lowStockThreshold: input.lowStockThreshold,
+          vendorId: resolvedVendorId,
         },
       });
       await logActivity({
@@ -818,13 +837,13 @@ export const productRouter = createTRPCRouter({
         entityId: product.id,
         entityType: "Product",
         actorId: ctx.user.id,
-        actorName: "Admin",
-        message: `Admin added a new product: ${product.name}`,
+        actorName: ctx.user.role === "ADMIN" ? "Admin" : "Vendor",
+        message: `${ctx.user.role === "ADMIN" ? "Admin" : "Vendor"} added a new product: ${product.name}`,
         metadata: { name: product.name, price: product.price },
       });
       return product;
     }),
-  update: adminProcedure
+  update: vendorProcedure
     .input(
       z.object({
         id: z.string(),
@@ -844,7 +863,26 @@ export const productRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
-      const product = await ctx.prisma.product.findFirst({ where: { id } });
+      let resolvedVendorId: string | null = null;
+      if (ctx.user.role === "VENDOR") {
+        const vendor = await ctx.prisma.vendor.findUnique({
+          where: { userId: ctx.user.id },
+        });
+        if (!vendor) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Vendor profile not found.",
+          });
+        }
+        resolvedVendorId = vendor.id;
+      }
+
+      const product = await ctx.prisma.product.findFirst({
+        where: {
+          id,
+          vendorId: ctx.user.role === "VENDOR" ? resolvedVendorId : undefined,
+        },
+      });
       if (!product) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -861,17 +899,34 @@ export const productRouter = createTRPCRouter({
         entityId: id,
         entityType: "Product",
         actorId: ctx.user.id,
-        actorName: "Admin",
-        message: `Admin updated product: ${updated.name}`,
+        actorName: ctx.user.role === "ADMIN" ? "Admin" : "Vendor",
+        message: `${ctx.user.role === "ADMIN" ? "Admin" : "Vendor"} updated product: ${updated.name}`,
         metadata: updateData,
       });
       return updated;
     }),
-  delete: adminProcedure
+  delete: vendorProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      let resolvedVendorId: string | null = null;
+      if (ctx.user.role === "VENDOR") {
+        const vendor = await ctx.prisma.vendor.findUnique({
+          where: { userId: ctx.user.id },
+        });
+        if (!vendor) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Vendor profile not found.",
+          });
+        }
+        resolvedVendorId = vendor.id;
+      }
+
       const product = await ctx.prisma.product.findFirst({
-        where: { id: input.id },
+        where: {
+          id: input.id,
+          vendorId: ctx.user.role === "VENDOR" ? resolvedVendorId : undefined,
+        },
         include: { _count: { select: { orderItems: true } } },
       });
       if (!product) {
@@ -891,8 +946,8 @@ export const productRouter = createTRPCRouter({
           entityId: input.id,
           entityType: "Product",
           actorId: ctx.user.id,
-          actorName: "Admin",
-          message: `Admin deactivated product (sold previously): ${product.name}`,
+          actorName: ctx.user.role === "ADMIN" ? "Admin" : "Vendor",
+          message: `${ctx.user.role === "ADMIN" ? "Admin" : "Vendor"} deactivated product (sold previously): ${product.name}`,
         });
         return {
           success: true,
@@ -907,8 +962,8 @@ export const productRouter = createTRPCRouter({
         entityId: input.id,
         entityType: "Product",
         actorId: ctx.user.id,
-        actorName: "Admin",
-        message: `Admin deleted product: ${product.name}`,
+        actorName: ctx.user.role === "ADMIN" ? "Admin" : "Vendor",
+        message: `${ctx.user.role === "ADMIN" ? "Admin" : "Vendor"} deleted product: ${product.name}`,
       });
       return { success: true, message: "Product deleted successfully." };
     }),
@@ -974,7 +1029,7 @@ export const productRouter = createTRPCRouter({
       });
       return newReview;
     }),
-  bulkUpload: adminProcedure
+  bulkUpload: vendorProcedure
     .input(
       z.array(
         z.object({
@@ -990,6 +1045,20 @@ export const productRouter = createTRPCRouter({
       ),
     )
     .mutation(async ({ ctx, input }) => {
+      let resolvedVendorId: string | null = null;
+      if (ctx.user.role === "VENDOR") {
+        const vendor = await ctx.prisma.vendor.findUnique({
+          where: { userId: ctx.user.id },
+        });
+        if (!vendor) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Vendor profile not found.",
+          });
+        }
+        resolvedVendorId = vendor.id;
+      }
+
       const results: string[] = [];
       const skipped: string[] = [];
       const categories = await ctx.prisma.category.findMany();
@@ -1016,6 +1085,7 @@ export const productRouter = createTRPCRouter({
               "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800",
             ],
             isActive: true,
+            vendorId: resolvedVendorId,
           },
         });
         results.push(product.id);

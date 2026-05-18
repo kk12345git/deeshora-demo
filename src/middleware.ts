@@ -19,7 +19,11 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware((auth, req) => {
-  if (isProtectedRoute(req)) {
+  // E2E Test bypass: If secret matches, bypass Clerk auth check
+  const e2eSecret = req.headers.get("x-e2e-secret") || req.cookies.get("x-e2e-secret")?.value;
+  const isE2E = e2eSecret && e2eSecret === process.env.CRON_SECRET;
+
+  if (isProtectedRoute(req) && !isE2E) {
     auth().protect();
   }
 

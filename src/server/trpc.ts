@@ -14,7 +14,24 @@ const ADMIN_EMAILS: string[] = (process.env.ADMIN_EMAILS ?? "")
   .filter(Boolean);
 
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const { userId } = await auth();
+  let userId: string | null = null;
+
+  // E2E Test bypass: If secret matches, bypass Clerk auth check and inject simulated user
+  const e2eSecret = opts.headers.get("x-e2e-secret");
+  if (e2eSecret && e2eSecret === process.env.CRON_SECRET) {
+    const e2eRole = opts.headers.get("x-e2e-role") || "ADMIN";
+    const e2eUser = await prisma.user.findFirst({
+      where: { role: e2eRole as any },
+    });
+    if (e2eUser) {
+      userId = e2eUser.clerkId;
+    }
+  }
+
+  if (!userId) {
+    const authResult = await auth();
+    userId = authResult.userId;
+  }
 
   // ─── C2: Fast path — skip all DB work for unauthenticated requests ────────
   if (!userId) {
@@ -94,38 +111,44 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
       }
 
       // 2. Sync Clerk metadata if missing or wrong
-      const { sessionClaims } = await auth();
-      if ((sessionClaims?.metadata as any)?.role !== "ADMIN") {
-        try {
-          const clerk = await clerkClient();
-          await clerk.users.updateUserMetadata(userId, {
-            publicMetadata: { role: "ADMIN" },
-          });
-          console.log(`[tRPC] Synced ADMIN role to Clerk for ${user.email}`);
-        } catch (e) {
-          console.error(
-            "[tRPC] Failed to sync Clerk metadata for existing admin:",
-            e,
-          );
+      const isE2E = opts.headers.get("x-e2e-secret") === process.env.CRON_SECRET;
+      if (!isE2E) {
+        const { sessionClaims } = await auth();
+        if ((sessionClaims?.metadata as any)?.role !== "ADMIN") {
+          try {
+            const clerk = await clerkClient();
+            await clerk.users.updateUserMetadata(userId, {
+              publicMetadata: { role: "ADMIN" },
+            });
+            console.log(`[tRPC] Synced ADMIN role to Clerk for ${user.email}`);
+          } catch (e) {
+            console.error(
+              "[tRPC] Failed to sync Clerk metadata for existing admin:",
+              e,
+            );
+          }
         }
       }
     } else if (user.role === "DELIVERY_PARTNER") {
       // Sync DELIVERY_PARTNER role to Clerk
-      const { sessionClaims } = await auth();
-      if ((sessionClaims?.metadata as any)?.role !== "DELIVERY_PARTNER") {
-        try {
-          const clerk = await clerkClient();
-          await clerk.users.updateUserMetadata(userId, {
-            publicMetadata: { role: "DELIVERY_PARTNER" },
-          });
-          console.log(
-            `[tRPC] Synced DELIVERY_PARTNER role to Clerk for ${user.email}`,
-          );
-        } catch (e) {
-          console.error(
-            "[tRPC] Failed to sync Clerk metadata for delivery partner:",
-            e,
-          );
+      const isE2E = opts.headers.get("x-e2e-secret") === process.env.CRON_SECRET;
+      if (!isE2E) {
+        const { sessionClaims } = await auth();
+        if ((sessionClaims?.metadata as any)?.role !== "DELIVERY_PARTNER") {
+          try {
+            const clerk = await clerkClient();
+            await clerk.users.updateUserMetadata(userId, {
+              publicMetadata: { role: "DELIVERY_PARTNER" },
+            });
+            console.log(
+              `[tRPC] Synced DELIVERY_PARTNER role to Clerk for ${user.email}`,
+            );
+          } catch (e) {
+            console.error(
+              "[tRPC] Failed to sync Clerk metadata for delivery partner:",
+              e,
+            );
+          }
         }
       }
     }

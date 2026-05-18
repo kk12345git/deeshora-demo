@@ -11,6 +11,7 @@ import { CartSync } from "@/components/cart/CartSync";
 import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import PageTransition from "@/components/layout/PageTransition";
+import BottomNav from "@/components/layout/BottomNav";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -135,7 +136,22 @@ export default async function RootLayout({
                 <RoleSwitcher />
                 <JsonLd />
                 <RoleGuard>
-                  <PageTransition>{children}</PageTransition>
+                  <PageTransition>
+                    <div className="pb-20 md:pb-0 min-h-screen relative overflow-hidden bg-gray-50 dark:bg-gray-950">
+                      {/* Ambient background glows for premium feel */}
+                      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-brand-500/5 blur-[120px] rounded-full dark:bg-brand-500/10" />
+                        <div className="absolute top-[40%] -right-[10%] w-[45%] h-[45%] bg-pink-500/5 blur-[100px] rounded-full dark:bg-pink-500/8" />
+                        <div className="absolute -bottom-[10%] left-[20%] w-[40%] h-[40%] bg-brand-500/5 blur-[110px] rounded-full dark:bg-brand-500/5" />
+                        {/* Premium dynamic micro-grid pattern */}
+                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] dark:bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)]" />
+                      </div>
+                      <div className="relative z-10">
+                        {children}
+                      </div>
+                    </div>
+                  </PageTransition>
+                  <BottomNav />
                 </RoleGuard>
                 <Toaster
                   position="bottom-center"
