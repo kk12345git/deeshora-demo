@@ -12,6 +12,7 @@ import { OrderStatus } from "@prisma/client";
 import { logActivity } from "@/lib/activity";
 
 import { initiatePayment } from "@/lib/payments";
+import { creditRedeemPointsForOrder } from "@/lib/points";
 
 export const orderRouter = createTRPCRouter({
   placeOrder: protectedProcedure
@@ -252,6 +253,11 @@ export const orderRouter = createTRPCRouter({
         });
 
         await tx.cartItem.deleteMany({ where: { cart: { userId: user.id } } });
+
+        // Credit points if payment was made via wallet (paid instantly)
+        if (paymentMethod === "WALLET") {
+          await creditRedeemPointsForOrder(orderRecord.id, tx);
+        }
 
         return orderRecord;
       });
@@ -656,34 +662,9 @@ export const orderRouter = createTRPCRouter({
           },
         });
 
-        // Daily 1Mart 1% Cashback Scheme
+        // Daily 1Mart 1% Cashback Scheme replaced by Redeem Points
         if (status === "DELIVERED" && order.status !== "DELIVERED") {
-          const cashbackAmount = Math.round(order.total * 0.01 * 100) / 100;
-          if (cashbackAmount > 0) {
-            await tx.user.update({
-              where: { id: order.userId },
-              data: { walletBalance: { increment: cashbackAmount } },
-            });
-            await tx.walletTransaction.create({
-              data: {
-                userId: order.userId,
-                amount: cashbackAmount,
-                type: "BONUS",
-                status: "COMPLETED",
-                description: `Daily 1Mart 1% Cashback for Order #${order.id.slice(-6)}`,
-                reference: order.id,
-              },
-            });
-            await tx.notification.create({
-              data: {
-                userId: order.userId,
-                title: "Daily 1Mart Cashback! 💰",
-                message: `Congratulations! You've received 1% cashback of ₹${cashbackAmount.toFixed(2)} in your wallet for Order #${order.id.slice(-6)}.`,
-                type: "SYSTEM",
-                link: "/wallet",
-              },
-            });
-          }
+          await creditRedeemPointsForOrder(orderId, tx);
         }
 
         // Referral logic
@@ -802,6 +783,10 @@ export const orderRouter = createTRPCRouter({
           },
         },
       });
+
+      if (isPaid) {
+        await creditRedeemPointsForOrder(input.orderId, ctx.prisma);
+      }
 
       await logActivity({
         type: "ORDER",

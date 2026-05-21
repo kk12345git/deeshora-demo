@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import crypto from "crypto";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher";
+import { creditRedeemPointsForOrder } from "@/lib/points";
 
 const SALT_KEY = process.env.PHONEPE_SALT_KEY || "";
 const SALT_INDEX = process.env.PHONEPE_SALT_INDEX || "1";
@@ -61,6 +62,8 @@ export async function POST(req: Request) {
               },
             },
           });
+
+          await creditRedeemPointsForOrder(order.id, prisma);
 
           // Dispatch real-time Pusher updates to immediately refresh the customer screen
           try {

@@ -2,8 +2,36 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Admin Console Automation Suite", () => {
-  test.beforeEach(async ({ page }) => {
-    // Inject secure E2E bypass headers to simulate an Admin session
+  test.beforeEach(async ({ context, page }) => {
+    // 1. Inject cookies for client-side Clerk layout bypass
+    await context.addCookies([
+      {
+        name: "x-e2e-secret",
+        value: "deeshora_secure_cron_9922_x",
+        domain: "127.0.0.1",
+        path: "/",
+      },
+      {
+        name: "x-e2e-role",
+        value: "ADMIN",
+        domain: "127.0.0.1",
+        path: "/",
+      },
+      {
+        name: "x-e2e-secret",
+        value: "deeshora_secure_cron_9922_x",
+        domain: "localhost",
+        path: "/",
+      },
+      {
+        name: "x-e2e-role",
+        value: "ADMIN",
+        domain: "localhost",
+        path: "/",
+      },
+    ]);
+
+    // 2. Inject secure E2E bypass headers to simulate an Admin session for server-side page renders
     await page.setExtraHTTPHeaders({
       "x-e2e-secret": "deeshora_secure_cron_9922_x",
       "x-e2e-role": "ADMIN",
@@ -15,10 +43,10 @@ test.describe("Admin Console Automation Suite", () => {
     await page.goto("/en/admin");
     await page.waitForLoadState("networkidle");
 
-    // 2. Verify dashboard title and quick stats exist
-    await expect(page.locator("text=Operational Dashboard").first()).toBeVisible();
-    await expect(page.locator("text=Total Sales").first()).toBeVisible();
-    await expect(page.locator("text=Active Orders").first()).toBeVisible();
+    // 2. Verify dashboard title and live stats exist
+    await expect(page.locator("text=Command Center").first()).toBeVisible();
+    await expect(page.locator("text=Total Users").first()).toBeVisible();
+    await expect(page.locator("text=Orders Today").first()).toBeVisible();
   });
 
   test("should automate Vendor Management page actions", async ({ page }) => {
@@ -27,7 +55,7 @@ test.describe("Admin Console Automation Suite", () => {
     await page.waitForLoadState("networkidle");
 
     // 2. Verify vendor metrics and action tabs
-    await expect(page.locator("text=Vendor Analytics").first()).toBeVisible();
+    await expect(page.locator("text=Marketplace Vendors").first()).toBeVisible();
     
     // Filter tabs should be present: ALL, PENDING, APPROVED, SUSPENDED
     const pendingTab = page.locator("button:has-text('Pending')");
@@ -37,7 +65,7 @@ test.describe("Admin Console Automation Suite", () => {
     }
 
     // Search bar functionality
-    const searchInput = page.locator("input[placeholder*='Search']").first();
+    const searchInput = page.locator("input[placeholder*='SEARCH']").first();
     if (await searchInput.count() > 0) {
       await searchInput.fill("Store");
       await page.waitForTimeout(500);
@@ -50,7 +78,7 @@ test.describe("Admin Console Automation Suite", () => {
     await page.waitForLoadState("networkidle");
 
     // 2. Verify tax cards and monthly calculation ledger are visible
-    await expect(page.locator("text=GST").first()).toBeVisible();
+    await expect(page.locator("text=Tax Control").first()).toBeVisible();
     await expect(page.locator("text=Reconciliation").first()).toBeVisible();
   });
 

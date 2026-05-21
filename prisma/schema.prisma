@@ -40,6 +40,8 @@ model User {
   referrals            User[]              @relation("UserReferral")
   walletTransactions   WalletTransaction[]
   vendor               Vendor?
+  redeemPoints         Float               @default(0)
+  pointsTransactions   PointsTransaction[]
 }
 
 model Address {
@@ -447,6 +449,24 @@ enum TransactionStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+model PointsTransaction {
+  id          String                @id @default(cuid())
+  userId      String
+  points      Float
+  type        PointsTransactionType
+  description String?
+  reference   String?
+  createdAt   DateTime              @default(now())
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum PointsTransactionType {
+  EARNED
+  REDEEMED
 }
 
 model Vendor {

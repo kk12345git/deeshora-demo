@@ -3,6 +3,7 @@ import { createTRPCRouter, deliveryProcedure } from "@/server/trpc";
 import { TRPCError } from "@trpc/server";
 import { OrderStatus } from "@prisma/client";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher";
+import { creditRedeemPointsForOrder } from "@/lib/points";
 
 export const deliveryRouter = createTRPCRouter({
   /** Get all orders that are READY for pickup but not yet assigned */
@@ -173,34 +174,9 @@ export const deliveryRouter = createTRPCRouter({
           },
         });
 
-        // Daily 1Mart 1% Cashback Scheme
+        // Daily 1Mart 1% Cashback Scheme replaced by Redeem Points
         if (order.status !== "DELIVERED") {
-          const cashbackAmount = Math.round(order.total * 0.01 * 100) / 100;
-          if (cashbackAmount > 0) {
-            await tx.user.update({
-              where: { id: order.userId },
-              data: { walletBalance: { increment: cashbackAmount } },
-            });
-            await tx.walletTransaction.create({
-              data: {
-                userId: order.userId,
-                amount: cashbackAmount,
-                type: "BONUS",
-                status: "COMPLETED",
-                description: `Daily 1Mart 1% Cashback for Order #${order.id.slice(-6)}`,
-                reference: order.id,
-              },
-            });
-            await tx.notification.create({
-              data: {
-                userId: order.userId,
-                title: "Daily 1Mart Cashback! 💰",
-                message: `Congratulations! You've received 1% cashback of ₹${cashbackAmount.toFixed(2)} in your wallet for Order #${order.id.slice(-6)}.`,
-                type: "SYSTEM",
-                link: "/wallet",
-              },
-            });
-          }
+          await creditRedeemPointsForOrder(order.id, tx);
 
           // Referral logic
           const userWithReferrer = await tx.user.findUnique({

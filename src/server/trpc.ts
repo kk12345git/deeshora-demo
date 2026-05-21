@@ -17,11 +17,25 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   let userId: string | null = null;
 
   // E2E Test bypass: If secret matches, bypass Clerk auth check and inject simulated user
-  const e2eSecret = opts.headers.get("x-e2e-secret");
+  let e2eSecret = opts.headers.get("x-e2e-secret");
+  let e2eRole = opts.headers.get("x-e2e-role");
+
+  if (!e2eSecret) {
+    const cookieHeader = opts.headers.get("cookie") || "";
+    const secretMatch = cookieHeader.match(/x-e2e-secret=([^;]+)/);
+    if (secretMatch) {
+      e2eSecret = decodeURIComponent(secretMatch[1]);
+    }
+    const roleMatch = cookieHeader.match(/x-e2e-role=([^;]+)/);
+    if (roleMatch) {
+      e2eRole = decodeURIComponent(roleMatch[1]);
+    }
+  }
+
   if (e2eSecret && e2eSecret === process.env.CRON_SECRET) {
-    const e2eRole = opts.headers.get("x-e2e-role") || "ADMIN";
+    const role = e2eRole || "ADMIN";
     const e2eUser = await prisma.user.findFirst({
-      where: { role: e2eRole as any },
+      where: { role: role as any },
     });
     if (e2eUser) {
       userId = e2eUser.clerkId;

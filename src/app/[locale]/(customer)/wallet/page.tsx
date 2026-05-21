@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { Link } from "@/navigation";
 import {
   Wallet,
   Plus,
@@ -26,6 +27,10 @@ export default function WalletPage() {
     trpc.wallet.getBalance.useQuery();
   const { data: transactions, isLoading: isLoadingTx } =
     trpc.wallet.getTransactions.useQuery();
+  const { data: isWelcomeOfferEligible = false } =
+    trpc.wallet.isWelcomeOfferEligible.useQuery();
+  const { data: redeemPoints = 0, isLoading: isLoadingPoints } =
+    trpc.wallet.getRedeemPoints.useQuery();
 
   const [rechargeAmount, setRechargeAmount] = useState<number>(100);
 
@@ -83,7 +88,7 @@ export default function WalletPage() {
   };
 
   const rechargeOptions = [100, 200, 500, 1000];
-  const bonusAmount = Math.floor(rechargeAmount / 100) * 10;
+  const bonusAmount = isWelcomeOfferEligible ? Math.floor(rechargeAmount / 100) * 10 : 0;
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 pb-20">
@@ -206,18 +211,70 @@ export default function WalletPage() {
               </motion.div>
             </div>
 
+            {/* Premium Redeem Points Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="relative overflow-hidden rounded-[3rem] p-8 border border-brand-500/20 bg-gradient-to-r from-brand-50/50 to-purple-50/50 dark:from-brand-950/20 dark:to-purple-950/20 shadow-xl backdrop-blur-xl group hover:border-brand-500/40 transition-all duration-300"
+            >
+              {/* Glowing Background Blob */}
+              <div className="absolute -right-20 -top-20 w-60 h-60 bg-brand-500/10 dark:bg-brand-500/5 rounded-full blur-3xl pointer-events-none group-hover:scale-125 transition-transform duration-700" />
+              
+              <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6 z-10">
+                <div className="flex items-center gap-5">
+                  <div className="w-16 h-16 bg-brand-500/10 dark:bg-brand-400/10 rounded-2xl flex items-center justify-center border border-brand-500/20 dark:border-brand-400/20 shadow-inner group-hover:scale-105 transition-transform duration-300">
+                    <Trophy className="text-brand-500 dark:text-brand-400" size={32} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500">
+                      Redeemable Points
+                    </p>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-4xl font-black italic tracking-tighter text-gray-900 dark:text-white">
+                        {isLoadingPoints ? "..." : redeemPoints.toFixed(2)}
+                      </span>
+                      <span className="text-xs font-black uppercase tracking-widest text-brand-500">
+                        Points
+                      </span>
+                    </div>
+                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-600 mt-0.5">
+                      Equivalent to ₹{isLoadingPoints ? "..." : redeemPoints.toFixed(2)} Cash • 1% on every product
+                    </p>
+                  </div>
+                </div>
+                
+                <Link
+                  href="/wallet/redeem"
+                  className="inline-flex items-center justify-center h-14 px-8 bg-gray-900 hover:bg-gray-805 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-950 font-black uppercase tracking-wider text-xs rounded-2xl shadow-lg hover:shadow-brand-500/10 transition-all duration-300 gap-2 group/btn"
+                >
+                  Redeem Now
+                  <ChevronRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </motion.div>
+
             {/* Quick Recharge Section */}
             <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 border border-gray-100 dark:border-gray-800 shadow-xl shadow-black/5">
               <div className="flex items-center justify-between mb-10">
                 <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3 italic">
                   POWER UP <ChevronRight size={24} className="text-brand-500" />
                 </h2>
-                <div className="flex items-center gap-2 text-brand-500 bg-brand-50 dark:bg-brand-900/20 px-4 py-2 rounded-2xl">
-                  <Trophy size={16} />
-                  <span className="text-xs font-black uppercase tracking-widest">
-                    Deeshora Bonus Active
-                  </span>
-                </div>
+                {isWelcomeOfferEligible ? (
+                  <div className="flex items-center gap-2 text-brand-500 bg-brand-50 dark:bg-brand-900/20 px-4 py-2 rounded-2xl">
+                    <Trophy size={16} />
+                    <span className="text-xs font-black uppercase tracking-widest">
+                      10% Welcome Offer Active
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-gray-400 bg-gray-50 dark:bg-gray-850/50 px-4 py-2 rounded-2xl">
+                    <Gift size={16} />
+                    <span className="text-xs font-black uppercase tracking-widest">
+                      Welcome Offer Claimed
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
@@ -255,35 +312,43 @@ export default function WalletPage() {
                 key={rechargeAmount}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="relative h-24 rounded-3xl overflow-hidden mb-10"
+                className="relative h-24 rounded-3xl overflow-hidden mb-10 shadow-lg"
               >
-                <div className="absolute inset-0 bg-brand-500" />
-                <div className="absolute inset-0 bg-gradient-to-r from-brand-600 to-pink-600" />
+                {bonusAmount > 0 ? (
+                  <>
+                    <div className="absolute inset-0 bg-brand-500" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-brand-600 to-pink-600" />
+                  </>
+                ) : (
+                  <div className="absolute inset-0 bg-gray-900" />
+                )}
                 <div className="absolute top-0 right-0 p-4 opacity-10">
                   <Gift size={64} />
                 </div>
                 <div className="relative h-full px-8 flex items-center justify-between text-white">
                   <div className="flex items-center gap-6">
                     <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
-                      <Zap size={24} fill="white" />
+                      <Zap size={24} fill={bonusAmount > 0 ? "white" : "none"} className={bonusAmount > 0 ? "" : "text-white"} />
                     </div>
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest opacity-60">
-                        Instant Bonus Applied
+                        {bonusAmount > 0 ? "Instant Welcome Bonus Applied" : "Standard Wallet Top-Up"}
                       </p>
                       <h4 className="text-xl font-black italic tracking-tighter">
                         Get ₹{rechargeAmount + bonusAmount} Total Value
                       </h4>
                     </div>
                   </div>
-                  <div className="text-right hidden sm:block">
-                    <p className="text-3xl font-black italic tracking-tighter">
-                      +₹{bonusAmount}
-                    </p>
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-60">
-                      Free Credits
-                    </p>
-                  </div>
+                  {bonusAmount > 0 && (
+                    <div className="text-right hidden sm:block">
+                      <p className="text-3xl font-black italic tracking-tighter">
+                        +₹{bonusAmount}
+                      </p>
+                      <p className="text-[10px] font-black uppercase tracking-widest opacity-60">
+                        Free Credits
+                      </p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
 

@@ -36,15 +36,15 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_APP_URL || "https://deeshora.in",
   ),
   title: {
-    default: "Deeshora - North Chennai's Own Daily 1Mart | 1% Wallet Cashback Store",
+    default: "Deeshora - North Chennai's Own Daily 1Mart | 1% Reward Points Store",
     template: "%s | Deeshora",
   },
   description:
-    "Deeshora is North Chennai's own Daily 1Mart. Shop daily essentials, groceries, and premium items with 1% instant wallet cashback credited on every purchase.",
+    "Deeshora is North Chennai's own Daily 1Mart. Shop daily essentials, groceries, and premium items with 1% redeemable reward points credited on every purchase.",
   keywords: [
     "North Chennai mart",
     "Daily 1Mart",
-    "1% cashback store",
+    "1% reward points store",
     "daily essentials delivery",
     "Deeshora Chennai",
     "instant delivery",
@@ -61,9 +61,9 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_IN",
     url: "https://deeshora.in",
-    title: "Deeshora - North Chennai's Own Daily 1Mart | 1% Wallet Cashback Store",
+    title: "Deeshora - North Chennai's Own Daily 1Mart | 1% Reward Points Store",
     description:
-      "Get daily essentials and premium items delivered instantly to your door with 1% wallet cashback on all orders.",
+      "Get daily essentials and premium items delivered instantly to your door with 1% reward points on all orders.",
     siteName: "Deeshora",
     images: [
       {
@@ -76,8 +76,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Deeshora - North Chennai's Own Daily 1Mart | 1% Wallet Cashback Store",
-    description: "Your daily essentials, delivered fast to your doorstep with 1% instant cashback.",
+    title: "Deeshora - North Chennai's Own Daily 1Mart | 1% Reward Points Store",
+    description: "Your daily essentials, delivered fast to your doorstep with 1% reward points.",
     images: ["/og-main.jpg"],
     creator: "@deeshora",
   },

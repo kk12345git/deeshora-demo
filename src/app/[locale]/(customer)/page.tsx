@@ -188,7 +188,7 @@ export default function HomePage() {
                 <p className="max-w-2xl mx-auto lg:mx-0 text-lg md:text-xl text-white/60 font-semibold leading-relaxed tracking-tight mt-6">
                   North Chennai&apos;s own online{" "}
                   <span className="text-white font-black italic">Daily 1Mart</span>.
-                  Get <span className="text-brand-400 font-bold">1% Instant Wallet Cashback</span> on all your purchases!
+                  Get <span className="text-brand-400 font-bold">1% Redeem Points</span> on all your purchases!
                 </p>
               </motion.div>
 
@@ -268,7 +268,7 @@ export default function HomePage() {
             <div className="flex-shrink-0 group">
               <div className="w-24 h-20 bg-gradient-to-br from-brand-500 to-pink-600 rounded-3xl flex flex-col items-center justify-center text-white shadow-xl shadow-brand-500/20 group-hover:scale-105 transition-transform border-4 border-white dark:border-gray-800">
                 <span className="text-[9px] font-black uppercase opacity-80 tracking-widest">
-                  CASHBACK
+                  REWARDS
                 </span>
                 <span className="text-2xl font-black italic -mt-1">1%</span>
               </div>
@@ -301,20 +301,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── DAILY 1MART CASHBACK DEALS (Dark Premium) ────────────────────────── */}
+      {/* ─── DAILY 1MART REWARD DEALS (Dark Premium) ────────────────────────── */}
       <section className="py-24 overflow-hidden bg-gray-950 relative">
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-500/10 blur-[100px] rounded-full" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/20 border border-brand-500/30 text-brand-400 text-[10px] font-black uppercase tracking-widest">
-                <Percent size={12} className="animate-pulse" /> Daily 1Mart Scheme
+                <Percent size={12} className="animate-pulse" /> 1% Reward Points Scheme
               </div>
               <h2 className="text-5xl md:text-8xl font-black text-white italic tracking-tighter leading-none">
                 DAILY <span className="text-brand-500">1MART</span> TOP PICKS
               </h2>
               <p className="text-white/40 font-bold text-lg max-w-md uppercase tracking-widest mt-4">
-                Get 1% wallet cashback instantly credited straight to your wallet on every single purchase!
+                Earn 1% in redeem points on every product purchase, convert to wallet cash anytime!
               </p>
             </div>
             <Link
@@ -370,7 +370,7 @@ export default function HomePage() {
                   WALLET
                 </h3>
                 <p className="text-white/70 font-bold text-lg mt-4 max-w-xs">
-                  Get <span className="text-white">1% Instant Cashback</span> on all purchases + extra bonus on top-ups!
+                  Earn <span className="text-white">1% Redeem Points</span> on all purchases + extra welcome bonus on top-ups!
                 </p>
                 <Link
                   href="/wallet"
