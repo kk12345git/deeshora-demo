@@ -2,7 +2,7 @@
 
 import { useCart } from "@/hooks/useCart";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/navigation";
 import {
   Minus,
   Plus,

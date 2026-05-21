@@ -27,8 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { useCart, CartItem } from "@/hooks/useCart";
-import Link from "next/link";
-import { useRouter } from "@/navigation";
+import { Link, useRouter } from "@/navigation";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import JsonLd from "@/components/JsonLd";
 import { getProductShareUrl } from "@/lib/whatsapp";

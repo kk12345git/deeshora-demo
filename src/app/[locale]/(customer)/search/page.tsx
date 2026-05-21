@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
+import { Link } from "@/navigation";
 import Image from "next/image";
 
 function CategoryItemImage({ category }: { category: any }) {

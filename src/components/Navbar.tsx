@@ -201,7 +201,7 @@ export default function Navbar() {
             </div>{" "}
             <div className="flex flex-col -space-y-1 hidden sm:flex">
               {" "}
-              <span className="text-lg font-black text-gray-900 tracking-tighter">
+              <span className="text-lg font-black text-gray-900 dark:text-white tracking-tighter">
                 Deeshora
               </span>{" "}
               <span className="text-[9px] font-bold text-brand-500 tracking-[0.2em] uppercase">
@@ -218,7 +218,7 @@ export default function Navbar() {
             <form onSubmit={handleDesktopSubmit}>
               {" "}
               <div
-                className={`flex items-center bg-gray-50 border-2 rounded-[1.25rem] transition-all duration-200 ${desktopOpen && (desktopSuggestions?.length ?? 0) > 0 ? "border-brand-400 bg-white rounded-b-none shadow-sm" : "border-transparent focus-within:border-brand-300 focus-within:bg-white focus-within:shadow-sm"}`}
+                className={`flex items-center bg-gray-50 dark:bg-gray-900 border-2 rounded-[1.25rem] transition-all duration-200 ${desktopOpen && (desktopSuggestions?.length ?? 0) > 0 ? "border-brand-400 dark:border-brand-500 bg-white dark:bg-gray-900 rounded-b-none shadow-sm" : "border-transparent dark:border-gray-800 focus-within:border-brand-300 dark:focus-within:border-brand-500 focus-within:bg-white dark:focus-within:bg-gray-900 focus-within:shadow-sm"}`}
               >
                 {" "}
                 {/* AI badge — subtle */}{" "}
@@ -238,7 +238,7 @@ export default function Navbar() {
                     desktopQuery.trim().length >= 2 && setDesktopOpen(true)
                   }
                   placeholder={tc("search")}
-                  className="flex-1 px-3 py-2.5 bg-transparent text-sm font-medium text-gray-800 placeholder:text-gray-400 outline-none min-w-0"
+                  className="flex-1 px-3 py-2.5 bg-transparent text-sm font-medium text-gray-800 dark:text-gray-100 placeholder:text-gray-400 outline-none min-w-0"
                 />{" "}
                 {desktopQuery ? (
                   <button
@@ -266,7 +266,7 @@ export default function Navbar() {
             </form>{" "}
             {/* Desktop Suggestions Dropdown */}{" "}
             {desktopOpen && debouncedDesktop.trim().length >= 2 && (
-              <div className="absolute top-full left-0 right-0 bg-white border-2 border-brand-400 border-t-0 rounded-b-[1.25rem] shadow-2xl shadow-black/10 overflow-hidden z-50">
+              <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-900 border-2 border-brand-400 dark:border-brand-500 border-t-0 rounded-b-[1.25rem] shadow-2xl shadow-black/10 overflow-hidden z-50">
                 {" "}
                 {isDesktopFetching ? (
                   <div className="flex items-center gap-2 px-4 py-3 text-gray-400">
@@ -284,7 +284,7 @@ export default function Navbar() {
                     {" "}
                     <div className="px-4 pt-2 pb-1">
                       {" "}
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                      <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
                         Quick Results
                       </span>{" "}
                     </div>{" "}
@@ -293,10 +293,10 @@ export default function Navbar() {
                         key={item.id}
                         type="button"
                         onClick={() => handleSuggestionClick(item.slug)}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-brand-50 transition-colors text-left group"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition-colors text-left group"
                       >
                         {" "}
-                        <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                        <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
                           {" "}
                           {item.images[0] ? (
                             <Image
@@ -307,7 +307,7 @@ export default function Navbar() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full bg-brand-50 flex items-center justify-center">
+                            <div className="w-full h-full bg-brand-50 dark:bg-brand-950/50 flex items-center justify-center">
                               {" "}
                               <ShoppingCart
                                 size={14}
@@ -318,14 +318,14 @@ export default function Navbar() {
                         </div>{" "}
                         <div className="flex-1 min-w-0">
                           {" "}
-                          <p className="font-bold text-gray-900 text-sm truncate group-hover:text-brand-600 transition-colors">
+                          <p className="font-bold text-gray-900 dark:text-gray-100 text-sm truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                             {item.name}
                           </p>{" "}
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-gray-400 dark:text-gray-500">
                             {item.category.name}
                           </p>{" "}
                         </div>{" "}
-                        <span className="font-black text-gray-800 text-sm flex-shrink-0">
+                        <span className="font-black text-gray-800 dark:text-gray-200 text-sm flex-shrink-0">
                           ₹{item.price}
                         </span>{" "}
                       </button>
@@ -336,7 +336,7 @@ export default function Navbar() {
                         submitSearch(desktopQuery);
                         setDesktopOpen(false);
                       }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 hover:bg-brand-50 border-t border-gray-100 text-xs font-bold text-brand-600 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-950 hover:bg-brand-50 dark:hover:bg-brand-900/30 border-t border-gray-100 dark:border-gray-800 text-xs font-bold text-brand-600 dark:text-brand-400 transition-colors"
                     >
                       {" "}
                       <Search size={12} /> See all results for &quot;
@@ -428,7 +428,7 @@ export default function Navbar() {
                 </div>{" "}
                 <button
                   onClick={() => setIsMobileMenuOpen(true)}
-                  className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-900"
+                  className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 >
                   {" "}
                   <Menu size={22} />{" "}
@@ -446,7 +446,7 @@ export default function Navbar() {
                 </Link>{" "}
                 <button
                   onClick={() => setIsMobileMenuOpen(true)}
-                  className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-900"
+                  className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 >
                   {" "}
                   <Menu size={22} />{" "}
@@ -465,7 +465,7 @@ export default function Navbar() {
             <form onSubmit={handleMobileSubmit}>
               {" "}
               <div
-                className={`flex items-center bg-white border-2 rounded-[1.25rem] shadow-lg transition-all ${mobileOpen && (mobileSuggestions?.length ?? 0) > 0 ? "border-brand-400 rounded-b-none" : "border-gray-200"}`}
+                className={`flex items-center bg-white dark:bg-gray-900 border-2 rounded-[1.25rem] shadow-lg transition-all ${mobileOpen && (mobileSuggestions?.length ?? 0) > 0 ? "border-brand-400 dark:border-brand-500 rounded-b-none" : "border-gray-200 dark:border-gray-800"}`}
               >
                 {" "}
                 <div className="flex items-center gap-1 pl-4 flex-shrink-0">
@@ -487,7 +487,7 @@ export default function Navbar() {
                     mobileQuery.trim().length >= 2 && setMobileOpen(true)
                   }
                   placeholder={tc("search")}
-                  className="flex-1 px-3 py-3.5 bg-transparent text-sm font-medium text-gray-800 placeholder:text-gray-400 outline-none"
+                  className="flex-1 px-3 py-3.5 bg-transparent text-sm font-medium text-gray-800 dark:text-gray-100 placeholder:text-gray-400 outline-none"
                 />{" "}
                 {mobileQuery ? (
                   <button
@@ -513,7 +513,7 @@ export default function Navbar() {
             </form>{" "}
             {/* Mobile Suggestions Dropdown */}{" "}
             {mobileOpen && debouncedMobile.trim().length >= 2 && (
-              <div className="absolute top-full left-0 right-0 bg-white border-2 border-brand-400 border-t-0 rounded-b-[1.25rem] shadow-2xl z-50 max-h-64 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-900 border-2 border-brand-400 dark:border-brand-500 border-t-0 rounded-b-[1.25rem] shadow-2xl z-50 max-h-64 overflow-y-auto">
                 {" "}
                 {isMobileFetching ? (
                   <div className="flex items-center gap-2 px-4 py-3 text-gray-400">
@@ -534,10 +534,10 @@ export default function Navbar() {
                         key={item.id}
                         type="button"
                         onClick={() => handleSuggestionClick(item.slug)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-50 transition-colors text-left border-b border-gray-50 last:border-0"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition-colors text-left border-b border-gray-50 dark:border-gray-800 last:border-0"
                       >
                         {" "}
-                        <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                        <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
                           {" "}
                           {item.images[0] ? (
                             <Image
@@ -548,7 +548,7 @@ export default function Navbar() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full bg-brand-50 flex items-center justify-center">
+                            <div className="w-full h-full bg-brand-50 dark:bg-brand-950/50 flex items-center justify-center">
                               {" "}
                               <ShoppingCart
                                 size={14}
@@ -559,14 +559,14 @@ export default function Navbar() {
                         </div>{" "}
                         <div className="flex-1 min-w-0">
                           {" "}
-                          <p className="font-bold text-gray-900 text-sm truncate">
+                          <p className="font-bold text-gray-900 dark:text-gray-100 text-sm truncate">
                             {item.name}
                           </p>{" "}
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-gray-400 dark:text-gray-500">
                             {item.category.name}
                           </p>{" "}
                         </div>{" "}
-                        <span className="font-black text-gray-800 text-sm">
+                        <span className="font-black text-gray-800 dark:text-gray-200 text-sm">
                           ₹{item.price}
                         </span>{" "}
                       </button>
@@ -578,7 +578,7 @@ export default function Navbar() {
                         setMobileOpen(false);
                         setMobileSearchOpen(false);
                       }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 text-xs font-bold text-brand-600"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 text-xs font-bold text-brand-600 dark:text-brand-400"
                     >
                       {" "}
                       <Search size={12} /> See all results for &quot;

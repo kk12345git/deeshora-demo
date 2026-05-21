@@ -15,7 +15,7 @@ import {
   ChevronRight,
   AlertCircle,
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/navigation";
 import toast from "react-hot-toast";
 
 export default function MyAddressesPage() {

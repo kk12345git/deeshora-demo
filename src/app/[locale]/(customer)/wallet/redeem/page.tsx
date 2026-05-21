@@ -106,7 +106,7 @@ export default function RedeemPointsPage() {
           {/* ─── Left Column: Balance & Convertor ─────────────────────── */}
           <div className="md:col-span-7 space-y-8">
             {/* Holographic Balance Card */}
-            <div className="relative overflow-hidden rounded-[3rem] p-10 border border-purple-500/30 bg-gradient-to-br from-purple-600 via-indigo-700 to-brand-700 text-white shadow-2xl shadow-purple-500/20">
+            <div className="relative overflow-hidden rounded-[3rem] p-6 sm:p-8 md:p-10 border border-purple-500/30 bg-gradient-to-br from-purple-600 via-indigo-700 to-brand-700 text-white shadow-2xl shadow-purple-500/20">
               {/* Dynamic light gradient overlays */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(255,255,255,0.15),transparent_60%)]" />
               <motion.div
@@ -137,7 +137,7 @@ export default function RedeemPointsPage() {
                     Total Reward Points
                   </p>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-6xl md:text-7xl font-black italic tracking-tighter text-white">
+                    <span className="text-4xl xs:text-5xl md:text-7xl font-black italic tracking-tighter text-white">
                       {isLoadingPoints ? "..." : points.toFixed(2)}
                     </span>
                     <span className="text-sm font-black uppercase tracking-widest text-white/60">
@@ -156,7 +156,7 @@ export default function RedeemPointsPage() {
             </div>
 
             {/* Redemption Converter Form */}
-            <div className="bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-gray-800/80 p-8 md:p-10 shadow-xl shadow-black/5 relative">
+            <div className="bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-gray-800/80 p-6 sm:p-8 md:p-10 shadow-xl shadow-black/5 relative">
               <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3 italic mb-8 uppercase">
                 CONVERT POINTS <ChevronRight size={24} className="text-purple-600" />
               </h2>
@@ -292,7 +292,7 @@ export default function RedeemPointsPage() {
 
           {/* ─── Right Column: Points Ledger History ─────────────────── */}
           <div className="md:col-span-5">
-            <div className="bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-gray-800/80 p-8 md:p-10 shadow-xl shadow-black/5 sticky top-28">
+            <div className="bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-gray-800/80 p-6 sm:p-8 md:p-10 shadow-xl shadow-black/5 sticky top-28">
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3 italic uppercase">
                   LEDGER <History className="text-purple-600" />

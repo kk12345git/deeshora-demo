@@ -1,7 +1,8 @@
 // src/app/(customer)/orders/[id]/page.tsx
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
+import { useRouter, Link } from "@/navigation";
 import { trpc } from "@/lib/trpc";
 import { useOrderTracking } from "@/hooks/useOrderTracking";
 import { OrderStatusBadge } from "@/components/customer/OrderStatus";
@@ -23,7 +24,7 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
-import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import { OrderStatus } from "@prisma/client";
 import toast from "react-hot-toast";

@@ -1,8 +1,7 @@
 // src/components/customer/MobileBottomNav.tsx
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/navigation";
 import { Home, Search, ShoppingBag, User, Package, Users } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { motion } from "framer-motion";
@@ -21,7 +20,7 @@ export default function MobileBottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-gray-200/50 pb-safe-area-inset-bottom">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-gray-200/50 pb-safe-area-inset-bottom dark:bg-gray-950/80 dark:border-gray-800/50">
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -33,14 +32,14 @@ export default function MobileBottomNav() {
               href={item.href}
               className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative ${
                 isActive
-                  ? "text-brand-600"
-                  : "text-gray-400 hover:text-gray-600"
+                  ? "text-brand-600 dark:text-brand-400"
+                  : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
               }`}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute inset-0 bg-brand-50/50 -z-10"
+                  className="absolute inset-0 bg-brand-50/50 dark:bg-brand-950/20 -z-10"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}

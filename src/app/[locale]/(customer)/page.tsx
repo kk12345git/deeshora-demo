@@ -522,7 +522,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── WhatsApp Button (Premium Floating) ─────────────────────── */}
-      <div className="fixed bottom-10 right-10 z-[60]">
+      <div className="fixed bottom-24 right-4 md:bottom-10 md:right-10 z-[60]">
         <motion.a
           whileHover={{ scale: 1.1, y: -5 }}
           whileTap={{ scale: 0.9 }}

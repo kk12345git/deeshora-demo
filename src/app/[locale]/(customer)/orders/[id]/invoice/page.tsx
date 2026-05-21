@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/navigation";
 import {
   Loader2,
   Printer,

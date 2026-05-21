@@ -418,7 +418,7 @@ export default function ClaymorphicPlayground() {
       </div>
 
       {/* ─── The Interactive 3D Card Stack ─────────────────────────────── */}
-      <div className="relative w-[340px] md:w-[420px] h-[360px] md:h-[420px] perspective-1000 preserve-3d">
+      <div className="relative w-[90vw] max-w-[340px] md:max-w-[420px] h-[360px] md:h-[420px] perspective-1000 preserve-3d">
         {cards.map((card, index) => {
           // Calculate stack rendering based on active item
           const isActive = card.id === activeCard;
@@ -487,7 +487,7 @@ export default function ClaymorphicPlayground() {
               )}
 
               {/* Card Contents */}
-              <div className="absolute inset-0 p-8 md:p-10 flex flex-col justify-between preserve-3d">
+              <div className="absolute inset-0 p-6 sm:p-8 md:p-10 flex flex-col justify-between preserve-3d">
                 
                 {/* Top Row: Icon + Badge */}
                 <div className="flex items-center justify-between pointer-events-none">

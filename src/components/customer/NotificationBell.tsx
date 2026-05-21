@@ -14,7 +14,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
-import Link from "next/link";
+import { Link } from "@/navigation";
 
 export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);

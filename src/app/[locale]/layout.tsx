@@ -11,7 +11,6 @@ import { CartSync } from "@/components/cart/CartSync";
 import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import PageTransition from "@/components/layout/PageTransition";
-import BottomNav from "@/components/layout/BottomNav";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -151,7 +150,6 @@ export default async function RootLayout({
                       </div>
                     </div>
                   </PageTransition>
-                  <BottomNav />
                 </RoleGuard>
                 <Toaster
                   position="bottom-center"

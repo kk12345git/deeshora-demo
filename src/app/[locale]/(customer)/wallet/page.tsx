@@ -140,7 +140,7 @@ export default function WalletPage() {
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                className="relative aspect-[16/9] md:aspect-auto md:h-80 rounded-[3.5rem] overflow-hidden group shadow-2xl shadow-brand-500/20 bg-gray-950 cursor-grab active:cursor-grabbing"
+                className="relative aspect-[4/3] xs:aspect-[16/9] sm:aspect-auto sm:h-80 rounded-[3rem] xs:rounded-[3.5rem] overflow-hidden group shadow-2xl shadow-brand-500/20 bg-gray-950 cursor-grab active:cursor-grabbing"
               >
                 <div className="absolute inset-0 bg-gray-950" />
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-600/40 via-transparent to-pink-600/40 opacity-50" />
@@ -161,7 +161,7 @@ export default function WalletPage() {
                   className="absolute -top-[50%] -right-[20%] w-[100%] h-[100%] bg-brand-500/10 blur-[120px] rounded-full"
                 />
 
-                <div className="relative h-full p-10 md:p-14 flex flex-col justify-between z-10 text-white select-none pointer-events-none" style={{ transformStyle: "preserve-3d" }}>
+                <div className="relative h-full p-6 sm:p-10 md:p-14 flex flex-col justify-between z-10 text-white select-none pointer-events-none" style={{ transformStyle: "preserve-3d" }}>
                   <div className="flex items-center justify-between" style={{ transform: "translateZ(25px)", transformStyle: "preserve-3d" }}>
                     <div className="flex items-center gap-4">
                       <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-3xl flex items-center justify-center border border-white/10 shadow-[inset_0_2px_4px_rgba(255,255,255,0.2)]">
@@ -188,7 +188,7 @@ export default function WalletPage() {
                       Total Value
                     </p>
                     <div className="flex items-baseline gap-3">
-                      <span className="text-6xl md:text-8xl font-black italic tracking-tighter">
+                      <span className="text-4xl xs:text-5xl sm:text-6xl md:text-8xl font-black italic tracking-tighter">
                         ₹{isLoadingBalance ? "..." : balance.toFixed(0)}
                       </span>
                       <span className="text-xl md:text-2xl font-bold text-white/40">
@@ -216,7 +216,7 @@ export default function WalletPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="relative overflow-hidden rounded-[3rem] p-8 border border-brand-500/20 bg-gradient-to-r from-brand-50/50 to-purple-50/50 dark:from-brand-950/20 dark:to-purple-950/20 shadow-xl backdrop-blur-xl group hover:border-brand-500/40 transition-all duration-300"
+              className="relative overflow-hidden rounded-[3rem] p-6 sm:p-8 border border-brand-500/20 bg-gradient-to-r from-brand-50/50 to-purple-50/50 dark:from-brand-950/20 dark:to-purple-950/20 shadow-xl backdrop-blur-xl group hover:border-brand-500/40 transition-all duration-300"
             >
               {/* Glowing Background Blob */}
               <div className="absolute -right-20 -top-20 w-60 h-60 bg-brand-500/10 dark:bg-brand-500/5 rounded-full blur-3xl pointer-events-none group-hover:scale-125 transition-transform duration-700" />
@@ -255,7 +255,7 @@ export default function WalletPage() {
             </motion.div>
 
             {/* Quick Recharge Section */}
-            <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 border border-gray-100 dark:border-gray-800 shadow-xl shadow-black/5">
+            <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-6 sm:p-10 border border-gray-100 dark:border-gray-800 shadow-xl shadow-black/5">
               <div className="flex items-center justify-between mb-10">
                 <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3 italic">
                   POWER UP <ChevronRight size={24} className="text-brand-500" />

@@ -1,6 +1,6 @@
 // src/components/seo/Breadcrumbs.tsx
 import React from "react";
-import Link from "next/link";
+import { Link } from "@/navigation";
 import { ChevronRight, Home } from "lucide-react";
 
 interface BreadcrumbItem {
