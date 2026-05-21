@@ -5,36 +5,36 @@
 
 @layer base {
   :root {
-    /* Default: Deep Purplle (#4B0082) */
-    --brand-50: 245 243 255;
-    --brand-100: 237 233 254;
-    --brand-200: 221 214 254;
-    --brand-300: 196 181 253;
-    --brand-400: 167 139 250;
-    --brand-500: 75 0 130;
-    --brand-600: 67 0 117;
-    --brand-700: 109 40 217;
-    --brand-800: 91 33 182;
-    --brand-900: 76 29 149;
-    --brand-950: 46 16 101;
+    /* Default brand theme (Magenta scale matching new logo) */
+    --brand-50: 255 240 245;
+    --brand-100: 253 224 238;
+    --brand-200: 251 180 215;
+    --brand-300: 247 122 183;
+    --brand-400: 237 60 148;
+    --brand-500: 212 29 109;
+    --brand-600: 180 18 90;
+    --brand-700: 150 14 74;
+    --brand-800: 120 12 60;
+    --brand-900: 95 10 50;
+    --brand-950: 60 5 30;
   }
 
   .theme-customer {
-    /* Purplle Deep Indigo/Purple */
-    --brand-50: 245 243 255;
-    --brand-100: 237 233 254;
-    --brand-200: 221 214 254;
-    --brand-300: 196 181 253;
-    --brand-400: 167 139 250;
-    --brand-500: 75 0 130;
-    --brand-600: 67 0 117;
-    --brand-700: 109 40 217;
-    --brand-800: 91 33 182;
-    --brand-900: 76 29 149;
-    --brand-950: 46 16 101;
+    /* Magenta Scale (Base: #D41D6D = 212 29 109) */
+    --brand-50: 255 240 245;
+    --brand-100: 253 224 238;
+    --brand-200: 251 180 215;
+    --brand-300: 247 122 183;
+    --brand-400: 237 60 148;
+    --brand-500: 212 29 109;
+    --brand-600: 180 18 90;
+    --brand-700: 150 14 74;
+    --brand-800: 120 12 60;
+    --brand-900: 95 10 50;
+    --brand-950: 60 5 30;
 
-    /* Secondary: Vibrant Pink for accents */
-    --accent-500: 212 29 109;
+    /* Accent: Vibrant Orange for accents (#FF7800 = 255 120 0) */
+    --accent-500: 255 120 0;
   }
 
   .theme-admin {
@@ -68,7 +68,7 @@
   }
 
   body {
-    @apply bg-white text-gray-900 antialiased selection:bg-brand-100 selection:text-brand-900;
+    @apply bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 antialiased selection:bg-brand-100 selection:text-brand-900 transition-colors duration-300;
     font-family: var(--font-manrope), sans-serif;
   }
 
@@ -84,28 +84,28 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center px-8 py-4 text-sm font-black text-white bg-gray-950 rounded-[2rem] shadow-2xl shadow-black/10 transition-all duration-500 hover:bg-brand-500 hover:shadow-brand-500/30 hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-brand-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest;
+    @apply inline-flex items-center justify-center px-8 py-4 text-sm font-black text-white bg-gray-950 dark:bg-white dark:text-gray-950 rounded-[2rem] shadow-2xl shadow-black/10 transition-all duration-500 hover:bg-brand-500 hover:text-white dark:hover:bg-brand-500 dark:hover:text-white hover:shadow-brand-500/30 hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-brand-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center px-8 py-4 text-sm font-black text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-[2rem] shadow-sm transition-all duration-500 hover:border-brand-500 hover:text-brand-600 hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-brand-500/10 active:scale-95 disabled:opacity-50 uppercase tracking-widest;
+    @apply inline-flex items-center justify-center px-8 py-4 text-sm font-black text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-[2rem] shadow-sm transition-all duration-500 hover:border-brand-500 dark:hover:border-brand-500 hover:text-brand-600 dark:hover:text-brand-400 hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-brand-500/10 active:scale-95 disabled:opacity-50 uppercase tracking-widest;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-black text-gray-500 bg-transparent rounded-2xl hover:bg-gray-50 transition-all focus:outline-none uppercase tracking-widest;
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-black text-gray-500 dark:text-gray-400 bg-transparent rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-all focus:outline-none uppercase tracking-widest;
   }
   .card {
-    @apply bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-gray-50 flex flex-col transition-all duration-500 hover:shadow-[0_30px_70px_rgba(0,0,0,0.08)] hover:-translate-y-1 overflow-hidden;
+    @apply bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-gray-50 dark:border-gray-800/60 flex flex-col transition-all duration-500 hover:shadow-[0_30px_70px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_30px_70px_rgba(0,0,0,0.3)] hover:-translate-y-1 overflow-hidden;
   }
   .input {
-    @apply block w-full px-6 py-4 text-sm text-gray-900 bg-gray-50 border-2 border-transparent rounded-[1.5rem] transition-all focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 focus:bg-white;
+    @apply block w-full px-6 py-4 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 border-2 border-transparent rounded-[1.5rem] transition-all focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-950;
   }
   .badge {
     @apply inline-flex items-center text-[10px] tracking-widest uppercase font-black px-4 py-1.5 rounded-full;
   }
   .section-title {
-    @apply text-4xl md:text-5xl font-black text-gray-900 tracking-tighter italic;
+    @apply text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tighter italic;
   }
   .glass-card {
-    @apply bg-white/70 backdrop-blur-xl border border-white/40 rounded-[3rem] shadow-2xl;
+    @apply bg-white/70 dark:bg-gray-950/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-[3rem] shadow-2xl;
   }
 }
 
