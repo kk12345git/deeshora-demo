@@ -96,7 +96,23 @@ export const orderRouter = createTRPCRouter({
 
       const deliveryFee =
         subtotal >= freeDeliveryThreshold ? 0 : baseDeliveryFee;
-      const total = subtotal + deliveryFee;
+
+      // Fetch latest subscription status of the user
+      const dbUser = await ctx.prisma.user.findUnique({
+        where: { id: user.id },
+        select: {
+          subscriptionStatus: true,
+          subscriptionExpiresAt: true,
+        },
+      });
+
+      const isVip =
+        dbUser?.subscriptionStatus === "ACTIVE" &&
+        dbUser?.subscriptionExpiresAt &&
+        dbUser.subscriptionExpiresAt > new Date();
+
+      const platformFee = isVip ? 0 : 1;
+      const total = subtotal + deliveryFee + platformFee;
 
       const itemsToCreate = cart.items.map((item) => ({
         productId: item.productId,
@@ -130,7 +146,7 @@ export const orderRouter = createTRPCRouter({
             deliverySlotId: input.deliverySlotId,
             status: OrderStatus.PENDING,
             vendorId: firstVendorId,
-            platformFee: 0,
+            platformFee,
             vendorAmount: subtotal,
             items: {
               create: itemsToCreate,

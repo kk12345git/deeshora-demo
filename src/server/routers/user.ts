@@ -52,12 +52,99 @@ export const userRouter = createTRPCRouter({
     if (!user)
       throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
 
+    // Check if subscription has expired
+    if (user.subscriptionStatus === "ACTIVE" && user.subscriptionExpiresAt && user.subscriptionExpiresAt < new Date()) {
+      if (user.subscriptionAutopay && user.walletBalance >= 29) {
+        // Auto-renew!
+        await ctx.prisma.$transaction(async (tx) => {
+          await tx.user.update({
+            where: { id: ctx.user.id },
+            data: {
+              walletBalance: { decrement: 29 },
+              subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            },
+          });
+          await tx.walletTransaction.create({
+            data: {
+              userId: ctx.user.id,
+              amount: -29,
+              type: "PAYMENT",
+              status: "COMPLETED",
+              description: "Auto-renewal of VIP Membership Subscription",
+            },
+          });
+        });
+        
+        // Re-fetch user with all relations
+        user = await ctx.prisma.user.findUnique({
+          where: { id: ctx.user.id },
+          include: {
+            addresses: { orderBy: { isDefault: "desc" } },
+            referredBy: { select: { name: true } },
+            referrals: {
+              take: 10,
+              select: { id: true, name: true, createdAt: true },
+            },
+            orders: {
+              take: 5,
+              orderBy: { createdAt: "desc" },
+              select: {
+                id: true,
+                status: true,
+                total: true,
+                createdAt: true,
+                paymentStatus: true,
+                items: { take: 1, select: { image: true, name: true } },
+              },
+            },
+            _count: { select: { orders: true, reviews: true, referrals: true } },
+          },
+        });
+        if (!user)
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      } else {
+        // Expiration without autopay or insufficient balance
+        user = await ctx.prisma.user.update({
+          where: { id: ctx.user.id },
+          data: {
+            subscriptionStatus: "NONE",
+            subscriptionExpiresAt: null,
+            subscriptionUtr: null,
+          },
+          include: {
+            addresses: { orderBy: { isDefault: "desc" } },
+            referredBy: { select: { name: true } },
+            referrals: {
+              take: 10,
+              select: { id: true, name: true, createdAt: true },
+            },
+            orders: {
+              take: 5,
+              orderBy: { createdAt: "desc" },
+              select: {
+                id: true,
+                status: true,
+                total: true,
+                createdAt: true,
+                paymentStatus: true,
+                items: { take: 1, select: { image: true, name: true } },
+              },
+            },
+            _count: { select: { orders: true, reviews: true, referrals: true } },
+          },
+        });
+      }
+    }
+
+    if (!user)
+      throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+
     // Auto-generate referral code if missing — with collision-safe retry loop
     if (!user.referralCode) {
       let code: string | null = null;
       for (let attempt = 0; attempt < 5; attempt++) {
         const candidate = (
-          user.id.slice(0, 3) + Math.random().toString(36).substring(2, 7)
+          ctx.user.id.slice(0, 3) + Math.random().toString(36).substring(2, 7)
         ).toUpperCase();
         const existing = await ctx.prisma.user.findUnique({
           where: { referralCode: candidate },
@@ -69,7 +156,7 @@ export const userRouter = createTRPCRouter({
       }
       if (code) {
         user = await ctx.prisma.user.update({
-          where: { id: user.id },
+          where: { id: ctx.user.id },
           data: { referralCode: code },
           include: {
             addresses: { orderBy: { isDefault: "desc" } },
@@ -336,5 +423,81 @@ export const userRouter = createTRPCRouter({
       }
 
       return updated;
+    }),
+
+  toggleAutopay: protectedProcedure
+    .input(z.object({ autopay: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.user.update({
+        where: { id: ctx.user.id },
+        data: { subscriptionAutopay: input.autopay },
+      });
+    }),
+
+  buyMembershipWithWallet: protectedProcedure.mutation(async ({ ctx }) => {
+    return ctx.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: ctx.user.id },
+        select: { walletBalance: true, subscriptionStatus: true },
+      });
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      }
+      if (user.walletBalance < 29) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Insufficient wallet balance. Please recharge your wallet." });
+      }
+      
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const updatedUser = await tx.user.update({
+        where: { id: ctx.user.id },
+        data: {
+          walletBalance: { decrement: 29 },
+          subscriptionStatus: "ACTIVE",
+          subscriptionExpiresAt: expiresAt,
+          subscriptionUtr: null,
+        },
+      });
+      
+      await tx.walletTransaction.create({
+        data: {
+          userId: ctx.user.id,
+          amount: -29,
+          type: "PAYMENT",
+          status: "COMPLETED",
+          description: "VIP Membership Subscription Purchase (Wallet)",
+        },
+      });
+      
+      return updatedUser;
+    });
+  }),
+
+  submitMembershipManualPayment: protectedProcedure
+    .input(
+      z.object({
+        utr: z
+          .string()
+          .length(12, "UTR must be exactly 12 digits")
+          .regex(/^\d+$/, "UTR must contain only numbers"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const existingUtr = await ctx.prisma.user.findFirst({
+        where: { subscriptionUtr: input.utr },
+      });
+      if (existingUtr) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This UTR number has already been submitted.",
+        });
+      }
+      
+      return ctx.prisma.user.update({
+        where: { id: ctx.user.id },
+        data: {
+          subscriptionStatus: "PENDING",
+          subscriptionUtr: input.utr,
+        },
+      });
     }),
 });

@@ -85,6 +85,15 @@ export default function CheckoutPage() {
     }
   }, [addresses, selectedAddressId]);
 
+  const { data: profile } = trpc.user.me.useQuery(undefined, { retry: false });
+
+  const isVip =
+    !!(profile?.subscriptionStatus === "ACTIVE" &&
+    profile?.subscriptionExpiresAt &&
+    new Date(profile.subscriptionExpiresAt) > new Date());
+
+  const platformFee = isVip ? 0 : 1;
+
   const netTotal = Math.max(0, total() - (appliedCoupon?.discount ?? 0));
 
   // ─── Address Form ─────────────────────────────────────────────────────────
@@ -650,6 +659,14 @@ export default function CheckoutPage() {
                   <span>Delivery</span>
                   <span className="text-emerald-600">Free Delivery</span>
                 </div>
+                <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                  <span>Platform Fee</span>
+                  {isVip ? (
+                    <span className="text-emerald-600 font-bold lowercase tracking-normal">₹0 (VIP Waived)</span>
+                  ) : (
+                    <span>+₹1.00</span>
+                  )}
+                </div>
                 {paymentMethod === "COD" && (
                   <div className="flex justify-between text-[10px] font-black text-amber-500 uppercase tracking-[0.2em]">
                     <span>COD Processing Fee</span>
@@ -670,7 +687,7 @@ export default function CheckoutPage() {
                   </span>
                   <span className="text-4xl font-black text-gray-900 tracking-tighter italic leading-none">
                     ₹
-                    {(netTotal + (paymentMethod === "COD" ? 10 : 0)).toFixed(2)}
+                    {(netTotal + platformFee + (paymentMethod === "COD" ? 10 : 0)).toFixed(2)}
                   </span>
                 </div>
               </div>

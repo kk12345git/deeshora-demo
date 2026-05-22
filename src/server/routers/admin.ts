@@ -861,7 +861,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   getPendingVerifications: adminProcedure.query(async ({ ctx }) => {
-    const [pendingOrders, pendingSubscriptions] = await Promise.all([
+    const [pendingOrders, pendingSubscriptions, pendingCustomerSubscriptions] = await Promise.all([
       ctx.prisma.order.findMany({
         where: { paymentStatus: "PENDING", utrNumber: { not: null } },
         include: {
@@ -877,9 +877,24 @@ export const adminRouter = createTRPCRouter({
         },
         orderBy: { updatedAt: "desc" },
       }),
+      ctx.prisma.user.findMany({
+        where: {
+          subscriptionStatus: "PENDING",
+          subscriptionUtr: { not: null },
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          subscriptionUtr: true,
+          updatedAt: true,
+        },
+        orderBy: { updatedAt: "asc" },
+      }),
     ]);
 
-    return { pendingOrders, pendingSubscriptions };
+    return { pendingOrders, pendingSubscriptions, pendingCustomerSubscriptions };
   }),
 
   approvePayment: adminProcedure
@@ -1206,6 +1221,50 @@ export const adminRouter = createTRPCRouter({
         });
 
         return payout;
+      });
+    }),
+
+
+
+  approveCustomerSubscription: adminProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { id: true, subscriptionStatus: true },
+      });
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      }
+
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      return ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: {
+          subscriptionStatus: "ACTIVE",
+          subscriptionExpiresAt: expiresAt,
+        },
+      });
+    }),
+
+  rejectCustomerSubscription: adminProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { id: true, subscriptionStatus: true },
+      });
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      }
+
+      return ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: {
+          subscriptionStatus: "NONE",
+          subscriptionUtr: null,
+          subscriptionExpiresAt: null,
+        },
       });
     }),
 });

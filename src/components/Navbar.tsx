@@ -19,6 +19,7 @@ import {
   Loader2,
   Wallet,
   CalendarDays,
+  Crown,
 } from "lucide-react";
 import { UserButton, useUser, SignOutButton } from "@clerk/nextjs";
 import { useCart } from "@/hooks/useCart";
@@ -168,6 +169,7 @@ export default function Navbar() {
       role: "ADMIN",
     },
     { name: t("my_space"), href: "/profile", icon: UserRound },
+    { name: "VIP Membership", href: "/membership", icon: Crown },
     { name: t("my_orders"), href: "/orders", icon: Package },
     { name: "Subscriptions", href: "/subscriptions", icon: CalendarDays },
   ];

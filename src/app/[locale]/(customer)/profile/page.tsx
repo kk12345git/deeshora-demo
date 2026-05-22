@@ -790,6 +790,18 @@ export default function MySpacePage() {
               }
             />
             <QuickLink
+              href="/membership"
+              icon={<Crown size={18} className="text-amber-500" />}
+              label="VIP Membership"
+              badge={
+                profile.subscriptionStatus === "ACTIVE"
+                  ? "ACTIVE"
+                  : profile.subscriptionStatus === "PENDING"
+                    ? "PENDING"
+                    : undefined
+              }
+            />
+            <QuickLink
               href="/profile/addresses"
               icon={<MapPin size={18} />}
               label="Saved Addresses"

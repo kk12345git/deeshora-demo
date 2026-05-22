@@ -42,6 +42,10 @@ model User {
   vendor               Vendor?
   redeemPoints         Float               @default(0)
   pointsTransactions   PointsTransaction[]
+  subscriptionStatus   SubscriptionStatus  @default(NONE)
+  subscriptionUtr      String?             @unique
+  subscriptionExpiresAt DateTime?
+  subscriptionAutopay  Boolean             @default(false)
 }
 
 model Address {
