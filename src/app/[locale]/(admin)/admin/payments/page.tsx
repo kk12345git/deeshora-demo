@@ -14,6 +14,7 @@ import {
   CheckCircle,
   Users,
   Shield,
+  Wallet,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
@@ -49,6 +50,22 @@ export default function AdminPaymentsPage() {
   const rejectCustomerSubscription = trpc.admin.rejectCustomerSubscription.useMutation({
     onSuccess: () => {
       toast.success("Customer VIP subscription rejected!");
+      refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const approveWalletRecharge = trpc.admin.approveWalletRecharge.useMutation({
+    onSuccess: () => {
+      toast.success("Wallet recharge approved!");
+      refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const rejectWalletRecharge = trpc.admin.rejectWalletRecharge.useMutation({
+    onSuccess: () => {
+      toast.success("Wallet recharge rejected!");
       refetch();
     },
     onError: (err) => toast.error(err.message),
@@ -367,7 +384,7 @@ export default function AdminPaymentsPage() {
                   </p>
                 </div>
                 <div className="bg-indigo-600 text-white px-5 py-2.5 rounded-[1.25rem] shadow-xl shadow-indigo-600/10">
-                  <p className="font-black text-xl tracking-tighter">₹29</p>
+                  <p className="font-black text-xl tracking-tighter">₹1</p>
                 </div>
               </div>
 
@@ -452,6 +469,141 @@ export default function AdminPaymentsPage() {
               </h3>
               <p className="text-gray-400 text-sm mt-2 font-medium">
                 All customer VIP upgrades have been processed.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Customer Wallet Recharges Section */}
+      <section className="space-y-8">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100">
+              <Wallet className="text-brand-500" size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-gray-900 tracking-tight">
+                Pending Wallet Deposits
+              </h2>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
+                Manual Recharge Audit Center
+              </p>
+            </div>
+          </div>
+          <div className="bg-brand-500 text-white text-[10px] font-black px-4 py-2 rounded-xl shadow-lg shadow-brand-500/20">
+            {data?.pendingWalletRecharges?.length || 0} AWAITING AUDIT
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {data?.pendingWalletRecharges?.map((tx, i) => (
+            <motion.div
+              key={tx.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-white p-8 rounded-[3rem] border border-gray-100 hover:shadow-2xl hover:shadow-brand-100/50 transition-all group relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none group-hover:-rotate-12 transition-transform duration-700">
+                <Wallet size={120} />
+              </div>
+
+              <div className="flex justify-between items-start mb-8 relative z-10">
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">
+                    Deposit Request
+                  </p>
+                  <p className="font-black text-brand-500 uppercase tracking-widest text-sm">
+                    Manual Top-up
+                  </p>
+                </div>
+                <div className="bg-brand-500 text-white px-5 py-2.5 rounded-[1.25rem] shadow-xl shadow-brand-500/10">
+                  <p className="font-black text-xl tracking-tighter">₹{tx.amount}</p>
+                </div>
+              </div>
+
+              <div className="space-y-5 mb-8 relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
+                    <User size={16} className="text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">
+                      Customer
+                    </p>
+                    <p className="text-sm font-black text-gray-950 uppercase tracking-tight">
+                      {tx.user?.name}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
+                    <AlertCircle size={16} className="text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">
+                      Contact
+                    </p>
+                    <p className="text-xs font-semibold text-gray-700 tracking-tight">
+                      {tx.user?.phone || tx.user?.email}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-950 p-5 rounded-[1.5rem] border border-white/5 shadow-2xl">
+                  <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] mb-2">
+                    UTR / Ref Terminal
+                  </p>
+                  <p className="text-brand-400 font-mono font-black text-xl tracking-[0.15em] break-all uppercase">
+                    {tx.reference}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 relative z-10">
+                <button
+                  onClick={() =>
+                    approveWalletRecharge.mutate({ transactionId: tx.id })
+                  }
+                  disabled={approveWalletRecharge.isPending}
+                  className="flex-1 h-14 bg-gray-950 hover:bg-brand-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-20 active:scale-95 shadow-xl"
+                >
+                  {approveWalletRecharge.isPending ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <Check size={18} />
+                  )}
+                  Approve
+                </button>
+                <button
+                  onClick={() =>
+                    rejectWalletRecharge.mutate({ transactionId: tx.id })
+                  }
+                  disabled={rejectWalletRecharge.isPending}
+                  className="w-14 h-14 border border-gray-100 rounded-2xl hover:bg-red-50 hover:border-red-100 hover:text-red-500 transition-all flex items-center justify-center active:scale-95 disabled:opacity-20"
+                >
+                  {rejectWalletRecharge.isPending ? (
+                    <Loader2 className="animate-spin text-red-500" />
+                  ) : (
+                    <X size={20} />
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          ))}
+
+          {(!data?.pendingWalletRecharges || data.pendingWalletRecharges.length === 0) && (
+            <div className="col-span-full py-32 text-center bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200">
+              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                <Wallet size={32} className="text-brand-500" />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">
+                Deposit Queue Clear
+              </h3>
+              <p className="text-gray-400 text-sm mt-2 font-medium">
+                All manual wallet deposits have been processed.
               </p>
             </div>
           )}

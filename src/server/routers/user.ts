@@ -54,20 +54,20 @@ export const userRouter = createTRPCRouter({
 
     // Check if subscription has expired
     if (user.subscriptionStatus === "ACTIVE" && user.subscriptionExpiresAt && user.subscriptionExpiresAt < new Date()) {
-      if (user.subscriptionAutopay && user.walletBalance >= 29) {
+      if (user.subscriptionAutopay && user.walletBalance >= 1) {
         // Auto-renew!
         await ctx.prisma.$transaction(async (tx) => {
           await tx.user.update({
             where: { id: ctx.user.id },
             data: {
-              walletBalance: { decrement: 29 },
+              walletBalance: { decrement: 1 },
               subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             },
           });
           await tx.walletTransaction.create({
             data: {
               userId: ctx.user.id,
-              amount: -29,
+              amount: -1,
               type: "PAYMENT",
               status: "COMPLETED",
               description: "Auto-renewal of VIP Membership Subscription",
@@ -443,7 +443,7 @@ export const userRouter = createTRPCRouter({
       if (!user) {
         throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
       }
-      if (user.walletBalance < 29) {
+      if (user.walletBalance < 1) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Insufficient wallet balance. Please recharge your wallet." });
       }
       
@@ -451,7 +451,7 @@ export const userRouter = createTRPCRouter({
       const updatedUser = await tx.user.update({
         where: { id: ctx.user.id },
         data: {
-          walletBalance: { decrement: 29 },
+          walletBalance: { decrement: 1 },
           subscriptionStatus: "ACTIVE",
           subscriptionExpiresAt: expiresAt,
           subscriptionUtr: null,
@@ -461,7 +461,7 @@ export const userRouter = createTRPCRouter({
       await tx.walletTransaction.create({
         data: {
           userId: ctx.user.id,
-          amount: -29,
+          amount: -1,
           type: "PAYMENT",
           status: "COMPLETED",
           description: "VIP Membership Subscription Purchase (Wallet)",

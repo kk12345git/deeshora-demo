@@ -50,11 +50,30 @@ export const walletRouter = createTRPCRouter({
     .input(
       z.object({
         amount: z.number().min(10),
-        transactionId: z.string().optional(), // For manual tracking
+        provider: z.enum(["PHONEPE", "MANUAL_UPI"]),
+        utr: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { amount } = input;
+      const { amount, provider, utr } = input;
+
+      if (provider === "MANUAL_UPI") {
+        if (!utr || utr.length !== 12 || !/^\d+$/.test(utr)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "UTR must be exactly a 12-digit number.",
+          });
+        }
+        const existingTx = await ctx.prisma.walletTransaction.findFirst({
+          where: { reference: utr },
+        });
+        if (existingTx) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "This UTR number has already been used.",
+          });
+        }
+      }
 
       // Check if user is eligible for welcome offer (first recharge only)
       const completedRechargesCount = await ctx.prisma.walletTransaction.count({
@@ -70,6 +89,21 @@ export const walletRouter = createTRPCRouter({
       const bonus = isWelcomeOfferEligible ? Math.floor(amount / 100) * 10 : 0;
       const totalToCredit = amount + bonus;
 
+      if (provider === "MANUAL_UPI") {
+        // Create a PENDING wallet transaction for admin approval
+        return await ctx.prisma.walletTransaction.create({
+          data: {
+            userId: ctx.user.id,
+            amount: totalToCredit,
+            type: TransactionType.RECHARGE,
+            status: TransactionStatus.PENDING,
+            description: `Wallet top-up of ₹${amount}${bonus > 0 ? ` with ₹${bonus} welcome bonus` : ""} (Manual UPI)`,
+            reference: utr,
+          },
+        });
+      }
+
+      // Provider is PHONEPE: Credit instantly (simulated success)
       return await ctx.prisma.$transaction(async (tx) => {
         // 1. Update user balance
         await tx.user.update({
@@ -84,8 +118,8 @@ export const walletRouter = createTRPCRouter({
             amount: totalToCredit,
             type: TransactionType.RECHARGE,
             status: TransactionStatus.COMPLETED,
-            description: `Wallet top-up of ₹${amount}${bonus > 0 ? ` with ₹${bonus} welcome bonus` : ""}`,
-            reference: input.transactionId,
+            description: `Wallet top-up of ₹${amount}${bonus > 0 ? ` with ₹${bonus} welcome bonus` : ""} (PhonePe)`,
+            reference: "PHONEPE_AUTO",
           },
         });
       });

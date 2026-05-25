@@ -861,7 +861,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   getPendingVerifications: adminProcedure.query(async ({ ctx }) => {
-    const [pendingOrders, pendingSubscriptions, pendingCustomerSubscriptions] = await Promise.all([
+    const [pendingOrders, pendingSubscriptions, pendingCustomerSubscriptions, pendingWalletRecharges] = await Promise.all([
       ctx.prisma.order.findMany({
         where: { paymentStatus: "PENDING", utrNumber: { not: null } },
         include: {
@@ -892,9 +892,20 @@ export const adminRouter = createTRPCRouter({
         },
         orderBy: { updatedAt: "asc" },
       }),
+      ctx.prisma.walletTransaction.findMany({
+        where: {
+          status: "PENDING",
+          type: "RECHARGE",
+          reference: { not: null },
+        },
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      }),
     ]);
 
-    return { pendingOrders, pendingSubscriptions, pendingCustomerSubscriptions };
+    return { pendingOrders, pendingSubscriptions, pendingCustomerSubscriptions, pendingWalletRecharges };
   }),
 
   approvePayment: adminProcedure
@@ -1265,6 +1276,82 @@ export const adminRouter = createTRPCRouter({
           subscriptionUtr: null,
           subscriptionExpiresAt: null,
         },
+      });
+    }),
+
+  approveWalletRecharge: adminProcedure
+    .input(z.object({ transactionId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const tx = await ctx.prisma.walletTransaction.findUnique({
+        where: { id: input.transactionId, status: "PENDING" },
+      });
+      if (!tx) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Pending wallet transaction not found.",
+        });
+      }
+
+      return await ctx.prisma.$transaction(async (prismaTx) => {
+        // 1. Update transaction status
+        const updatedTx = await prismaTx.walletTransaction.update({
+          where: { id: input.transactionId },
+          data: { status: "COMPLETED" },
+        });
+
+        // 2. Increment user wallet balance
+        await prismaTx.user.update({
+          where: { id: tx.userId },
+          data: { walletBalance: { increment: tx.amount } },
+        });
+
+        // 3. Create user notification
+        await prismaTx.notification.create({
+          data: {
+            userId: tx.userId,
+            title: "Wallet Recharged! 🚀",
+            message: `Your manual wallet recharge of ₹${tx.amount.toFixed(2)} has been verified and approved.`,
+            type: "SYSTEM",
+            link: "/wallet",
+          },
+        });
+
+        return updatedTx;
+      });
+    }),
+
+  rejectWalletRecharge: adminProcedure
+    .input(z.object({ transactionId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const tx = await ctx.prisma.walletTransaction.findUnique({
+        where: { id: input.transactionId, status: "PENDING" },
+      });
+      if (!tx) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Pending wallet transaction not found.",
+        });
+      }
+
+      return await ctx.prisma.$transaction(async (prismaTx) => {
+        // 1. Update transaction status
+        const updatedTx = await prismaTx.walletTransaction.update({
+          where: { id: input.transactionId },
+          data: { status: "FAILED" },
+        });
+
+        // 2. Create user notification
+        await prismaTx.notification.create({
+          data: {
+            userId: tx.userId,
+            title: "Recharge Rejected ❌",
+            message: `Your manual wallet recharge of ₹${tx.amount.toFixed(2)} could not be verified and was rejected.`,
+            type: "SYSTEM",
+            link: "/wallet",
+          },
+        });
+
+        return updatedTx;
       });
     }),
 });

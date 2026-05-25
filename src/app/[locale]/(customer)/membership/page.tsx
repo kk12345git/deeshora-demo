@@ -66,7 +66,7 @@ export default function MembershipPage() {
   };
 
   const handleBuyWithWallet = () => {
-    if (confirm("Are you sure you want to purchase 1-Month VIP Membership for ₹29 from your wallet?")) {
+    if (confirm("Are you sure you want to purchase 1-Month VIP Membership for ₹1 from your wallet?")) {
       buyWithWalletMutation.mutate();
     }
   };
@@ -218,7 +218,7 @@ export default function MembershipPage() {
                 <div className="flex items-baseline justify-between border-b border-gray-800 pb-4">
                   <span className="text-gray-400 text-sm">Monthly Plan</span>
                   <div className="text-right">
-                    <span className="text-3xl font-black tracking-tight text-white">₹29</span>
+                    <span className="text-3xl font-black tracking-tight text-white">₹1</span>
                     <span className="text-gray-400 text-xs"> / month</span>
                   </div>
                 </div>
@@ -259,7 +259,7 @@ export default function MembershipPage() {
                   Auto-Renewal (Wallet AutoPay)
                 </h3>
                 <p className="text-xs text-gray-400 max-w-sm">
-                  Enable autopay to renew subscription automatically for ₹29 every 30 days using your wallet balance.
+                  Enable autopay to renew subscription automatically for ₹1 every 30 days using your wallet balance.
                 </p>
               </div>
               <button
@@ -338,7 +338,7 @@ export default function MembershipPage() {
           <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 max-w-md w-full space-y-6 relative">
             <h3 className="text-xl font-black text-white flex items-center gap-2">
               <QrCode size={20} className="text-purple-400" />
-              Pay via UPI (₹29)
+              Pay via UPI (₹1)
             </h3>
             
             <div className="space-y-4">
@@ -360,7 +360,7 @@ export default function MembershipPage() {
               <div className="p-4 bg-indigo-950/20 border border-indigo-500/10 rounded-2xl flex gap-3 text-xs text-indigo-300">
                 <Info size={16} className="flex-shrink-0 mt-0.5" />
                 <p>
-                  Scan or transfer exactly <strong>₹29</strong> to the above UPI address, then input the 12-digit UPI transaction reference (UTR) below to activate subscription.
+                  Scan or transfer exactly <strong>₹1</strong> to the above UPI address, then input the 12-digit UPI transaction reference (UTR) below to activate subscription.
                 </p>
               </div>
 

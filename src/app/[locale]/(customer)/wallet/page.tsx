@@ -17,6 +17,12 @@ import {
   Trophy,
   Crown,
   ChevronRight,
+  QrCode,
+  Info,
+  Copy,
+  Check,
+  ArrowRight,
+  X,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,6 +39,12 @@ export default function WalletPage() {
     trpc.wallet.getRedeemPoints.useQuery();
 
   const [rechargeAmount, setRechargeAmount] = useState<number>(100);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<"PHONEPE" | "MANUAL_UPI" | null>(null);
+  const [utr, setUtr] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [showUpiAppSimulator, setShowUpiAppSimulator] = useState(false);
+  const [selectedUpiApp, setSelectedUpiApp] = useState<string | null>(null);
 
   // 3D Tilt Coordinates and Touch-Drag state handlers
   const [coords, setCoords] = useState({ x: 0, y: 0 });
@@ -76,15 +88,35 @@ export default function WalletPage() {
 
   const rechargeMutation = trpc.wallet.addMoney.useMutation({
     onSuccess: () => {
-      toast.success("Wallet recharged successfully! 🚀");
+      if (selectedProvider === "MANUAL_UPI") {
+        toast.success("Deposit details submitted! Admin will verify the UTR shortly. ⏳");
+      } else {
+        toast.success("Wallet recharged successfully! 🚀");
+      }
       utils.wallet.getBalance.invalidate();
       utils.wallet.getTransactions.invalidate();
+      setShowPaymentModal(false);
+      setSelectedProvider(null);
+      setUtr("");
+      setShowUpiAppSimulator(false);
+      setSelectedUpiApp(null);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      toast.error(err.message);
+      setShowUpiAppSimulator(false);
+    },
   });
 
-  const handleRecharge = () => {
-    rechargeMutation.mutate({ amount: rechargeAmount });
+  const handleRecharge = (provider: "PHONEPE" | "MANUAL_UPI", customUtr?: string) => {
+    if (provider === "MANUAL_UPI") {
+      if (!customUtr || customUtr.length !== 12 || !/^\d+$/.test(customUtr)) {
+        toast.error("UTR must be exactly a 12-digit number.");
+        return;
+      }
+      rechargeMutation.mutate({ amount: rechargeAmount, provider, utr: customUtr });
+    } else {
+      rechargeMutation.mutate({ amount: rechargeAmount, provider });
+    }
   };
 
   const rechargeOptions = [100, 200, 500, 1000];
@@ -353,8 +385,7 @@ export default function WalletPage() {
               </motion.div>
 
               <button
-                onClick={handleRecharge}
-                disabled={rechargeMutation.isPending}
+                onClick={() => setShowPaymentModal(true)}
                 className="group w-full h-20 bg-gray-950 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl shadow-gray-950/20 hover:bg-black hover:shadow-brand-500/20 transition-all flex items-center justify-center gap-4 text-lg overflow-hidden relative"
               >
                 {rechargeMutation.isPending ? (
@@ -469,6 +500,257 @@ export default function WalletPage() {
           </div>
         </div>
       </div>
+
+      {/* Payment Selection Modal */}
+      <AnimatePresence>
+        {showPaymentModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md text-gray-900 dark:text-white">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] p-8 max-w-md w-full space-y-6 relative shadow-2xl"
+            >
+              {/* Header */}
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[10px] font-black tracking-widest text-brand-500 uppercase">
+                    Add Money
+                  </p>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white mt-1 italic">
+                    Recharge Wallet
+                  </h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setSelectedProvider(null);
+                    setUtr("");
+                    setShowUpiAppSimulator(false);
+                    setSelectedUpiApp(null);
+                  }}
+                  className="p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Amount Breakdown Banner */}
+              <div className="bg-gray-50 dark:bg-gray-950 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                <div>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                    Deposit Amount
+                  </p>
+                  <p className="text-2xl font-black text-gray-900 dark:text-white italic">
+                    ₹{rechargeAmount}
+                  </p>
+                </div>
+                {bonusAmount > 0 && (
+                  <div className="text-right">
+                    <p className="text-[9px] font-black text-brand-500 uppercase tracking-widest">
+                      Welcome Bonus
+                    </p>
+                    <p className="text-lg font-black text-brand-600 dark:text-brand-400 italic">
+                      +₹{bonusAmount}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* State 1: Choose Payment Method */}
+              {selectedProvider === null && (
+                <div className="space-y-4">
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">
+                    Select Payment Flow
+                  </p>
+                  
+                  {/* UPI Gateway / App */}
+                  <button
+                    onClick={() => setSelectedProvider("PHONEPE")}
+                    className="w-full flex items-center justify-between p-5 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-brand-500/50 dark:hover:border-brand-500/50 hover:shadow-lg transition-all group"
+                  >
+                    <div className="flex items-center gap-4 text-left">
+                      <div className="w-12 h-12 bg-brand-50 dark:bg-brand-950/20 rounded-xl flex items-center justify-center text-brand-500">
+                        <Zap size={22} fill="currentColor" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                          UPI Apps (Instant)
+                        </h4>
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          PhonePe, GPay, Paytm, BHIM
+                        </p>
+                      </div>
+                    </div>
+                    <ArrowRight size={18} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
+                  </button>
+
+                  {/* UPI QR Code / Manual */}
+                  <button
+                    onClick={() => setSelectedProvider("MANUAL_UPI")}
+                    className="w-full flex items-center justify-between p-5 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-brand-500/50 dark:hover:border-brand-500/50 hover:shadow-lg transition-all group"
+                  >
+                    <div className="flex items-center gap-4 text-left">
+                      <div className="w-12 h-12 bg-purple-50 dark:bg-purple-950/20 rounded-xl flex items-center justify-center text-purple-500">
+                        <QrCode size={22} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                          Scan UPI QR Code
+                        </h4>
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          Pay manually & submit UTR
+                        </p>
+                      </div>
+                    </div>
+                    <ArrowRight size={18} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+              )}
+
+              {/* State 2: PhonePe UPI App Selector & Simulator */}
+              {selectedProvider === "PHONEPE" && (
+                <div className="space-y-4">
+                  {showUpiAppSimulator ? (
+                    <div className="py-8 flex flex-col items-center justify-center text-center space-y-4">
+                      <Loader2 className="w-12 h-12 animate-spin text-brand-500" />
+                      <div>
+                        <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                          Opening {selectedUpiApp || "UPI App"}...
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1 max-w-xs">
+                          Please authorize the transaction of ₹{rechargeAmount} in your UPI app to complete top-up.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">
+                          Choose UPI App
+                        </p>
+                        <button
+                          onClick={() => setSelectedProvider(null)}
+                          className="text-[10px] font-black uppercase text-brand-500 hover:underline"
+                        >
+                          Back
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { name: "PhonePe", color: "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400" },
+                          { name: "GPay", color: "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400" },
+                          { name: "Paytm", color: "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-400" },
+                          { name: "BHIM UPI", color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" },
+                        ].map((app) => (
+                          <button
+                            key={app.name}
+                            onClick={() => {
+                              setSelectedUpiApp(app.name);
+                              setShowUpiAppSimulator(true);
+                              setTimeout(() => {
+                                handleRecharge("PHONEPE");
+                              }, 2000);
+                            }}
+                            className={`p-4 rounded-xl text-xs font-black uppercase tracking-wider border border-transparent hover:border-gray-200 dark:hover:border-gray-700 text-center transition-all ${app.color}`}
+                          >
+                            {app.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* State 3: Manual UPI UTR Submission */}
+              {selectedProvider === "MANUAL_UPI" && (
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">
+                      UPI QR Code Payment
+                    </p>
+                    <button
+                      onClick={() => setSelectedProvider(null)}
+                      className="text-[10px] font-black uppercase text-brand-500 hover:underline"
+                    >
+                      Back
+                    </button>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 dark:bg-gray-950 rounded-2xl border border-gray-100 dark:border-gray-800 text-center space-y-3">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                      Scan to Pay ₹{rechargeAmount}
+                    </p>
+                    <div className="flex items-center justify-center gap-2 bg-white dark:bg-gray-900 px-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-800">
+                      <span className="font-mono text-gray-900 dark:text-white text-xs font-bold select-all">
+                        deeshware15-2@okicici
+                      </span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText("deeshware15-2@okicici");
+                          setCopied(true);
+                          toast.success("UPI ID copied!");
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                      >
+                        {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-brand-50/30 dark:bg-brand-950/10 border border-brand-500/10 rounded-2xl flex gap-3 text-xs text-brand-600 dark:text-brand-400">
+                    <Info size={16} className="flex-shrink-0 mt-0.5" />
+                    <p>
+                      Transfer exactly <strong>₹{rechargeAmount}</strong> to the above UPI address, then input your 12-digit UTR below. Admin will credit your wallet upon verification.
+                    </p>
+                  </div>
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleRecharge("MANUAL_UPI", utr);
+                    }}
+                    className="space-y-4"
+                  >
+                    <div className="space-y-1">
+                      <label htmlFor="utr" className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                        12-digit UTR / Transaction ID
+                      </label>
+                      <input
+                        id="utr"
+                        type="text"
+                        required
+                        value={utr}
+                        onChange={(e) => setUtr(e.target.value)}
+                        maxLength={12}
+                        placeholder="Enter 12-digit UPI reference number"
+                        className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-700 focus:border-brand-500 dark:focus:border-brand-500 outline-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={rechargeMutation.isPending}
+                      className="w-full bg-gray-950 hover:bg-brand-600 dark:bg-white dark:hover:bg-brand-500 text-white dark:text-gray-950 dark:hover:text-white py-4 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    >
+                      {rechargeMutation.isPending ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <>
+                          Verify & Submit <ArrowRight size={14} />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
