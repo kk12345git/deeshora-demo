@@ -608,56 +608,78 @@ export default function WalletPage() {
                 </div>
               )}
 
-              {/* State 2: PhonePe UPI App Selector & Simulator */}
               {selectedProvider === "PHONEPE" && (
-                <div className="space-y-4">
-                  {showUpiAppSimulator ? (
-                    <div className="py-8 flex flex-col items-center justify-center text-center space-y-4">
-                      <Loader2 className="w-12 h-12 animate-spin text-brand-500" />
-                      <div>
-                        <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
-                          Opening {selectedUpiApp || "UPI App"}...
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1 max-w-xs">
-                          Please authorize the transaction of ₹{rechargeAmount} in your UPI app to complete top-up.
-                        </p>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">
+                      UPI Intent Pay
+                    </p>
+                    <button
+                      onClick={() => {
+                        setSelectedProvider(null);
+                        setShowUpiAppSimulator(false);
+                      }}
+                      className="text-[10px] font-black uppercase text-brand-500 hover:underline"
+                    >
+                      Back
+                    </button>
+                  </div>
+
+                  {!showUpiAppSimulator ? (
+                    <div className="space-y-6 text-center py-4">
+                      <div className="w-16 h-16 bg-brand-50 dark:bg-brand-950/20 rounded-2xl flex items-center justify-center mx-auto text-brand-500 shadow-md">
+                        <Zap size={32} fill="currentColor" />
                       </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">
-                          Choose UPI App
+                      <div className="space-y-2">
+                        <h4 className="text-lg font-black text-gray-900 dark:text-white tracking-tight">
+                          Pay via Installed UPI App
+                        </h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 max-w-xs mx-auto leading-relaxed">
+                          Click below to choose from any installed UPI app (PhonePe, GPay, Paytm, BHIM, etc.) on your phone to transfer ₹{rechargeAmount} directly to the admin account.
                         </p>
-                        <button
-                          onClick={() => setSelectedProvider(null)}
-                          className="text-[10px] font-black uppercase text-brand-500 hover:underline"
-                        >
-                          Back
-                        </button>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        {[
-                          { name: "PhonePe", color: "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400" },
-                          { name: "GPay", color: "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400" },
-                          { name: "Paytm", color: "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-400" },
-                          { name: "BHIM UPI", color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" },
-                        ].map((app) => (
-                          <button
-                            key={app.name}
-                            onClick={() => {
-                              setSelectedUpiApp(app.name);
-                              setShowUpiAppSimulator(true);
-                              setTimeout(() => {
-                                handleRecharge("PHONEPE");
-                              }, 2000);
-                            }}
-                            className={`p-4 rounded-xl text-xs font-black uppercase tracking-wider border border-transparent hover:border-gray-200 dark:hover:border-gray-700 text-center transition-all ${app.color}`}
-                          >
-                            {app.name}
-                          </button>
-                        ))}
+                      <button
+                        onClick={() => {
+                          const upiLink = `upi://pay?pa=deeshware15-2@okicici&pn=Deeshora&am=${rechargeAmount}&cu=INR&tn=Wallet%20Recharge`;
+                          // Redirect to native UPI chooser
+                          window.location.href = upiLink;
+                          setShowUpiAppSimulator(true);
+                        }}
+                        className="w-full bg-brand-500 hover:bg-brand-600 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                      >
+                        <Zap size={16} fill="currentColor" />
+                        Launch UPI Chooser
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="py-6 flex flex-col items-center justify-center text-center space-y-6">
+                      <Loader2 className="w-12 h-12 animate-spin text-brand-500" />
+                      <div className="space-y-2">
+                        <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                          Waiting for Payment...
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-xs leading-relaxed">
+                          Please complete the payment of <strong>₹{rechargeAmount}</strong> in your selected UPI app, then click the confirmation button below to credit your wallet.
+                        </p>
+                      </div>
+
+                      <div className="flex gap-3 w-full pt-4">
+                        <button
+                          type="button"
+                          onClick={() => setShowUpiAppSimulator(false)}
+                          className="flex-1 py-3.5 rounded-xl border border-gray-100 dark:border-gray-800 text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
+                        >
+                          Retry Payment
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRecharge("PHONEPE")}
+                          className="flex-1 bg-gray-950 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-950 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-1.5 transition-all"
+                        >
+                          <CheckCircle2 size={16} className="text-brand-500 dark:text-brand-400" />
+                          Confirm Credit
+                        </button>
                       </div>
                     </div>
                   )}
